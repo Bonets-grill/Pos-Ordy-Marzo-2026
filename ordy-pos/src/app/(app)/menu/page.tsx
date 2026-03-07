@@ -187,6 +187,42 @@ const btnDanger: React.CSSProperties = {
   cursor: "pointer",
 };
 
+/* ── Modal Overlay (must be outside component to avoid remount on state change) ── */
+
+function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 100,
+        padding: 16,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: 16,
+          padding: "1.5rem",
+          width: "100%",
+          maxWidth: 540,
+          maxHeight: "90vh",
+          overflowY: "auto",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 /* ── Component ────────────────────────────────────────── */
 
 export default function MenuPage() {
@@ -710,39 +746,7 @@ export default function MenuPage() {
     );
   };
 
-  /* ── Modal overlay ────────────────────────────────── */
-
-  const Overlay = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-        padding: 16,
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          borderRadius: 16,
-          padding: "1.5rem",
-          width: "100%",
-          maxWidth: 540,
-          maxHeight: "90vh",
-          overflowY: "auto",
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
+  /* ── Modal overlay — see Overlay component defined outside ── */
 
   /* ── Confirm delete overlay ───────────────────────── */
 
