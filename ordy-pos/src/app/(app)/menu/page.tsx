@@ -44,26 +44,29 @@ interface Product {
 interface ModifierGroup {
   id: string;
   tenant_id: string;
-  name: string;
-  type: "single_select" | "multi_select";
+  name_es: string;
+  name_en: string;
   required: boolean;
   min_select: number;
   max_select: number;
   sort_order: number;
+  active: boolean;
 }
 
 interface ModifierOption {
   id: string;
   group_id: string;
   tenant_id: string;
-  name: string;
+  name_es: string;
+  name_en: string;
   price_delta: number;
   sort_order: number;
+  active: boolean;
 }
 
 interface ItemModifierGroup {
-  menu_item_id: string;
-  modifier_group_id: string;
+  item_id: string;
+  group_id: string;
 }
 
 type Tab = "categories" | "items" | "modifiers";
@@ -111,18 +114,21 @@ const blankProduct: Omit<Product, "id" | "tenant_id"> = {
 };
 
 const blankModifierGroup: Omit<ModifierGroup, "id" | "tenant_id"> = {
-  name: "",
-  type: "single_select",
+  name_es: "",
+  name_en: "",
   required: false,
   min_select: 0,
   max_select: 1,
   sort_order: 0,
+  active: true,
 };
 
 const blankModifierOption: Omit<ModifierOption, "id" | "group_id" | "tenant_id"> = {
-  name: "",
+  name_es: "",
+  name_en: "",
   price_delta: 0,
   sort_order: 0,
+  active: true,
 };
 
 /* ── Shared styles ────────────────────────────────────── */
@@ -316,7 +322,7 @@ export default function MenuPage() {
     if (!tenantId) return;
     const supabase = createClient();
     const { data } = await supabase
-      .from("menu_modifier_groups")
+      .from("modifier_groups")
       .select("*")
       .eq("tenant_id", tenantId)
       .order("sort_order", { ascending: true });
@@ -327,7 +333,7 @@ export default function MenuPage() {
     if (!tenantId) return;
     const supabase = createClient();
     const { data } = await supabase
-      .from("menu_modifier_options")
+      .from("modifiers")
       .select("*")
       .eq("tenant_id", tenantId)
       .order("sort_order", { ascending: true });
@@ -439,9 +445,9 @@ export default function MenuPage() {
     const supabase = createClient();
     const { data } = await supabase
       .from("menu_item_modifier_groups")
-      .select("modifier_group_id")
-      .eq("menu_item_id", prod.id);
-    setItemModGroups(data ? data.map((d: { modifier_group_id: string }) => d.modifier_group_id) : []);
+      .select("group_id")
+      .eq("item_id", prod.id);
+    setItemModGroups(data ? data.map((d: { group_id: string }) => d.group_id) : []);
     setProdModal(true);
   };
 
@@ -459,9 +465,9 @@ export default function MenuPage() {
     }
     // Save modifier group assignments
     if (itemId) {
-      await supabase.from("menu_item_modifier_groups").delete().eq("menu_item_id", itemId);
+      await supabase.from("menu_item_modifier_groups").delete().eq("item_id", itemId);
       if (itemModGroups.length > 0) {
-        const rows = itemModGroups.map((gid) => ({ menu_item_id: itemId, modifier_group_id: gid }));
+        const rows = itemModGroups.map((gid) => ({ item_id: itemId, group_id: gid }));
         await supabase.from("menu_item_modifier_groups").insert(rows);
       }
     }
@@ -593,25 +599,26 @@ export default function MenuPage() {
   const openModGroupEdit = (g: ModifierGroup) => {
     setModGroupEdit(g);
     setModGroupForm({
-      name: g.name,
-      type: g.type,
+      name_es: g.name_es,
+      name_en: g.name_en,
       required: g.required,
       min_select: g.min_select,
       max_select: g.max_select,
       sort_order: g.sort_order,
+      active: g.active,
     });
     setModGroupModal(true);
   };
 
   const saveModGroup = async () => {
-    if (!tenantId || !modGroupForm.name) return;
+    if (!tenantId || !modGroupForm.name_es) return;
     setSaving(true);
     const supabase = createClient();
     const payload = { ...modGroupForm, tenant_id: tenantId };
     if (modGroupEdit) {
-      await supabase.from("menu_modifier_groups").update(payload).eq("id", modGroupEdit.id);
+      await supabase.from("modifier_groups").update(payload).eq("id", modGroupEdit.id);
     } else {
-      await supabase.from("menu_modifier_groups").insert(payload);
+      await supabase.from("modifier_groups").insert(payload);
     }
     setModGroupModal(false);
     setSaving(false);
@@ -621,11 +628,11 @@ export default function MenuPage() {
   const deleteModGroup = async (id: string) => {
     const supabase = createClient();
     // Delete options first
-    await supabase.from("menu_modifier_options").delete().eq("group_id", id);
+    await supabase.from("modifiers").delete().eq("group_id", id);
     // Delete junction entries
-    await supabase.from("menu_item_modifier_groups").delete().eq("modifier_group_id", id);
+    await supabase.from("menu_item_modifier_groups").delete().eq("group_id", id);
     // Delete group
-    await supabase.from("menu_modifier_groups").delete().eq("id", id);
+    await supabase.from("modifier_groups").delete().eq("id", id);
     setModGroupDeleting(null);
     if (expandedGroup === id) setExpandedGroup(null);
     await Promise.all([loadModifierGroups(), loadModifierOptions()]);
@@ -645,22 +652,24 @@ export default function MenuPage() {
     setModOptGroupId(opt.group_id);
     setModOptEdit(opt);
     setModOptForm({
-      name: opt.name,
+      name_es: opt.name_es,
+      name_en: opt.name_en,
       price_delta: opt.price_delta,
       sort_order: opt.sort_order,
+      active: opt.active,
     });
     setModOptModal(true);
   };
 
   const saveModOpt = async () => {
-    if (!tenantId || !modOptGroupId || !modOptForm.name) return;
+    if (!tenantId || !modOptGroupId || !modOptForm.name_es) return;
     setSaving(true);
     const supabase = createClient();
     const payload = { ...modOptForm, group_id: modOptGroupId, tenant_id: tenantId };
     if (modOptEdit) {
-      await supabase.from("menu_modifier_options").update(payload).eq("id", modOptEdit.id);
+      await supabase.from("modifiers").update(payload).eq("id", modOptEdit.id);
     } else {
-      await supabase.from("menu_modifier_options").insert(payload);
+      await supabase.from("modifiers").insert(payload);
     }
     setModOptModal(false);
     setSaving(false);
@@ -669,7 +678,7 @@ export default function MenuPage() {
 
   const deleteModOpt = async (id: string) => {
     const supabase = createClient();
-    await supabase.from("menu_modifier_options").delete().eq("id", id);
+    await supabase.from("modifiers").delete().eq("id", id);
     setModOptDeleting(null);
     await loadModifierOptions();
   };
@@ -946,11 +955,11 @@ export default function MenuPage() {
       for (const group of selected) {
         // Create modifier group
         const { data: gData, error: gErr } = await supabase
-          .from("menu_modifier_groups")
+          .from("modifier_groups")
           .insert({
             tenant_id: tenantId,
-            name: group.name,
-            type: group.type,
+            name_es: group.name,
+            name_en: group.name,
             required: group.required,
             min_select: group.min_select,
             max_select: group.max_select,
@@ -971,11 +980,12 @@ export default function MenuPage() {
           const optRows = group.options.map((opt, idx) => ({
             group_id: groupId,
             tenant_id: tenantId,
-            name: opt.name,
+            name_es: opt.name,
+            name_en: opt.name,
             price_delta: opt.price_delta,
             sort_order: idx,
           }));
-          const { error: optErr } = await supabase.from("menu_modifier_options").insert(optRows);
+          const { error: optErr } = await supabase.from("modifiers").insert(optRows);
           if (optErr) console.error("Failed to insert options:", optErr.message);
         }
 
@@ -984,8 +994,8 @@ export default function MenuPage() {
           const validIds = group.product_ids.filter((pid) => allProductIds.has(pid));
           if (validIds.length > 0) {
             const junctionRows = validIds.map((pid) => ({
-              menu_item_id: pid,
-              modifier_group_id: groupId,
+              item_id: pid,
+              group_id: groupId,
             }));
             const { error: jErr } = await supabase.from("menu_item_modifier_groups").insert(junctionRows);
             if (jErr) console.error("Failed to link products:", jErr.message);
@@ -1480,7 +1490,7 @@ export default function MenuPage() {
           {modifierGroups
             .filter((g) => {
               if (!searchQuery.trim()) return true;
-              return g.name.toLowerCase().includes(searchQuery.toLowerCase());
+              return (g.name_es || g.name_en || "").toLowerCase().includes(searchQuery.toLowerCase());
             })
             .map((group) => {
               const groupOpts = modOptions.filter((o) => o.group_id === group.id);
@@ -1506,18 +1516,18 @@ export default function MenuPage() {
 
                     <div style={{ flex: 1, minWidth: 140 }}>
                       <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.95rem" }}>
-                        {group.name}
+                        {group.name_es || group.name_en}
                       </div>
                       <div style={{ color: "var(--text-muted)", fontSize: "0.78rem", display: "flex", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
                         <span style={{
                           padding: "1px 8px",
                           borderRadius: 999,
-                          background: group.type === "single_select" ? "rgba(59,130,246,0.15)" : "rgba(168,85,247,0.15)",
-                          color: group.type === "single_select" ? "#60a5fa" : "#c084fc",
+                          background: group.max_select === 1 ? "rgba(59,130,246,0.15)" : "rgba(168,85,247,0.15)",
+                          color: group.max_select === 1 ? "#60a5fa" : "#c084fc",
                           fontSize: "0.72rem",
                           fontWeight: 600,
                         }}>
-                          {group.type === "single_select" ? t("menu.single_select") : t("menu.multi_select")}
+                          {group.max_select === 1 ? t("menu.single_select") : t("menu.multi_select")}
                         </span>
                         {group.required && (
                           <span style={{
@@ -1585,7 +1595,7 @@ export default function MenuPage() {
                           }}
                         >
                           <span style={{ color: "var(--text-primary)", fontSize: "0.9rem", flex: 1 }}>
-                            {opt.name}
+                            {opt.name_es || opt.name_en}
                           </span>
                           <span style={{
                             color: opt.price_delta > 0 ? "var(--accent)" : opt.price_delta < 0 ? "#22c55e" : "var(--text-muted)",
@@ -2110,13 +2120,13 @@ export default function MenuPage() {
                           style={{ width: 16, height: 16, accentColor: "var(--accent)" }}
                         />
                         <span style={{ color: "var(--text-primary)", fontWeight: 500, fontSize: "0.88rem", flex: 1 }}>
-                          {g.name}
+                          {g.name_es || g.name_en}
                         </span>
                         <span style={{
                           fontSize: "0.72rem",
                           color: "var(--text-muted)",
                         }}>
-                          {g.type === "single_select" ? t("menu.single_select") : t("menu.multi_select")}
+                          {g.max_select === 1 ? t("menu.single_select") : t("menu.multi_select")}
                           {g.required ? ` · ${t("menu.required")}` : ""}
                         </span>
                       </label>
@@ -2166,28 +2176,25 @@ export default function MenuPage() {
           </h2>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {/* Name */}
+            {/* Name ES */}
             <div>
-              <label style={labelStyle}>{t("menu.modifier_name")} *</label>
+              <label style={labelStyle}>{t("menu.modifier_name")} (ES) *</label>
               <input
                 style={inputStyle}
-                value={modGroupForm.name}
-                onChange={(e) => setModGroupForm({ ...modGroupForm, name: e.target.value })}
+                value={modGroupForm.name_es}
+                onChange={(e) => setModGroupForm({ ...modGroupForm, name_es: e.target.value })}
                 placeholder={t("menu.modifier_name_placeholder")}
               />
             </div>
-
-            {/* Type */}
+            {/* Name EN */}
             <div>
-              <label style={labelStyle}>{t("menu.modifier_type")}</label>
-              <select
+              <label style={labelStyle}>{t("menu.modifier_name")} (EN)</label>
+              <input
                 style={inputStyle}
-                value={modGroupForm.type}
-                onChange={(e) => setModGroupForm({ ...modGroupForm, type: e.target.value as "single_select" | "multi_select" })}
-              >
-                <option value="single_select">{t("menu.single_select")}</option>
-                <option value="multi_select">{t("menu.multi_select")}</option>
-              </select>
+                value={modGroupForm.name_en}
+                onChange={(e) => setModGroupForm({ ...modGroupForm, name_en: e.target.value })}
+                placeholder="English name"
+              />
             </div>
 
             {/* Required */}
@@ -2256,12 +2263,21 @@ export default function MenuPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {/* Name */}
             <div>
-              <label style={labelStyle}>{t("menu.option_name")} *</label>
+              <label style={labelStyle}>{t("menu.option_name")} (ES) *</label>
               <input
                 style={inputStyle}
-                value={modOptForm.name}
-                onChange={(e) => setModOptForm({ ...modOptForm, name: e.target.value })}
+                value={modOptForm.name_es}
+                onChange={(e) => setModOptForm({ ...modOptForm, name_es: e.target.value })}
                 placeholder={t("menu.option_name_placeholder")}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>{t("menu.option_name")} (EN)</label>
+              <input
+                style={inputStyle}
+                value={modOptForm.name_en}
+                onChange={(e) => setModOptForm({ ...modOptForm, name_en: e.target.value })}
+                placeholder="English name"
               />
             </div>
 
