@@ -186,7 +186,12 @@ export function ResellerDashboard() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">{t("reseller.myClients")}</CardTitle>
-          <Button size="sm" className="gap-1">
+          <Button
+            size="sm"
+            className="gap-1"
+            onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent("Quiero agregar un nuevo cliente a mi franquicia Layra")}`, "_blank")}
+            title={t("reseller.addClient")}
+          >
             <Plus className="h-4 w-4" />
             {t("reseller.addClient")}
           </Button>

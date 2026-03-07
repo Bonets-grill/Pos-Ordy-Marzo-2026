@@ -26,6 +26,7 @@ import { PriceManager } from "@/pages/admin/PriceManager";
 import { Franchise } from "@/pages/franchise/Franchise";
 import { FranchiseManager } from "@/pages/admin/FranchiseManager";
 import { ResellerDashboard } from "@/pages/reseller/ResellerDashboard";
+import { Bookings } from "@/pages/bookings/Bookings";
 
 export default function App() {
   return (
@@ -40,6 +41,11 @@ export default function App() {
           <Route path="/franchise" element={<Franchise />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/checkout/agent/:systemId" element={
+            <AuthGuard>
+              <Checkout />
+            </AuthGuard>
+          } />
           <Route path="/checkout/:systemId" element={
             <AuthGuard>
               <Checkout />
@@ -65,6 +71,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/bookings" element={<Bookings />} />
 
             {/* Super Admin routes */}
             <Route
@@ -139,7 +146,14 @@ export default function App() {
                 </AuthGuard>
               }
             />
-            <Route path="/reseller" element={<ResellerDashboard />} />
+            <Route
+              path="/reseller"
+              element={
+                <AuthGuard requiredRole="tenant_admin">
+                  <ResellerDashboard />
+                </AuthGuard>
+              }
+            />
           </Route>
 
           {/* Catch-all */}

@@ -4,10 +4,14 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { renderSystemHtml } from "@/lib/templates/engine";
 import { Button } from "@/components/ui/button";
 import { TEMPLATE_LANGS, type TemplateLang } from "@/lib/templates/i18n";
-import { getAgentConfig } from "@/lib/agents/configs";
+import { getAgentConfig, type RealDashboardData } from "@/lib/agents/configs";
 import { getAgentById } from "@/lib/agents/catalog";
 import type { I18nString } from "@/lib/templates/types";
 import { AgentChat } from "@/components/chat/AgentChat";
+import type { ChatActivity } from "@/components/chat/AgentChat";
+import { translate } from "@/i18n/index";
+import type { Lang } from "@/lib/constants";
+import { supabase } from "@/core/supabase/client";
 
 function getInitialLang(): TemplateLang {
   const stored = localStorage.getItem("layra_lang") as TemplateLang | null;
@@ -29,9 +33,49 @@ export function AgentDemo() {
   const [loaded, setLoaded] = useState(false);
   const [lang, setLang] = useState<TemplateLang>(getInitialLang);
 
-  const config = agentId ? getAgentConfig(agentId) : null;
+  const [realData, setRealData] = useState<RealDashboardData | undefined>(undefined);
   const catalogAgent = agentId ? getAgentById(agentId) : null;
+  const config = agentId ? getAgentConfig(agentId, realData) : null;
   const name = config ? resolveStr(config.name, lang) : "";
+  const t = (key: string, params?: Record<string, string | number>) => translate(lang as Lang, key, params);
+
+  // Fetch real bookings data
+  useEffect(() => {
+    if (!agentId) return;
+    async function fetchReal() {
+      const today = new Date().toISOString().slice(0, 10);
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Monday
+      const weekStartStr = weekStart.toISOString().slice(0, 10);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const weekEndStr = weekEnd.toISOString().slice(0, 10);
+
+      const [todayRes, weekRes, recentRes] = await Promise.all([
+        supabase.from("bookings").select("status").eq("agent_id", agentId!).eq("booking_date", today),
+        supabase.from("bookings").select("status").eq("agent_id", agentId!).gte("booking_date", weekStartStr).lte("booking_date", weekEndStr),
+        supabase.from("bookings").select("client_name, service, channel, status, time_start, booking_date").eq("agent_id", agentId!).order("created_at", { ascending: false }).limit(15),
+      ]);
+
+      const todayBookings = todayRes.data ?? [];
+      const weekBookings = weekRes.data ?? [];
+      const recent = recentRes.data ?? [];
+
+      setRealData({
+        todayBookings: todayBookings.length,
+        weekBookings: weekBookings.length,
+        confirmedToday: todayBookings.filter(b => b.status === "confirmed").length,
+        noShowsToday: todayBookings.filter(b => b.status === "no_show").length,
+        activityRows: recent.map(b => ({
+          event: `${b.client_name} — ${b.service} (${b.booking_date} ${(b.time_start || "").slice(0, 5)})`,
+          channel: b.channel === "whatsapp" ? "WhatsApp" : "Web",
+          result: b.status === "confirmed" ? "Confirmada" : b.status === "cancelled" ? "Cancelada" : b.status === "no_show" ? "No asistio" : "Completada",
+          time: (b.time_start || "").slice(0, 5),
+        })),
+      });
+    }
+    fetchReal();
+  }, [agentId]);
 
   const renderDemo = useCallback((l: TemplateLang) => {
     if (!config || !iframeRef.current) return;
@@ -59,23 +103,25 @@ export function AgentDemo() {
     return () => window.removeEventListener("message", handler);
   }, []);
 
-  const notFoundLabels: Record<TemplateLang, { title: string; desc: string; back: string }> = {
-    es: { title: "Agente no encontrado", desc: `El agente "${agentId}" no tiene una demo disponible.`, back: "Volver a agentes" },
-    en: { title: "Agent not found", desc: `The agent "${agentId}" has no demo available.`, back: "Back to agents" },
-    fr: { title: "Agent introuvable", desc: `L'agent "${agentId}" n'a pas de demo disponible.`, back: "Retour aux agents" },
-    de: { title: "Agent nicht gefunden", desc: `Der Agent "${agentId}" hat keine Demo verfügbar.`, back: "Zurück zu Agenten" },
-    it: { title: "Agente non trovato", desc: `L'agente "${agentId}" non ha una demo disponibile.`, back: "Torna agli agenti" },
-  };
+  // Activity injection into iframe — only inject meaningful events (not every message)
+  const handleActivity = useCallback((activity: ChatActivity) => {
+    if (!iframeRef.current?.contentWindow) return;
+    // Only inject completions, not "active conversation" noise
+    if (activity.result === "En Progreso") return;
+    iframeRef.current.contentWindow.postMessage({
+      type: "newActivity",
+      activity,
+    }, "*");
+  }, []);
 
   if (!config) {
-    const nf = notFoundLabels[lang];
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold">{nf.title}</h1>
-          <p className="text-muted-foreground">{nf.desc}</p>
+          <h1 className="text-2xl font-bold">{t("demo.agentNotFound")}</h1>
+          <p className="text-muted-foreground">{t("demo.agentNotFoundDesc", { agentId: agentId || "" })}</p>
           <Button asChild>
-            <Link to="/agents">{nf.back}</Link>
+            <Link to="/agents">{t("demo.backToAgents")}</Link>
           </Button>
         </div>
       </div>
@@ -102,14 +148,14 @@ export function AgentDemo() {
               AI
             </div>
             <span className="text-sm font-medium text-white">{name}</span>
-            <span className="text-xs text-gray-500">— {{ es: "Demo Agente IA", en: "AI Agent Demo", fr: "Demo Agent IA", de: "KI-Agent Demo", it: "Demo Agente IA" }[lang]}</span>
+            <span className="text-xs text-gray-500">{"\u2014"} {t("demo.agentDemoLabel")}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-2 mr-4">
+          <div className="hidden sm:flex items-center gap-2 mr-2">
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
               <div className="h-2 w-2 rounded-full bg-emerald-500" />
-              {{ es: "14 días gratis", en: "14 days free", fr: "14 jours gratuits", de: "14 Tage kostenlos", it: "14 giorni gratis" }[lang]}
+              {t("demo.trialFree")}
             </div>
           </div>
           <Button
@@ -119,7 +165,7 @@ export function AgentDemo() {
           >
             <Link to={`/checkout/agent/${agentId}`}>
               <ExternalLink className="h-3 w-3" />
-              {{ es: "Activar Agente", en: "Activate Agent", fr: "Activer l'Agent", de: "Agent Aktivieren", it: "Attiva Agente" }[lang]}
+              {t("demo.activateAgent")}
             </Link>
           </Button>
         </div>
@@ -132,7 +178,7 @@ export function AgentDemo() {
         sandbox="allow-scripts allow-same-origin"
       />
 
-      {/* Live AI Chat */}
+      {/* Live AI Chat with QR inside */}
       {catalogAgent && (
         <AgentChat
           agentId={catalogAgent.id}
@@ -140,6 +186,7 @@ export function AgentDemo() {
           brandColor={catalogAgent.brandColor}
           greeting={getAgentGreeting(catalogAgent.id, lang)}
           lang={lang}
+          onActivity={handleActivity}
         />
       )}
     </div>
@@ -147,39 +194,11 @@ export function AgentDemo() {
 }
 
 function getAgentGreeting(agentId: string, lang: string): string {
-  const greetings: Record<string, Record<string, string>> = {
-    barber_shop: {
-      es: "Hola! Bienvenido a la barberia. Puedo ayudarte a agendar una cita, consultar precios o ver horarios disponibles. En que te puedo ayudar?",
-      en: "Hey! Welcome to the barber shop. I can help you book an appointment, check prices, or see available times. What can I do for you?",
-    },
-    hair_salon: {
-      es: "Hola! Bienvenida al salon. Estoy aqui para ayudarte con tu proxima cita o recomendarte tratamientos. Que necesitas?",
-      en: "Hi! Welcome to the salon. I'm here to help with your next appointment or recommend treatments. What do you need?",
-    },
-    restaurant_agent: {
-      es: "Hola! Bienvenido a nuestro restaurante. Puedo ayudarte con una reserva, mostrarte el menu o tomar tu pedido. Que te apetece?",
-      en: "Hi! Welcome to our restaurant. I can help with a reservation, show you our menu, or take your order. What would you like?",
-    },
-    dentist_agent: {
-      es: "Hola! Bienvenido a la clinica dental. Puedo ayudarte a agendar una cita o resolver dudas sobre tratamientos. Como te puedo ayudar?",
-      en: "Hi! Welcome to the dental clinic. I can help you schedule an appointment or answer questions. How can I help?",
-    },
-    auto_mechanic: {
-      es: "Hola! Bienvenido al taller. Cuentame que problema tiene tu vehiculo o si necesitas agendar un servicio.",
-      en: "Hi! Welcome to the shop. Tell me what's going on with your vehicle or if you need to schedule a service.",
-    },
-  };
-
-  const agentGreetings = greetings[agentId];
-  if (agentGreetings) return agentGreetings[lang] || agentGreetings.es || agentGreetings.en || "";
-
-  // Default greeting
-  const defaults: Record<string, string> = {
-    es: "Hola! Soy el asistente virtual. En que puedo ayudarte hoy?",
-    en: "Hi! I'm the virtual assistant. How can I help you today?",
-    fr: "Bonjour! Je suis l'assistant virtuel. Comment puis-je vous aider?",
-    de: "Hallo! Ich bin der virtuelle Assistent. Wie kann ich Ihnen helfen?",
-    it: "Ciao! Sono l'assistente virtuale. Come posso aiutarti?",
-  };
-  return defaults[lang] || defaults.es;
+  const key = `greeting.${agentId}`;
+  const result = translate(lang as Lang, key);
+  // If translate returns the key itself, it means no specific greeting exists — use default
+  if (result === key) {
+    return translate(lang as Lang, "greeting.default");
+  }
+  return result;
 }

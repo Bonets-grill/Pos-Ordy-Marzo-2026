@@ -7,40 +7,53 @@ import { getTenantAdminModules } from "../../templates/tenantAdmin";
 import type { AgentCatalogItem } from "../types";
 import type { I18nStr } from "../types";
 
-function agentDashboard(agent: AgentCatalogItem): SystemConfig["modules"][0] {
+export interface RealDashboardData {
+  todayBookings: number;
+  weekBookings: number;
+  confirmedToday: number;
+  noShowsToday: number;
+  activityRows: Array<{ event: string; channel: string; result: string; time: string }>;
+}
+
+function agentDashboard(agent: AgentCatalogItem, realData?: RealDashboardData): SystemConfig["modules"][0] {
+  const hasReal = !!realData;
+  const todayCount = realData?.todayBookings ?? 0;
+  const weekCount = realData?.weekBookings ?? 0;
+  const confirmedCount = realData?.confirmedToday ?? 0;
+  const noShowCount = realData?.noShowsToday ?? 0;
+  const resolutionRate = todayCount > 0 ? Math.round((confirmedCount / todayCount) * 100) : 0;
+
+  const rows = hasReal && realData!.activityRows.length > 0
+    ? realData!.activityRows
+    : [
+        { event: "—", channel: "—", result: "—", time: "—" },
+      ];
+
   return {
     id: "dashboard",
     label: t5("Panel Principal", "Dashboard", "Tableau de Bord", "Übersicht", "Pannello"),
     icon: "dashboard",
     kpis: [
-      { label: t5("Conversaciones Hoy", "Conversations Today", "Conversations Aujourd'hui", "Gespräche Heute", "Conversazioni Oggi"), value: "127", change: "+18%", trend: "up" },
-      { label: t5("Tasa de Resolución", "Resolution Rate", "Taux de Résolution", "Lösungsrate", "Tasso Risoluzione"), value: "94.2%", change: "+2.1%", trend: "up" },
-      { label: t5("Tiempo de Respuesta", "Response Time", "Temps de Réponse", "Antwortzeit", "Tempo di Risposta"), value: "1.2s", change: "-0.3s", trend: "down" },
-      { label: t5("Citas Agendadas", "Appointments Booked", "RDV Réservés", "Gebuchte Termine", "Appuntamenti Prenotati"), value: "34", change: "+8", trend: "up" },
+      { label: t5("Citas Hoy", "Bookings Today", "RDV Aujourd'hui", "Termine Heute", "Appuntamenti Oggi"), value: String(todayCount), change: hasReal ? "" : "—", trend: todayCount > 0 ? "up" : "neutral" },
+      { label: t5("Citas Semana", "Week Bookings", "RDV Semaine", "Wochentermine", "Appuntamenti Settimana"), value: String(weekCount), change: hasReal ? "" : "—", trend: weekCount > 0 ? "up" : "neutral" },
+      { label: t5("Confirmadas", "Confirmed", "Confirmés", "Bestätigt", "Confermati"), value: String(confirmedCount), trend: confirmedCount > 0 ? "up" : "neutral" },
+      { label: t5("No Asistieron", "No-Shows", "Absences", "Nicht Erschienen", "Assenze"), value: String(noShowCount), trend: noShowCount > 0 ? "down" : "neutral" },
     ],
     table: {
       columns: [
         { key: "event", label: t5("Actividad Reciente", "Recent Activity", "Activité Récente", "Letzte Aktivität", "Attività Recente"), type: "text" },
-        { key: "channel", label: t5("Canal", "Channel", "Canal", "Kanal", "Canale"), type: "badge", badgeColors: { WhatsApp: "green", Web: "blue", Email: "purple" } },
-        { key: "result", label: t5("Resultado", "Result", "Résultat", "Ergebnis", "Risultato"), type: "badge", badgeColors: { Completado: "green", "En Progreso": "blue", Pendiente: "yellow", Escalado: "red" } },
+        { key: "channel", label: t5("Canal", "Channel", "Canal", "Kanal", "Canale"), type: "badge", badgeColors: { WhatsApp: "green", Web: "blue", whatsapp: "green", web: "blue" } },
+        { key: "result", label: t5("Resultado", "Result", "Résultat", "Ergebnis", "Risultato"), type: "badge", badgeColors: { Confirmada: "green", Confirmado: "green", confirmed: "green", Cancelada: "red", cancelled: "red", "No asistio": "yellow", no_show: "yellow", completed: "blue", Completada: "blue" } },
         { key: "time", label: t5("Hora", "Time", "Heure", "Uhrzeit", "Ora"), type: "text" },
       ],
-      rows: [
-        { event: "Cita agendada para mañana 10:00", channel: "WhatsApp", result: "Completado", time: "09:32" },
-        { event: "Consulta de precios respondida", channel: "WhatsApp", result: "Completado", time: "09:28" },
-        { event: "Nuevo contacto — información enviada", channel: "Web", result: "Completado", time: "09:15" },
-        { event: "Solicitud compleja — escalado a humano", channel: "WhatsApp", result: "Escalado", time: "09:10" },
-        { event: "Recordatorio de cita enviado", channel: "WhatsApp", result: "Completado", time: "09:00" },
-        { event: "Follow-up post-servicio", channel: "Email", result: "Pendiente", time: "08:45" },
-        { event: "Catálogo de servicios compartido", channel: "WhatsApp", result: "Completado", time: "08:30" },
-      ],
+      rows,
       searchPlaceholder: t5("Buscar actividad...", "Search activity...", "Rechercher activité...", "Aktivität suchen...", "Cerca attività..."),
       searchField: "event",
     },
   };
 }
 
-export function getAgentConfig(agentId: string): SystemConfig | null {
+export function getAgentConfig(agentId: string, realData?: RealDashboardData): SystemConfig | null {
   const agent = getAgentById(agentId);
   if (!agent) return null;
 
@@ -50,7 +63,7 @@ export function getAgentConfig(agentId: string): SystemConfig | null {
     brandColor: agent.brandColor,
     icon: undefined,
     modules: [
-      agentDashboard(agent),
+      agentDashboard(agent, realData),
       ...getAgentSharedModules(),
     ],
     tenantAdmin: { modules: getTenantAdminModules() },

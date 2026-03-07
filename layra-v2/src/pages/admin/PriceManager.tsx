@@ -160,22 +160,22 @@ export function PriceManager() {
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
-                    Sistema
+                    {t("prices.system")}
                   </th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
-                    Categoria
+                    {t("prices.category")}
                   </th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
-                    Estado
+                    {t("prices.status")}
                   </th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 w-32">
-                    Precio (USD)
+                    {t("prices.price")}
                   </th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 w-32">
-                    Mensual (USD)
+                    {t("prices.monthly")}
                   </th>
                   <th className="text-right text-xs font-semibold text-muted-foreground px-4 py-3 w-24">
-                    Accion
+                    {t("prices.action")}
                   </th>
                 </tr>
               </thead>
