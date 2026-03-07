@@ -5,6 +5,7 @@ import {
   Code2, Eye, Monitor, Smartphone, Rocket,
   FileCode, PanelLeftClose, PanelLeftOpen,
   Paperclip, Image as ImageIcon, X, FileUp, CheckCircle2,
+  Trash2, DollarSign,
 } from "lucide-react";
 import {
   SandpackProvider,
@@ -19,12 +20,16 @@ import {
   extractHtmlPreview,
   extractCodeBlocks,
   buildSandpackFiles,
+  mergeHtmlFromMessages,
   type CodeBlock,
 } from "@/lib/codeExtractor";
+import { getTemplateConfig } from "@/lib/templates/configs";
+import { renderSystemHtml } from "@/lib/templates/engine";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 interface Attachment {
   type: "image" | "file";
@@ -63,6 +68,14 @@ export function SystemBuilder() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [debugStatus, setDebugStatus] = useState<string | null>(null);
+  // Cost tracking: Opus = $15/MTok input, $75/MTok output (~4 chars per token)
+  const [costData, setCostData] = useState({ inputTokens: 0, outputTokens: 0 });
+  const [activeModel, setActiveModel] = useState<string | null>(null);
+  // Module progress tracking
+  const [moduleStatus, setModuleStatus] = useState<Record<string, "pending" | "building" | "done">>({});
+  const [moduleCosts, setModuleCosts] = useState<Record<string, number>>({});
+  const lastDetectedModule = useRef<string | null>(null);
+  const moduleStartChars = useRef(0);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -78,19 +91,39 @@ export function SystemBuilder() {
 
   useEffect(scrollToBottom, [messages, scrollToBottom]);
 
-  // ─── LOAD saved build from Supabase ───
+  // ─── LOAD saved build: localStorage first (instant), then Supabase (authoritative) ───
   useEffect(() => {
     if (!systemId) return;
+    const lsKey = `layra_build_${systemId}`;
+
+    // 1) Instant restore from localStorage
+    try {
+      const cached = localStorage.getItem(lsKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.messages?.length) setMessages(parsed.messages);
+        if (parsed.html_preview) setHtmlContent(parsed.html_preview);
+        if (parsed.generated_files && Object.keys(parsed.generated_files).length > 0) {
+          setSandpackFiles(parsed.generated_files);
+        }
+      }
+    } catch { /* ignore corrupt localStorage */ }
+
+    // 2) Then try Supabase (may have newer data from another device)
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("system_builds")
         .select("*")
         .eq("system_id", systemId)
         .single();
 
+      if (error) {
+        console.warn("[builder] Supabase load failed (using localStorage):", error.message);
+      }
+
       if (data) {
         const savedMessages = (data.messages as Message[]) || [];
-        setMessages(savedMessages);
+        if (savedMessages.length > 0) setMessages(savedMessages);
         if (data.html_preview) setHtmlContent(data.html_preview);
         if (data.generated_files && Object.keys(data.generated_files).length > 0) {
           setSandpackFiles(data.generated_files as Record<string, string>);
@@ -101,39 +134,75 @@ export function SystemBuilder() {
     load();
   }, [systemId]);
 
-  // Auto-set initial prompt only after load + if no saved messages
+  // Initialize module status
+  useEffect(() => {
+    if (!system) return;
+    const initial: Record<string, "pending" | "building" | "done"> = {};
+    for (const mod of system.modules) initial[mod] = "pending";
+    setModuleStatus(initial);
+  }, [system]);
+
+  // ─── TEMPLATE ENGINE: instant render if pre-built config exists ───
+  const templateConfig = systemId ? getTemplateConfig(systemId) : null;
+
+  useEffect(() => {
+    if (!loaded || !systemId || !templateConfig) return;
+    // Only auto-render if no existing build
+    if (htmlContent && htmlContent.length > 500) return;
+    if (messages.length > 0) return;
+
+    const html = renderSystemHtml(templateConfig);
+    setHtmlContent(html);
+    // Mark all modules as done
+    const done: Record<string, "done"> = {};
+    for (const mod of templateConfig.modules) done[mod.id] = "done";
+    setModuleStatus(done);
+    // Add a system message so the chat shows the build is done
+    setMessages([{
+      role: "assistant",
+      content: `Sistema **${templateConfig.name}** generado con el motor de templates.\n\nTodos los ${templateConfig.modules.length} modulos estan listos con:\n- Navegacion funcional\n- Tablas con datos reales\n- Modales de creacion\n- Busqueda y filtros\n- Notificaciones toast\n\nPuedes personalizarlo usando el chat.`,
+    }]);
+  }, [loaded, systemId, templateConfig]);
+
+  // Auto-set initial prompt only after load + if no saved messages (AI builder fallback)
   useEffect(() => {
     if (!loaded || !system) return;
+    if (templateConfig) return; // skip — template engine handles this
     if (messages.length === 0) {
-      const prompt = `Construye el sistema COMPLETO "${system.id}" (${system.category}).
-Módulos requeridos: ${system.modules.join(", ")}. Tier: ${system.tier}.
+      const moduleList = system.modules.map((m, i) => `${i + 1}. ${m}`).join("\n");
+      const prompt = `Build "${system.id}" (${system.category}). Tier: ${system.tier}.
 
-IMPORTANTE: Esto es un sistema SaaS COMPLETO, no solo un dashboard.
-Necesito que generes UNA SOLA página HTML que contenga TODO:
+MODULES TO BUILD:
+${moduleList}
 
-1. Sidebar con navegación a TODOS los módulos (${system.modules.join(", ")})
-2. Cada módulo debe ser una sección/vista funcional con datos mock reales
-3. Al hacer click en cada item del sidebar, debe mostrar ese módulo (usa JS para cambiar vistas)
-4. Dashboard con KPIs reales, gráficos, actividad reciente
-5. Cada módulo con: tabla de datos, filtros, búsqueda, botones de acción
-6. Diseño nivel Linear/Stripe — profesional, no un prototipo
+Generate ONE HTML page with modular architecture:
+- Shell (sidebar + header + showModule() JS navigation)
+- Each module as <section id="mod-NAME" class="module-panel">
+- Mark each with <!-- MODULE:name --> comments
+- Include working buttons, modals, tables with real data
+- Start with shell + dashboard + first 2 modules COMPLETE
 
-El HTML debe ser 100% funcional con JavaScript vanilla para la navegación entre módulos.
-Incluye Tailwind CDN, Inter font, iconos SVG inline.
-TODOS los módulos deben estar implementados, no solo listados en el sidebar.
-
-Genera:
-1. \`\`\`html — Página COMPLETA standalone con TODOS los módulos funcionando
-2. \`\`\`tsx — Componente React equivalente
-
-NO digas "completado" hasta que TODOS los ${system.modules.length} módulos estén implementados con contenido real.`;
+The auto-continue system will request remaining modules.
+Start directly with \`\`\`html — no explanations.`;
       setInput(prompt);
     }
-  }, [loaded, system]);
+  }, [loaded, system, templateConfig]);
 
-  // ─── AUTO-SAVE to Supabase (debounced) ───
+  // ─── AUTO-SAVE: localStorage (instant) + Supabase (debounced) ───
   useEffect(() => {
     if (!systemId || !loaded || messages.length === 0) return;
+
+    // Instant localStorage save (survives refresh)
+    const lsKey = `layra_build_${systemId}`;
+    try {
+      localStorage.setItem(lsKey, JSON.stringify({
+        messages,
+        generated_files: sandpackFiles,
+        html_preview: htmlContent,
+      }));
+    } catch { /* localStorage full — ignore */ }
+
+    // Debounced Supabase save
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       supabase
@@ -148,7 +217,7 @@ NO digas "completado" hasta que TODOS los ${system.modules.length} módulos est�
           { onConflict: "system_id" }
         )
         .then(({ error }) => {
-          if (error) console.error("[builder] save error:", error);
+          if (error) console.error("[builder] Supabase save error:", error);
         });
     }, 2000);
     return () => {
@@ -156,40 +225,64 @@ NO digas "completado" hasta que TODOS los ${system.modules.length} módulos est�
     };
   }, [messages, sandpackFiles, htmlContent, systemId, loaded]);
 
-  // Update preview from assistant messages — search ALL messages (newest first)
+  // Update preview from assistant messages
+  // During streaming: debounced live preview (every 3s)
+  // After streaming: immediate final update
+  const previewTimer = useRef<ReturnType<typeof setTimeout>>();
+  const lastPreviewLen = useRef(0);
+
   useEffect(() => {
-    const assistants = [...messages]
-      .reverse()
-      .filter((m) => m.role === "assistant" && m.content.length > 100);
+    const assistants = messages.filter((m) => m.role === "assistant" && m.content.length > 100);
     if (assistants.length === 0) return;
 
-    // Find most recent message with HTML
-    for (const msg of assistants) {
-      const html = extractHtmlPreview(msg.content);
-      if (html) {
-        setHtmlContent(html);
-        break;
+    function updatePreview() {
+      // MERGE HTML from all messages (base + continue sections)
+      const mergedHtml = mergeHtmlFromMessages(messages);
+      if (mergedHtml && mergedHtml.length > (htmlContent?.length || 0)) {
+        setHtmlContent(mergedHtml);
+      }
+
+      // Only update sandpack/codeblocks when not streaming (expensive)
+      if (!streaming) {
+        let bestFiles: Record<string, string> = {};
+        for (const msg of assistants) {
+          const files = buildSandpackFiles(msg.content);
+          if (Object.keys(files).length > Object.keys(bestFiles).length) {
+            bestFiles = files;
+          }
+        }
+        if (Object.keys(bestFiles).length > 0) setSandpackFiles(bestFiles);
+
+        let bestBlocks: CodeBlock[] = [];
+        for (const msg of assistants) {
+          const blocks = extractCodeBlocks(msg.content);
+          if (blocks.length > bestBlocks.length) bestBlocks = blocks;
+        }
+        if (bestBlocks.length > 0) setCodeBlocks(bestBlocks);
       }
     }
 
-    // Find most recent message with Sandpack files
-    for (const msg of assistants) {
-      const files = buildSandpackFiles(msg.content);
-      if (Object.keys(files).length > 0) {
-        setSandpackFiles(files);
-        break;
+    if (streaming) {
+      // During streaming: check if enough new content to warrant a preview update
+      const lastMsg = assistants[assistants.length - 1];
+      const contentLen = lastMsg?.content.length || 0;
+      // Update every ~5KB of new content (debounced)
+      if (contentLen - lastPreviewLen.current > 5000) {
+        lastPreviewLen.current = contentLen;
+        if (previewTimer.current) clearTimeout(previewTimer.current);
+        previewTimer.current = setTimeout(updatePreview, 500);
       }
+    } else {
+      // After streaming: immediate update
+      lastPreviewLen.current = 0;
+      if (previewTimer.current) clearTimeout(previewTimer.current);
+      updatePreview();
     }
 
-    // Collect all code blocks from most recent code-containing message
-    for (const msg of assistants) {
-      const blocks = extractCodeBlocks(msg.content);
-      if (blocks.length > 0) {
-        setCodeBlocks(blocks);
-        break;
-      }
-    }
-  }, [messages]);
+    return () => {
+      if (previewTimer.current) clearTimeout(previewTimer.current);
+    };
+  }, [messages, streaming]);
 
   // Convert HTML content to blob URL for reliable iframe rendering
   useEffect(() => {
@@ -228,6 +321,47 @@ NO digas "completado" hasta que TODOS los ${system.modules.length} módulos est�
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   }
 
+  async function resetBuild() {
+    if (!systemId) return;
+    if (!confirm("¿Resetear conversación? Se borrarán todos los mensajes y el preview.")) return;
+    setMessages([]);
+    setHtmlContent(null);
+    setSandpackFiles({});
+    setCodeBlocks([]);
+    setDebugStatus(null);
+    setCostData({ inputTokens: 0, outputTokens: 0 });
+    setModuleCosts({});
+    if (system) {
+      const initial: Record<string, "pending" | "building" | "done"> = {};
+      for (const mod of system.modules) initial[mod] = "pending";
+      setModuleStatus(initial);
+    }
+    lastDetectedModule.current = null;
+    moduleStartChars.current = 0;
+    // Clear from localStorage + DB
+    try { localStorage.removeItem(`layra_build_${systemId}`); } catch {}
+    await supabase.from("system_builds").delete().eq("system_id", systemId);
+    // Re-set initial prompt
+    if (system) {
+      const moduleList = system.modules.map((m, i) => `${i + 1}. ${m}`).join("\n");
+      const prompt = `Build "${system.id}" (${system.category}). Tier: ${system.tier}.
+
+MODULES TO BUILD:
+${moduleList}
+
+Generate ONE HTML page with modular architecture:
+- Shell (sidebar + header + showModule() JS navigation)
+- Each module as <section id="mod-NAME" class="module-panel">
+- Mark each with <!-- MODULE:name --> comments
+- Include working buttons, modals, tables with real data
+- Start with shell + dashboard + first 2 modules COMPLETE
+
+The auto-continue system will request remaining modules.
+Start directly with \`\`\`html — no explanations.`;
+      setInput(prompt);
+    }
+  }
+
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
@@ -261,11 +395,23 @@ NO digas "completado" hasta que TODOS los ${system.modules.length} módulos est�
         const openBlocks = (last.content.match(/```/g) || []).length;
         if (openBlocks % 2 !== 0 && autoContinueCount.current < MAX_AUTO_CONTINUES) {
           autoContinueCount.current++;
+          setDebugStatus(`Código incompleto — continuando automáticamente (ronda ${autoContinueCount.current + 1}/${MAX_AUTO_CONTINUES + 1})...`);
           setTimeout(() => {
-            handleSend("continue generating exactly from where you stopped. Do NOT repeat any code. Just continue.");
-          }, 1000);
+            // Find which modules are still pending
+            const pending = system?.modules.filter((m) => {
+              const s = moduleStatus[m];
+              return s === "pending" || s === undefined;
+            }) || [];
+            const continueMsg = pending.length > 0
+              ? `Continue building. Pending modules: ${pending.join(", ")}. Output ONLY the next module sections as <section id="mod-NAME" class="module-panel">. Do NOT repeat the shell or already-built modules. Pick up exactly where you stopped.`
+              : "Continue generating exactly from where you stopped. Do NOT repeat any code. Just continue.";
+            handleSend(continueMsg);
+          }, 1500);
         } else {
           autoContinueCount.current = 0;
+          if (openBlocks % 2 !== 0) {
+            setDebugStatus("Generación completa (máximo de rondas alcanzado)");
+          }
         }
       } else {
         autoContinueCount.current = 0;
@@ -312,135 +458,250 @@ NO digas "completado" hasta que TODOS los ${system.modules.length} módulos est�
       return;
     }
 
-    const systemContext = system
-      ? `Building system: ${system.id} (${system.category}). Modules: ${system.modules.join(", ")}. IMPORTANT: Always include a \`\`\`html block with a complete standalone preview page (include Tailwind CDN), AND a \`\`\`tsx block with the React component.`
-      : "";
+    // Build context with codemap for targeted edits
+    let systemContext = "";
+    if (system) {
+      const builtModules = Object.entries(moduleStatus)
+        .filter(([, s]) => s === "done")
+        .map(([m]) => m);
+      const pendingModules = Object.entries(moduleStatus)
+        .filter(([, s]) => s === "pending")
+        .map(([m]) => m);
+
+      const codemap = {
+        system: system.id,
+        modules: Object.fromEntries(
+          system.modules.map((m) => [m, { status: moduleStatus[m] || "pending" }])
+        ),
+      };
+
+      systemContext = `Building system: ${system.id} (${system.category}).
+All modules: ${system.modules.join(", ")}.
+Built: ${builtModules.length > 0 ? builtModules.join(", ") : "none"}.
+Pending: ${pendingModules.length > 0 ? pendingModules.join(", ") : "none"}.
+CODEMAP: ${JSON.stringify(codemap)}
+Use <!-- MODULE:name --> markers. Each module = <section id="mod-NAME" class="module-panel">.
+Navigation: showModule('name') JS function. Sidebar buttons with data-nav="name".`;
+    }
 
     // Abort controller for cleanup
     abortRef.current = new AbortController();
 
-    setDebugStatus("Conectando con Claude...");
+    const roundLabel = autoContinueCount.current > 0
+      ? ` (ronda ${autoContinueCount.current + 1}/${MAX_AUTO_CONTINUES + 1})`
+      : "";
+    setDebugStatus(`Conectando con Claude${roundLabel}...`);
 
     try {
       const apiUrl = `${window.location.origin}/api/admin/ai`;
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          messages: newMessages.map((m) => ({
-            role: m.role,
-            content: m.content,
-            attachments: m.attachments,
-          })),
-          context: systemContext,
-        }),
-        signal: abortRef.current.signal,
+      const payload = JSON.stringify({
+        messages: newMessages.map((m) => ({
+          role: m.role,
+          content: m.content,
+          attachments: m.attachments,
+        })),
+        context: systemContext,
       });
 
-      if (!response.ok) {
-        let errMsg = `Error ${response.status}`;
-        try {
-          const err = await response.json();
-          errMsg = err.error || errMsg;
-        } catch {}
-        setDebugStatus(`Error: ${errMsg}`);
-        throw new Error(errMsg);
-      }
+      // Use XMLHttpRequest for SSE — most reliable across all browsers including Safari
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        let fullContent = "";
+        // Track position of last fully-processed double-newline boundary
+        let parsedUpTo = 0;
+        // Estimate input tokens (~4 chars per token)
+        const inputChars = payload.length;
+        const estimatedInputTokens = Math.ceil(inputChars / 4);
+        const streamStartTime = Date.now();
 
-      setDebugStatus("Stream conectado — recibiendo...");
+        xhr.open("POST", apiUrl, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
-      // Try streaming with getReader(), fall back to text() if body is null
-      const reader = response.body?.getReader();
-      let fullContent = "";
+        function parseFromBuffer() {
+          const raw = xhr.responseText;
+          // Find all complete SSE events (terminated by \n\n)
+          // Process from where we last left off
+          let searchFrom = parsedUpTo;
+          while (true) {
+            const eventEnd = raw.indexOf("\n\n", searchFrom);
+            if (eventEnd === -1) break; // No more complete events
 
-      if (reader) {
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let chunkCount = 0;
+            const eventText = raw.slice(searchFrom, eventEnd);
+            searchFrom = eventEnd + 2;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunkCount++;
-          buffer += decoder.decode(value, { stream: true });
-          setDebugStatus(`Recibiendo... (${chunkCount} chunks, ${buffer.length} bytes)`);
-
-          // Process complete lines from buffer
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || ""; // Keep incomplete line in buffer
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            try {
-              const parsed = JSON.parse(line.slice(6));
-              if (parsed.type === "text") {
-                fullContent += parsed.content;
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = { role: "assistant", content: fullContent };
-                  return updated;
-                });
-              } else if (parsed.type === "error") {
-                throw new Error(parsed.content || "Stream error");
-              }
-            } catch (e) {
-              if (e instanceof Error && e.message !== "Stream error") {
-                // JSON parse error — skip malformed line
-              } else {
-                throw e;
+            // Parse each line in this event
+            const lines = eventText.split("\n");
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith("data: ")) continue;
+              try {
+                const parsed = JSON.parse(trimmed.slice(6));
+                if (parsed.type === "meta" && parsed.model) {
+                  setActiveModel(parsed.model);
+                } else if (parsed.type === "text" && parsed.content) {
+                  fullContent += parsed.content;
+                } else if (parsed.type === "error") {
+                  reject(new Error(parsed.content || "Stream error"));
+                  xhr.abort();
+                  return;
+                }
+              } catch {
+                // Skip malformed JSON
               }
             }
           }
+          parsedUpTo = searchFrom;
+
+          // Update UI
+          if (fullContent.length > 0) {
+            const content = fullContent;
+            setMessages((prev) => {
+              const updated = [...prev];
+              updated[updated.length - 1] = { role: "assistant", content };
+              return updated;
+            });
+          }
+          // Detect modules being built from MODULE markers and section ids
+          if (system) {
+            // Only search within ```html blocks (not prompt text)
+            const htmlStart = fullContent.indexOf("```html");
+            const codeContent = htmlStart >= 0 ? fullContent.slice(htmlStart) : "";
+
+            const newStatus: Record<string, "pending" | "building" | "done"> = {};
+            const detectedOrder: string[] = [];
+
+            for (const mod of system.modules) {
+              const variants = [
+                mod,                              // task_management
+                mod.replace(/_/g, "-"),            // task-management
+                mod.replace(/_/g, ""),             // taskmanagement
+              ];
+              // Search for MODULE markers, section ids, or nav items in HTML code only
+              const found = variants.some((v) =>
+                codeContent.includes(`<!-- MODULE:${v}`) ||
+                codeContent.includes(`id="mod-${v}"`) ||
+                codeContent.includes(`id="${v}"`) ||
+                codeContent.includes(`id="${v}-`) ||
+                codeContent.includes(`data-nav="${v}"`) ||
+                codeContent.includes(`showModule('${v}')`)
+              );
+
+              if (found) detectedOrder.push(mod);
+              newStatus[mod] = found ? "done" : "pending";
+            }
+
+            // The LAST detected module is "building" while streaming
+            let currentModName = "iniciando";
+            if (detectedOrder.length > 0) {
+              const lastMod = detectedOrder[detectedOrder.length - 1];
+              newStatus[lastMod] = "building";
+              currentModName = lastMod.replace(/_/g, " ");
+
+              // Track cost per module: when a NEW module is detected, close the previous one
+              if (lastMod !== lastDetectedModule.current) {
+                if (lastDetectedModule.current) {
+                  const charsForModule = fullContent.length - moduleStartChars.current;
+                  const tokensForModule = Math.ceil(charsForModule / 4);
+                  const moduleCost = (tokensForModule / 1_000_000) * 75;
+                  setModuleCosts((prev) => ({
+                    ...prev,
+                    [lastDetectedModule.current!]: moduleCost,
+                  }));
+                }
+                lastDetectedModule.current = lastMod;
+                moduleStartChars.current = fullContent.length;
+              }
+            } else if (codeContent.length > 0) {
+              currentModName = "HTML base";
+            }
+
+            const doneCount = detectedOrder.length > 0 ? detectedOrder.length - 1 : 0; // last is "building"
+            setModuleStatus(newStatus);
+
+            // Status bar with live info
+            const elapsed = (Date.now() - streamStartTime) / 1000;
+            const kbPerSec = elapsed > 0 ? (raw.length / 1024) / elapsed : 0;
+            const totalCost = (estimatedInputTokens / 1_000_000) * 15 + (Math.ceil(fullContent.length / 4) / 1_000_000) * 75;
+
+            const round = autoContinueCount.current > 0
+              ? ` · Ronda ${autoContinueCount.current + 1}/${MAX_AUTO_CONTINUES + 1}`
+              : "";
+            setDebugStatus(
+              `${currentModName} · ${doneCount}/${system.modules.length} módulos · ${(raw.length / 1024).toFixed(0)}KB · $${totalCost.toFixed(2)}${round}`
+            );
+          }
         }
 
-        // Flush remaining buffer
-        if (buffer.startsWith("data: ")) {
-          try {
-            const parsed = JSON.parse(buffer.slice(6));
-            if (parsed.type === "text") {
-              fullContent += parsed.content;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = { role: "assistant", content: fullContent };
+        xhr.onprogress = parseFromBuffer;
+
+        xhr.onload = () => {
+          if (xhr.status !== 200) {
+            try {
+              const err = JSON.parse(xhr.responseText);
+              reject(new Error(err.error || `Error ${xhr.status}`));
+            } catch {
+              reject(new Error(`Error ${xhr.status}: ${xhr.responseText.slice(0, 100)}`));
+            }
+            return;
+          }
+
+          // Final parse of any remaining data
+          parseFromBuffer();
+
+          if (fullContent.length > 0) {
+            // Update cost tracker
+            const estimatedOutputTokens = Math.ceil(fullContent.length / 4);
+            setCostData((prev) => ({
+              inputTokens: prev.inputTokens + estimatedInputTokens,
+              outputTokens: prev.outputTokens + estimatedOutputTokens,
+            }));
+            // Close last module cost
+            if (lastDetectedModule.current) {
+              const charsForModule = fullContent.length - moduleStartChars.current;
+              const tokensForModule = Math.ceil(charsForModule / 4);
+              const moduleCost = (tokensForModule / 1_000_000) * 75;
+              setModuleCosts((prev) => ({
+                ...prev,
+                [lastDetectedModule.current!]: moduleCost,
+              }));
+            }
+            // Mark all detected as done
+            if (system) {
+              setModuleStatus((prev) => {
+                const updated = { ...prev };
+                for (const k of Object.keys(updated)) {
+                  if (updated[k] === "building") updated[k] = "done";
+                }
                 return updated;
               });
             }
-          } catch {}
+            resolve();
+          } else {
+            const raw = xhr.responseText;
+            setDebugStatus(`Error: sin contenido (${raw.length} bytes). Inicio: "${raw.slice(0, 120)}"`);
+            reject(new Error("Respuesta vacía del servidor"));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error("Error de red — conexión fallida"));
+        };
+
+        xhr.ontimeout = () => {
+          reject(new Error("Timeout — respuesta demasiado lenta"));
+        };
+
+        xhr.timeout = 300000; // 5 minutes
+
+        // Store abort reference
+        const prevAbort = abortRef.current;
+        if (prevAbort) {
+          prevAbort.signal.addEventListener("abort", () => xhr.abort());
         }
 
-        if (fullContent.length === 0) {
-          setDebugStatus(`Error: stream vacío (${chunkCount} chunks recibidos)`);
-          throw new Error("Respuesta vacía del servidor");
-        }
-      } else {
-        // Fallback: no streaming support, read as text
-        setDebugStatus("Sin streaming — leyendo respuesta completa...");
-        const text = await response.text();
-        // Parse SSE lines from full text
-        const lines = text.split("\n");
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const parsed = JSON.parse(line.slice(6));
-            if (parsed.type === "text") {
-              fullContent += parsed.content;
-            }
-          } catch {}
-        }
-        if (fullContent.length > 0) {
-          setMessages((prev) => {
-            const updated = [...prev];
-            updated[updated.length - 1] = { role: "assistant", content: fullContent };
-            return updated;
-          });
-        } else {
-          setDebugStatus("Error: respuesta vacía (fallback)");
-          throw new Error("Respuesta vacía del servidor");
-        }
-      }
+        xhr.send(payload);
+      });
 
       setDebugStatus(null);
     } catch (error) {
@@ -538,9 +799,33 @@ NO digas "completado" hasta que TODOS los ${system.modules.length} módulos est�
             {t(`catalog.sys.${system.id}`)}
           </Badge>
           <Badge variant="outline" className="gap-1 text-xs h-6">
-            <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-            Claude
+            <div className={cn("h-1.5 w-1.5 rounded-full", streaming ? "bg-green-500 animate-pulse" : "bg-green-500")} />
+            {activeModel?.includes("opus") ? "Opus" : activeModel?.includes("sonnet") ? "Sonnet" : "Claude"}
+            {activeModel?.includes("sonnet") && (
+              <span className="text-[8px] text-blue-500 ml-0.5">FAST</span>
+            )}
           </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 gap-1 text-[10px] text-red-500 hover:text-red-700 hover:bg-red-50"
+            onClick={resetBuild}
+            disabled={streaming}
+            title="Resetear conversación"
+          >
+            <Trash2 className="h-3 w-3" />
+            Reset
+          </Button>
+          {(costData.inputTokens > 0 || costData.outputTokens > 0) && (
+            <Badge
+              variant="outline"
+              className="gap-1 text-[10px] h-6 font-mono border-amber-300 text-amber-700 bg-amber-50"
+              title={`Input: ~${(costData.inputTokens / 1000).toFixed(1)}K tokens ($${((costData.inputTokens / 1_000_000) * 15).toFixed(3)})\nOutput: ~${(costData.outputTokens / 1000).toFixed(1)}K tokens ($${((costData.outputTokens / 1_000_000) * 75).toFixed(3)})`}
+            >
+              <DollarSign className="h-3 w-3" />
+              {((costData.inputTokens / 1_000_000) * 15 + (costData.outputTokens / 1_000_000) * 75).toFixed(2)}
+            </Badge>
+          )}
           <div className="w-px h-5 bg-border" />
           <div className="flex items-center gap-1 text-[10px]">
             <Link to="/admin" className="text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted">Admin</Link>
@@ -605,6 +890,10 @@ NO digas "completado" hasta que TODOS los ${system.modules.length} módulos est�
             </>
           )}
 
+          <div className="w-px h-4 bg-border mx-1" />
+          <div className="[&_button]:h-7 [&_button]:w-7 [&_svg]:h-3.5 [&_svg]:w-3.5">
+            <ThemeToggle />
+          </div>
           <div className="w-px h-4 bg-border mx-1" />
           <Button variant="default" size="sm" className="h-7 gap-1 text-xs">
             <Rocket className="h-3 w-3" />
@@ -712,10 +1001,60 @@ NO digas "completado" hasta que TODOS los ${system.modules.length} módulos est�
               <div className={cn(
                 "px-3 py-1.5 text-[10px] font-mono border-t",
                 debugStatus.startsWith("Error")
-                  ? "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400"
-                  : "bg-jade-50 text-jade-700 dark:bg-jade-950 dark:text-jade-400"
+                  ? "bg-red-500/10 text-red-600 dark:text-red-300"
+                  : "bg-emerald-500/10 text-emerald-800 dark:text-white"
               )}>
                 {debugStatus}
+              </div>
+            )}
+
+            {/* Module progress list */}
+            {system && Object.keys(moduleStatus).length > 0 && (
+              <div className="border-t px-2 py-1.5 space-y-1 max-h-[160px] overflow-y-auto native-scroll">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">Módulos</span>
+                  <span className="text-[10px] font-mono text-foreground">
+                    {Object.values(moduleStatus).filter((s) => s !== "pending").length}/{system.modules.length}
+                    {" · "}
+                    <span className="text-yellow-400 font-bold">${Object.values(moduleCosts).reduce((a, b) => a + b, 0).toFixed(2)}</span>
+                  </span>
+                </div>
+                {system.modules.map((mod) => {
+                  const status = moduleStatus[mod] || "pending";
+                  const cost = moduleCosts[mod];
+                  return (
+                    <div
+                      key={mod}
+                      className={cn(
+                        "flex items-center justify-between rounded-md px-2 py-1 text-[11px]",
+                        status === "done" && "bg-green-500/20",
+                        status === "building" && "bg-yellow-500/20 ring-1 ring-yellow-500/50",
+                        status === "pending" && "opacity-30"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        {status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />}
+                        {status === "building" && <Loader2 className="h-3.5 w-3.5 text-yellow-400 animate-spin" />}
+                        {status === "pending" && <div className="h-3.5 w-3.5 rounded-full border-2 border-foreground/20" />}
+                        <span className={cn(
+                          "capitalize text-foreground",
+                          (status === "done" || status === "building") && "font-semibold",
+                        )}>
+                          {mod.replace(/_/g, " ")}
+                        </span>
+                      </div>
+                      {cost != null && cost > 0 ? (
+                        <span className="text-[10px] font-mono font-semibold text-foreground">
+                          ${cost.toFixed(3)}
+                        </span>
+                      ) : status === "building" ? (
+                        <span className="text-[9px] font-mono text-yellow-400">
+                          ...
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -808,7 +1147,7 @@ NO digas "completado" hasta que TODOS los ${system.modules.length} módulos est�
         )}
 
         {/* RIGHT: Preview / Code */}
-        <div className="flex-1 min-w-0 bg-white flex items-center justify-center">
+        <div className="flex-1 min-w-0 bg-white dark:bg-white flex items-center justify-center" style={{ backgroundColor: "#ffffff" }}>
           {viewMode === "preview" ? (
             <>
               {previewMode === "html" && (

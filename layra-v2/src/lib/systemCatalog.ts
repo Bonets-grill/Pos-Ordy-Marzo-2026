@@ -1,0 +1,492 @@
+// ─── LAYRA SYSTEM CATALOG ────────────────────────────────
+// High-demand verified systems for all markets worldwide.
+// Each system is a template that customers can deploy and customize.
+// Claude Code builds these one by one as production-ready templates.
+
+export interface SystemTemplate {
+  id: string;
+  category: SystemCategory;
+  icon: string; // lucide icon name
+  tier: "free" | "pro" | "enterprise";
+  modules: string[];
+  status: "available" | "coming_soon" | "in_development";
+  demand: "very_high" | "high" | "medium";
+  markets: string[]; // target markets/regions
+  price: number; // one-time purchase price in USD
+  monthlyFee: number; // monthly maintenance fee in USD
+}
+
+export type SystemCategory =
+  | "business"
+  | "food_hospitality"
+  | "health_wellness"
+  | "education"
+  | "real_estate"
+  | "services"
+  | "retail"
+  | "tech"
+  | "finance"
+  | "media";
+
+export const SYSTEM_CATALOG: SystemTemplate[] = [
+  // ── BUSINESS & OPERATIONS ──
+  {
+    id: "crm",
+    category: "business",
+    icon: "Users",
+    tier: "pro",
+    modules: ["contacts", "pipelines", "deals", "analytics", "email_templates", "task_management"],
+    status: "available",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "project_management",
+    category: "business",
+    icon: "KanbanSquare",
+    tier: "pro",
+    modules: ["boards", "tasks", "timelines", "team_chat", "file_sharing", "time_tracking"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "invoicing",
+    category: "business",
+    icon: "Receipt",
+    tier: "pro",
+    modules: ["invoices", "quotes", "expenses", "clients", "reports", "recurring_billing"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "hr_platform",
+    category: "business",
+    icon: "UserCog",
+    tier: "enterprise",
+    modules: ["employees", "payroll", "time_off", "onboarding", "performance", "documents"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 499,
+    monthlyFee: 79,
+  },
+  {
+    id: "agency_platform",
+    category: "business",
+    icon: "Building2",
+    tier: "enterprise",
+    modules: ["client_portal", "projects", "proposals", "contracts", "billing", "reporting"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 499,
+    monthlyFee: 79,
+  },
+
+  // ── FOOD & HOSPITALITY ──
+  {
+    id: "restaurant",
+    category: "food_hospitality",
+    icon: "UtensilsCrossed",
+    tier: "pro",
+    modules: ["menu", "orders", "reservations", "delivery", "kitchen_display", "qr_ordering"],
+    status: "available",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "hotel_booking",
+    category: "food_hospitality",
+    icon: "Hotel",
+    tier: "enterprise",
+    modules: ["rooms", "reservations", "check_in", "housekeeping", "guest_portal", "channel_manager"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 499,
+    monthlyFee: 79,
+  },
+  {
+    id: "food_delivery",
+    category: "food_hospitality",
+    icon: "Bike",
+    tier: "enterprise",
+    modules: ["restaurants", "menu", "orders", "delivery_tracking", "driver_app", "payments"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 599,
+    monthlyFee: 99,
+  },
+  {
+    id: "catering",
+    category: "food_hospitality",
+    icon: "ChefHat",
+    tier: "pro",
+    modules: ["events", "menus", "quotes", "orders", "staff_scheduling", "invoicing"],
+    status: "coming_soon",
+    demand: "medium",
+    markets: ["EU", "US", "LATAM"],
+    price: 249,
+    monthlyFee: 39,
+  },
+
+  // ── HEALTH & WELLNESS ──
+  {
+    id: "clinic_management",
+    category: "health_wellness",
+    icon: "Stethoscope",
+    tier: "enterprise",
+    modules: ["patients", "appointments", "medical_records", "prescriptions", "billing", "telemedicine"],
+    status: "available",
+    demand: "very_high",
+    markets: ["global"],
+    price: 599,
+    monthlyFee: 99,
+  },
+  {
+    id: "gym_fitness",
+    category: "health_wellness",
+    icon: "Dumbbell",
+    tier: "pro",
+    modules: ["members", "classes", "trainers", "subscriptions", "check_in", "workout_plans"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 299,
+    monthlyFee: 49,
+  },
+  {
+    id: "salon_spa",
+    category: "health_wellness",
+    icon: "Sparkles",
+    tier: "pro",
+    modules: ["appointments", "services", "staff", "clients", "products", "loyalty"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "dental_clinic",
+    category: "health_wellness",
+    icon: "HeartPulse",
+    tier: "enterprise",
+    modules: ["patients", "treatments", "appointments", "x_rays", "billing", "reminders"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 499,
+    monthlyFee: 79,
+  },
+
+  // ── EDUCATION ──
+  {
+    id: "lms",
+    category: "education",
+    icon: "GraduationCap",
+    tier: "enterprise",
+    modules: ["courses", "students", "lessons", "quizzes", "certificates", "progress_tracking"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 599,
+    monthlyFee: 99,
+  },
+  {
+    id: "school_management",
+    category: "education",
+    icon: "School",
+    tier: "enterprise",
+    modules: ["students", "teachers", "classes", "grades", "attendance", "parent_portal"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 499,
+    monthlyFee: 79,
+  },
+  {
+    id: "tutoring",
+    category: "education",
+    icon: "BookOpen",
+    tier: "pro",
+    modules: ["tutors", "students", "sessions", "scheduling", "payments", "video_calls"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 299,
+    monthlyFee: 49,
+  },
+
+  // ── REAL ESTATE ──
+  {
+    id: "real_estate",
+    category: "real_estate",
+    icon: "Home",
+    tier: "pro",
+    modules: ["properties", "listings", "agents", "leads", "viewings", "contracts"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "property_management",
+    category: "real_estate",
+    icon: "Building",
+    tier: "enterprise",
+    modules: ["properties", "tenants", "leases", "maintenance", "payments", "documents"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 499,
+    monthlyFee: 79,
+  },
+
+  // ── SERVICES ──
+  {
+    id: "booking_system",
+    category: "services",
+    icon: "CalendarCheck",
+    tier: "pro",
+    modules: ["services", "calendar", "staff", "bookings", "reminders", "payments"],
+    status: "available",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "cleaning_service",
+    category: "services",
+    icon: "SprayCan",
+    tier: "pro",
+    modules: ["bookings", "staff", "scheduling", "clients", "invoicing", "ratings"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 299,
+    monthlyFee: 49,
+  },
+  {
+    id: "legal_firm",
+    category: "services",
+    icon: "Scale",
+    tier: "enterprise",
+    modules: ["cases", "clients", "documents", "billing", "calendar", "time_tracking"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 499,
+    monthlyFee: 79,
+  },
+  {
+    id: "auto_repair",
+    category: "services",
+    icon: "Wrench",
+    tier: "pro",
+    modules: ["vehicles", "work_orders", "parts", "appointments", "invoicing", "history"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 299,
+    monthlyFee: 49,
+  },
+  {
+    id: "freelancer_platform",
+    category: "services",
+    icon: "Briefcase",
+    tier: "pro",
+    modules: ["projects", "clients", "proposals", "contracts", "invoicing", "time_tracking"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+
+  // ── RETAIL & ECOMMERCE ──
+  {
+    id: "ecommerce",
+    category: "retail",
+    icon: "ShoppingCart",
+    tier: "pro",
+    modules: ["products", "cart", "checkout", "orders", "inventory", "shipping"],
+    status: "available",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "pos_system",
+    category: "retail",
+    icon: "CreditCard",
+    tier: "pro",
+    modules: ["products", "sales", "inventory", "customers", "reports", "receipts"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "marketplace",
+    category: "retail",
+    icon: "Store",
+    tier: "enterprise",
+    modules: ["vendors", "products", "orders", "commissions", "reviews", "payouts"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 599,
+    monthlyFee: 99,
+  },
+
+  // ── TECH & SAAS ──
+  {
+    id: "saas_dashboard",
+    category: "tech",
+    icon: "BarChart3",
+    tier: "pro",
+    modules: ["analytics", "users", "subscriptions", "billing", "api_keys", "usage_metrics"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "helpdesk",
+    category: "tech",
+    icon: "LifeBuoy",
+    tier: "pro",
+    modules: ["tickets", "knowledge_base", "live_chat", "sla", "agents", "reports"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "ai_automation",
+    category: "tech",
+    icon: "Bot",
+    tier: "enterprise",
+    modules: ["workflows", "triggers", "ai_agents", "integrations", "logs", "templates"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 599,
+    monthlyFee: 99,
+  },
+
+  // ── FINANCE ──
+  {
+    id: "accounting",
+    category: "finance",
+    icon: "Calculator",
+    tier: "enterprise",
+    modules: ["transactions", "accounts", "reports", "tax", "reconciliation", "multi_currency"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 499,
+    monthlyFee: 79,
+  },
+  {
+    id: "expense_tracker",
+    category: "finance",
+    icon: "Wallet",
+    tier: "free",
+    modules: ["expenses", "categories", "budgets", "reports", "receipts", "approvals"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 0,
+    monthlyFee: 0,
+  },
+
+  // ── MEDIA & CONTENT ──
+  {
+    id: "cms",
+    category: "media",
+    icon: "FileText",
+    tier: "pro",
+    modules: ["pages", "blog", "media_library", "seo", "templates", "forms"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "social_media_manager",
+    category: "media",
+    icon: "Share2",
+    tier: "pro",
+    modules: ["scheduling", "analytics", "content_calendar", "multi_platform", "engagement", "reports"],
+    status: "coming_soon",
+    demand: "very_high",
+    markets: ["global"],
+    price: 349,
+    monthlyFee: 59,
+  },
+  {
+    id: "podcast_platform",
+    category: "media",
+    icon: "Mic",
+    tier: "pro",
+    modules: ["episodes", "hosting", "analytics", "distribution", "monetization", "website"],
+    status: "coming_soon",
+    demand: "medium",
+    markets: ["US", "EU"],
+    price: 249,
+    monthlyFee: 39,
+  },
+  {
+    id: "event_management",
+    category: "media",
+    icon: "Ticket",
+    tier: "pro",
+    modules: ["events", "tickets", "registrations", "check_in", "speakers", "sponsors"],
+    status: "coming_soon",
+    demand: "high",
+    markets: ["global"],
+    price: 299,
+    monthlyFee: 49,
+  },
+];
+
+export const SYSTEM_CATEGORIES: { id: SystemCategory; icon: string }[] = [
+  { id: "business", icon: "Briefcase" },
+  { id: "food_hospitality", icon: "UtensilsCrossed" },
+  { id: "health_wellness", icon: "HeartPulse" },
+  { id: "education", icon: "GraduationCap" },
+  { id: "real_estate", icon: "Home" },
+  { id: "services", icon: "Wrench" },
+  { id: "retail", icon: "ShoppingCart" },
+  { id: "tech", icon: "Code" },
+  { id: "finance", icon: "Calculator" },
+  { id: "media", icon: "FileText" },
+];
+
+export function getSystemsByCategory(category: SystemCategory) {
+  return SYSTEM_CATALOG.filter((s) => s.category === category);
+}
+
+export function getSystemById(id: string) {
+  return SYSTEM_CATALOG.find((s) => s.id === id);
+}
