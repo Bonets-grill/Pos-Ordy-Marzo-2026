@@ -1,0 +1,271 @@
+import type { SystemConfig } from "../types";
+import { t5 } from "../types";
+
+export const cms: SystemConfig = {
+  name: "ContentOS",
+  subtitle: t5("Gestión de Contenido", "Content Management", "Gestion de Contenu", "Inhaltsverwaltung", "Gestione dei Contenuti"),
+  brandColor: "#2563eb",
+  icon: "📝",
+  modules: [
+    {
+      id: "dashboard",
+      label: t5("Panel Principal", "Dashboard", "Tableau de Bord", "Übersicht", "Pannello Principale"),
+      icon: "dashboard",
+      kpis: [
+        { label: t5("Páginas Publicadas", "Published Pages", "Pages Publiées", "Veröffentlichte Seiten", "Pagine Pubblicate"), value: "124", change: "+8", trend: "up" },
+        { label: t5("Visitas del Mes", "Monthly Visits", "Visites du Mois", "Besuche im Monat", "Visite del Mese"), value: "34.520", change: "+18.3%", trend: "up" },
+        { label: t5("Artículos en Borrador", "Draft Articles", "Articles en Brouillon", "Artikelentwürfe", "Articoli in Bozza"), value: "12", change: "+3", trend: "up" },
+        { label: t5("Formularios Recibidos", "Forms Received", "Formulaires Reçus", "Empfangene Formulare", "Moduli Ricevuti"), value: "89", change: "+21", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "usuario", label: t5("Usuario", "User", "Utilisateur", "Benutzer", "Utente"), type: "text" },
+          { key: "accion", label: t5("Acción", "Action", "Action", "Aktion", "Azione"), type: "text" },
+          { key: "contenido", label: t5("Contenido", "Content", "Contenu", "Inhalt", "Contenuto"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Publicado: "green", Borrador: "yellow", Programado: "blue", Archivado: "gray" } },
+        ],
+        rows: [
+          { fecha: "2026-03-07", usuario: "Elena Martín", accion: "Publicó página", contenido: "Sobre Nosotros v2", estado: "Publicado" },
+          { fecha: "2026-03-07", usuario: "Javier Ruiz", accion: "Editó artículo", contenido: "Guía SEO 2026", estado: "Borrador" },
+          { fecha: "2026-03-06", usuario: "María López", accion: "Programó publicación", contenido: "Lanzamiento producto", estado: "Programado" },
+          { fecha: "2026-03-06", usuario: "Carlos Díaz", accion: "Subió 12 imágenes", contenido: "Galería eventos", estado: "Publicado" },
+          { fecha: "2026-03-05", usuario: "Ana García", accion: "Archivó página", contenido: "Promo Black Friday", estado: "Archivado" },
+        ],
+        searchPlaceholder: t5("Buscar actividad reciente...", "Search recent activity...", "Rechercher activité récente...", "Letzte Aktivität suchen...", "Cerca attività recente..."),
+      },
+    },
+    {
+      id: "pages",
+      label: t5("Páginas", "Pages", "Pages", "Seiten", "Pagine"),
+      icon: "file",
+      kpis: [
+        { label: t5("Total Páginas", "Total Pages", "Total Pages", "Seiten Gesamt", "Totale Pagine"), value: "124", change: "+8", trend: "up" },
+        { label: t5("Publicadas", "Published", "Publiées", "Veröffentlicht", "Pubblicate"), value: "98", change: "+5", trend: "up" },
+        { label: t5("En Borrador", "In Draft", "En Brouillon", "Entwurf", "In Bozza"), value: "18", change: "+3", trend: "up" },
+        { label: t5("Visitas Promedio", "Average Visits", "Visites Moyennes", "Durchschn. Besuche", "Visite Medie"), value: "278", change: "+12%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "titulo", label: t5("Título", "Title", "Titre", "Titel", "Titolo"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { Landing: "blue", Blog: "green", Producto: "purple", Institucional: "indigo" } },
+          { key: "autor", label: t5("Autor", "Author", "Auteur", "Autor", "Autore"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Publicado: "green", Borrador: "yellow", Programado: "blue", Archivado: "gray" } },
+          { key: "modificado", label: t5("Modificado", "Modified", "Modifié", "Geändert", "Modificato"), type: "date" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { titulo: "Inicio - Hero Principal", tipo: "Landing", autor: "Elena Martín", estado: "Publicado", modificado: "2026-03-07" },
+          { titulo: "Sobre Nosotros", tipo: "Institucional", autor: "Elena Martín", estado: "Publicado", modificado: "2026-03-07" },
+          { titulo: "Plan Enterprise - Landing", tipo: "Landing", autor: "Javier Ruiz", estado: "Borrador", modificado: "2026-03-06" },
+          { titulo: "Catálogo Productos 2026", tipo: "Producto", autor: "María López", estado: "Programado", modificado: "2026-03-06" },
+          { titulo: "Blog - Novedades Marzo", tipo: "Blog", autor: "Ana García", estado: "Borrador", modificado: "2026-03-05" },
+          { titulo: "Política de Privacidad", tipo: "Institucional", autor: "Carlos Díaz", estado: "Publicado", modificado: "2026-02-20" },
+        ],
+        searchPlaceholder: t5("Buscar páginas...", "Search pages...", "Rechercher des pages...", "Seiten suchen...", "Cerca pagine..."),
+      },
+      modal: {
+        title: t5("Nueva Página", "New Page", "Nouvelle Page", "Neue Seite", "Nuova Pagina"),
+        fields: [
+          { name: "titulo", label: t5("Título", "Title", "Titre", "Titel", "Titolo"), type: "text", required: true, placeholder: t5("Título de la página", "Page title", "Titre de la page", "Seitentitel", "Titolo della pagina") },
+          { name: "slug", label: "URL (slug)", type: "text", required: true, placeholder: "mi-pagina" },
+          { name: "tipo", label: t5("Tipo de Página", "Page Type", "Type de Page", "Seitentyp", "Tipo di Pagina"), type: "select", required: true, options: [{ value: "landing", label: "Landing" }, { value: "blog", label: "Blog" }, { value: "producto", label: t5("Producto", "Product", "Produit", "Produkt", "Prodotto") }, { value: "institucional", label: t5("Institucional", "Institutional", "Institutionnel", "Institutionell", "Istituzionale") }] },
+          { name: "descripcion", label: t5("Meta Descripción", "Meta Description", "Méta Description", "Meta-Beschreibung", "Meta Descrizione"), type: "textarea", placeholder: t5("Descripción para SEO...", "Description for SEO...", "Description pour SEO...", "Beschreibung für SEO...", "Descrizione per SEO...") },
+          { name: "publicar", label: t5("Publicar inmediatamente", "Publish immediately", "Publier immédiatement", "Sofort veröffentlichen", "Pubblica immediatamente"), type: "checkbox" },
+        ],
+      },
+      tabs: [
+        { id: "todas", label: t5("Todas", "All", "Toutes", "Alle", "Tutte"), filterField: "estado", filterValue: "" },
+        { id: "publicadas", label: t5("Publicadas", "Published", "Publiées", "Veröffentlicht", "Pubblicate"), filterField: "estado", filterValue: "Publicado" },
+        { id: "borradores", label: t5("Borradores", "Drafts", "Brouillons", "Entwürfe", "Bozze"), filterField: "estado", filterValue: "Borrador" },
+        { id: "programadas", label: t5("Programadas", "Scheduled", "Programmées", "Geplant", "Programmate"), filterField: "estado", filterValue: "Programado" },
+        { id: "archivadas", label: t5("Archivadas", "Archived", "Archivées", "Archiviert", "Archiviate"), filterField: "estado", filterValue: "Archivado" },
+      ],
+    },
+    {
+      id: "blog",
+      label: "Blog",
+      icon: "edit",
+      kpis: [
+        { label: t5("Total Artículos", "Total Articles", "Total Articles", "Artikel Gesamt", "Totale Articoli"), value: "67", change: "+4", trend: "up" },
+        { label: t5("Lecturas del Mes", "Monthly Reads", "Lectures du Mois", "Lesungen im Monat", "Letture del Mese"), value: "12.340", change: "+22%", trend: "up" },
+        { label: t5("Tiempo Lectura Medio", "Avg. Reading Time", "Temps de Lecture Moyen", "Durchschn. Lesezeit", "Tempo Medio di Lettura"), value: t5("3.4 min", "3.4 min", "3.4 min", "3,4 Min.", "3,4 min"), change: "+0.2", trend: "up" },
+        { label: t5("Comentarios Nuevos", "New Comments", "Nouveaux Commentaires", "Neue Kommentare", "Nuovi Commenti"), value: "34", change: "+12", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "titulo", label: t5("Título", "Title", "Titre", "Titel", "Titolo"), type: "text" },
+          { key: "autor", label: t5("Autor", "Author", "Auteur", "Autor", "Autore"), type: "text" },
+          { key: "categoria", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "badge", badgeColors: { Tutorial: "blue", Noticia: "green", "Opinión": "purple", "Caso de Éxito": "orange" } },
+          { key: "lecturas", label: t5("Lecturas", "Reads", "Lectures", "Lesungen", "Letture"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Publicado: "green", Borrador: "yellow", Programado: "blue" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { titulo: "Guía completa de SEO 2026", autor: "Javier Ruiz", categoria: "Tutorial", lecturas: "2.340", estado: "Publicado" },
+          { titulo: "Novedades plataforma v3.2", autor: "Elena Martín", categoria: "Noticia", lecturas: "1.890", estado: "Publicado" },
+          { titulo: "Caso Éxito: Empresa XYZ", autor: "María López", categoria: "Caso de Éxito", lecturas: "956", estado: "Publicado" },
+          { titulo: "El futuro del CMS headless", autor: "Carlos Díaz", categoria: "Opinión", lecturas: "0", estado: "Borrador" },
+          { titulo: "10 plugins imprescindibles", autor: "Ana García", categoria: "Tutorial", lecturas: "0", estado: "Programado" },
+        ],
+        searchPlaceholder: t5("Buscar artículos...", "Search articles...", "Rechercher des articles...", "Artikel suchen...", "Cerca articoli..."),
+      },
+      modal: {
+        title: t5("Nuevo Artículo", "New Article", "Nouvel Article", "Neuer Artikel", "Nuovo Articolo"),
+        fields: [
+          { name: "titulo", label: t5("Título", "Title", "Titre", "Titel", "Titolo"), type: "text", required: true, placeholder: t5("Título del artículo", "Article title", "Titre de l'article", "Artikeltitel", "Titolo dell'articolo") },
+          { name: "slug", label: "URL (slug)", type: "text", required: true, placeholder: "mi-articulo" },
+          { name: "categoria", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "select", required: true, options: [{ value: "tutorial", label: "Tutorial" }, { value: "noticia", label: t5("Noticia", "News", "Actualité", "Nachricht", "Notizia") }, { value: "opinion", label: t5("Opinión", "Opinion", "Opinion", "Meinung", "Opinione") }, { value: "caso_exito", label: t5("Caso de Éxito", "Success Story", "Cas de Réussite", "Erfolgsgeschichte", "Caso di Successo") }] },
+          { name: "extracto", label: t5("Extracto", "Excerpt", "Extrait", "Auszug", "Estratto"), type: "textarea", placeholder: t5("Resumen breve del artículo...", "Brief article summary...", "Résumé bref de l'article...", "Kurze Artikelzusammenfassung...", "Breve riassunto dell'articolo...") },
+          { name: "fechaPublicacion", label: t5("Fecha de Publicación", "Publication Date", "Date de Publication", "Veröffentlichungsdatum", "Data di Pubblicazione"), type: "date" },
+        ],
+      },
+    },
+    {
+      id: "media",
+      label: t5("Medios", "Media", "Médias", "Medien", "Media"),
+      icon: "image",
+      kpis: [
+        { label: t5("Total Archivos", "Total Files", "Total Fichiers", "Dateien Gesamt", "Totale File"), value: "1.842", change: "+124", trend: "up" },
+        { label: t5("Almacenamiento Usado", "Storage Used", "Stockage Utilisé", "Genutzter Speicher", "Spazio Utilizzato"), value: "4.2 GB", change: "+320 MB", trend: "up" },
+        { label: t5("Imágenes", "Images", "Images", "Bilder", "Immagini"), value: "1.456", trend: "neutral" },
+        { label: t5("Documentos", "Documents", "Documents", "Dokumente", "Documenti"), value: "386", trend: "neutral" },
+      ],
+      table: {
+        columns: [
+          { key: "nombre", label: t5("Archivo", "File", "Fichier", "Datei", "File"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { Imagen: "blue", Video: "purple", Documento: "orange", Audio: "green" } },
+          { key: "tamaño", label: t5("Tamaño", "Size", "Taille", "Größe", "Dimensione"), type: "text" },
+          { key: "subido", label: t5("Subido", "Uploaded", "Téléchargé", "Hochgeladen", "Caricato"), type: "date" },
+          { key: "usos", label: t5("Usos", "Uses", "Utilisations", "Verwendungen", "Utilizzi"), type: "text" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { nombre: "hero-banner-2026.jpg", tipo: "Imagen", tamaño: "2.4 MB", subido: "2026-03-07", usos: "3" },
+          { nombre: "video-producto-demo.mp4", tipo: "Video", tamaño: "48 MB", subido: "2026-03-06", usos: "1" },
+          { nombre: "catalogo-2026.pdf", tipo: "Documento", tamaño: "5.6 MB", subido: "2026-03-05", usos: "2" },
+          { nombre: "logo-empresa-dark.svg", tipo: "Imagen", tamaño: "12 KB", subido: "2026-03-04", usos: "8" },
+          { nombre: "podcast-ep12.mp3", tipo: "Audio", tamaño: "34 MB", subido: "2026-03-03", usos: "1" },
+          { nombre: "team-photo.jpg", tipo: "Imagen", tamaño: "1.8 MB", subido: "2026-03-01", usos: "4" },
+        ],
+        searchPlaceholder: t5("Buscar archivos...", "Search files...", "Rechercher des fichiers...", "Dateien suchen...", "Cerca file..."),
+      },
+      tabs: [
+        { id: "todos", label: t5("Todos", "All", "Tous", "Alle", "Tutti"), filterField: "tipo", filterValue: "" },
+        { id: "imagenes", label: t5("Imágenes", "Images", "Images", "Bilder", "Immagini"), filterField: "tipo", filterValue: "Imagen" },
+        { id: "videos", label: "Videos", filterField: "tipo", filterValue: "Video" },
+        { id: "documentos", label: t5("Documentos", "Documents", "Documents", "Dokumente", "Documenti"), filterField: "tipo", filterValue: "Documento" },
+        { id: "audio", label: "Audio", filterField: "tipo", filterValue: "Audio" },
+      ],
+    },
+    {
+      id: "seo",
+      label: "SEO",
+      icon: "search",
+      kpis: [
+        { label: t5("Puntuación SEO Media", "Average SEO Score", "Score SEO Moyen", "Durchschn. SEO-Bewertung", "Punteggio SEO Medio"), value: "82/100", change: "+5", trend: "up" },
+        { label: t5("Páginas Indexadas", "Indexed Pages", "Pages Indexées", "Indexierte Seiten", "Pagine Indicizzate"), value: "98", change: "+6", trend: "up" },
+        { label: t5("Errores 404", "404 Errors", "Erreurs 404", "404-Fehler", "Errori 404"), value: "3", change: "-2", trend: "down" },
+        { label: t5("Posición Media", "Average Position", "Position Moyenne", "Durchschn. Position", "Posizione Media"), value: "12.4", change: "-2.1", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "pagina", label: t5("Página", "Page", "Page", "Seite", "Pagina"), type: "text" },
+          { key: "puntuacion", label: t5("Puntuación", "Score", "Score", "Bewertung", "Punteggio"), type: "text" },
+          { key: "palabraClave", label: t5("Palabra Clave", "Keyword", "Mot-clé", "Schlüsselwort", "Parola Chiave"), type: "text" },
+          { key: "posicion", label: t5("Posición", "Position", "Position", "Position", "Posizione"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Óptimo: "green", Mejorable: "yellow", Crítico: "red" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { pagina: "/inicio", puntuacion: "95/100", palabraClave: "plataforma CMS", posicion: "3", estado: "Óptimo" },
+          { pagina: "/blog/guia-seo-2026", puntuacion: "88/100", palabraClave: "guía SEO", posicion: "7", estado: "Óptimo" },
+          { pagina: "/productos", puntuacion: "72/100", palabraClave: "gestión contenido", posicion: "15", estado: "Mejorable" },
+          { pagina: "/sobre-nosotros", puntuacion: "65/100", palabraClave: "empresa CMS", posicion: "28", estado: "Mejorable" },
+          { pagina: "/blog/plugins-2025", puntuacion: "34/100", palabraClave: "plugins CMS", posicion: "52", estado: "Crítico" },
+        ],
+        searchPlaceholder: t5("Buscar páginas...", "Search pages...", "Rechercher des pages...", "Seiten suchen...", "Cerca pagine..."),
+      },
+    },
+    {
+      id: "forms",
+      label: t5("Formularios", "Forms", "Formulaires", "Formulare", "Moduli"),
+      icon: "clipboard",
+      kpis: [
+        { label: t5("Total Formularios", "Total Forms", "Total Formulaires", "Formulare Gesamt", "Totale Moduli"), value: "8", change: "+1", trend: "up" },
+        { label: t5("Envíos del Mes", "Monthly Submissions", "Soumissions du Mois", "Einsendungen im Monat", "Invii del Mese"), value: "89", change: "+21", trend: "up" },
+        { label: t5("Tasa de Conversión", "Conversion Rate", "Taux de Conversion", "Konversionsrate", "Tasso di Conversione"), value: "3.2%", change: "+0.4%", trend: "up" },
+        { label: t5("Sin Responder", "Unanswered", "Sans Réponse", "Unbeantwortet", "Senza Risposta"), value: "14", change: "+5", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "nombre", label: t5("Formulario", "Form", "Formulaire", "Formular", "Modulo"), type: "text" },
+          { key: "pagina", label: t5("Página", "Page", "Page", "Seite", "Pagina"), type: "text" },
+          { key: "envios", label: t5("Envíos", "Submissions", "Soumissions", "Einsendungen", "Invii"), type: "text" },
+          { key: "conversion", label: t5("Conversión", "Conversion", "Conversion", "Konversion", "Conversione"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Activo: "green", Inactivo: "gray", Test: "yellow" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { nombre: "Contacto Principal", pagina: "/contacto", envios: "45", conversion: "4.2%", estado: "Activo" },
+          { nombre: "Newsletter", pagina: "/blog", envios: "23", conversion: "2.8%", estado: "Activo" },
+          { nombre: "Solicitar Demo", pagina: "/productos", envios: "12", conversion: "6.1%", estado: "Activo" },
+          { nombre: "Encuesta Satisfacción", pagina: "/gracias", envios: "9", conversion: "1.5%", estado: "Activo" },
+          { nombre: "Registro Webinar", pagina: "/eventos", envios: "0", conversion: "0%", estado: "Test" },
+        ],
+        searchPlaceholder: t5("Buscar formularios...", "Search forms...", "Rechercher des formulaires...", "Formulare suchen...", "Cerca moduli..."),
+      },
+      modal: {
+        title: t5("Nuevo Formulario", "New Form", "Nouveau Formulaire", "Neues Formular", "Nuovo Modulo"),
+        fields: [
+          { name: "nombre", label: t5("Nombre del Formulario", "Form Name", "Nom du Formulaire", "Formularname", "Nome del Modulo"), type: "text", required: true, placeholder: t5("Ej: Contacto", "E.g.: Contact", "Ex : Contact", "Z.B.: Kontakt", "Es.: Contatto") },
+          { name: "pagina", label: t5("Página Destino", "Destination Page", "Page de Destination", "Zielseite", "Pagina di Destinazione"), type: "text", required: true, placeholder: "/ruta-pagina" },
+          { name: "emailNotificacion", label: t5("Email de Notificación", "Notification Email", "Email de Notification", "Benachrichtigungs-E-Mail", "Email di Notifica"), type: "email", placeholder: "notificaciones@empresa.com" },
+          { name: "mensajeExito", label: t5("Mensaje de Éxito", "Success Message", "Message de Succès", "Erfolgsmeldung", "Messaggio di Successo"), type: "textarea", placeholder: t5("Gracias por contactarnos...", "Thank you for contacting us...", "Merci de nous avoir contactés...", "Vielen Dank für Ihre Kontaktaufnahme...", "Grazie per averci contattato...") },
+        ],
+      },
+    },
+  ],
+  superAdmin: {
+    modules: [
+      {
+        id: "tenants",
+        label: t5("Gestión de Tenants", "Tenant Management", "Gestion des Tenants", "Tenant-Verwaltung", "Gestione dei Tenant"),
+        icon: "building",
+        kpis: [
+          { label: "Total Tenants", value: "156", change: "+18", trend: "up" },
+          { label: t5("Tenants Activos", "Active Tenants", "Tenants Actifs", "Aktive Tenants", "Tenant Attivi"), value: "142", change: "+14", trend: "up" },
+          { label: t5("Ingresos MRR", "MRR Revenue", "Revenus MRR", "MRR-Einnahmen", "Ricavi MRR"), value: "€24.800", change: "+15%", trend: "up" },
+          { label: "Churn Rate", value: "1.4%", change: "-0.2%", trend: "down" },
+        ],
+        table: {
+          columns: [
+            { key: "nombre", label: t5("Sitio Web", "Website", "Site Web", "Webseite", "Sito Web"), type: "text" },
+            { key: "plan", label: t5("Plan", "Plan", "Plan", "Plan", "Piano"), type: "badge", badgeColors: { Starter: "gray", Growth: "blue", Scale: "purple" } },
+            { key: "paginas", label: t5("Páginas", "Pages", "Pages", "Seiten", "Pagine"), type: "text" },
+            { key: "almacenamiento", label: t5("Almacenamiento", "Storage", "Stockage", "Speicher", "Spazio"), type: "text" },
+            { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Activo: "green", Suspendido: "red", Trial: "yellow" } },
+            { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+          ],
+          rows: [
+            { nombre: "Hotel Costa Brava", plan: "Scale", paginas: "45", almacenamiento: "2.1 GB", estado: "Activo" },
+            { nombre: "Universidad Complutense", plan: "Scale", paginas: "234", almacenamiento: "8.4 GB", estado: "Activo" },
+            { nombre: "Restaurante El Asador", plan: "Starter", paginas: "8", almacenamiento: "340 MB", estado: "Activo" },
+            { nombre: "ONG Ayuda Global", plan: "Growth", paginas: "28", almacenamiento: "1.2 GB", estado: "Trial" },
+            { nombre: "Clínica Dental Sonrisa", plan: "Growth", paginas: "15", almacenamiento: "780 MB", estado: "Suspendido" },
+          ],
+          searchPlaceholder: t5("Buscar tenants...", "Search tenants...", "Rechercher des tenants...", "Tenants suchen...", "Cerca tenant..."),
+        },
+        modal: {
+          title: t5("Nuevo Tenant", "New Tenant", "Nouveau Tenant", "Neuer Tenant", "Nuovo Tenant"),
+          fields: [
+            { name: "nombre", label: t5("Nombre del Sitio", "Site Name", "Nom du Site", "Seitenname", "Nome del Sito"), type: "text", required: true, placeholder: t5("Mi sitio web", "My website", "Mon site web", "Meine Webseite", "Il mio sito web") },
+            { name: "dominio", label: t5("Dominio", "Domain", "Domaine", "Domain", "Dominio"), type: "text", required: true, placeholder: "www.ejemplo.com" },
+            { name: "email", label: t5("Email Administrador", "Admin Email", "Email Administrateur", "Admin-E-Mail", "Email Amministratore"), type: "email", required: true, placeholder: "admin@ejemplo.com" },
+            { name: "plan", label: t5("Plan", "Plan", "Plan", "Plan", "Piano"), type: "select", required: true, options: [{ value: "starter", label: "Starter" }, { value: "growth", label: "Growth" }, { value: "scale", label: "Scale" }] },
+          ],
+        },
+      },
+    ],
+  },
+};

@@ -1,0 +1,288 @@
+import { t5 } from "../types";
+import type { SystemConfig } from "../types";
+
+export const restaurantConfig: SystemConfig = {
+  name: "RestaurantOS",
+  subtitle: t5("Gestión de Restaurante", "Restaurant Management", "Gestion de Restaurant", "Restaurantverwaltung", "Gestione Ristorante"),
+  brandColor: "#f59e0b",
+  icon: "🍽️",
+  modules: [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: "dashboard",
+      kpis: [
+        { label: t5("Ventas Hoy", "Sales Today", "Ventes Aujourd'hui", "Verkäufe Heute", "Vendite Oggi"), value: "$4,280", change: "+15%", trend: "up" },
+        { label: t5("Pedidos Hoy", "Orders Today", "Commandes Aujourd'hui", "Bestellungen Heute", "Ordini Oggi"), value: "67", change: "+8", trend: "up" },
+        { label: t5("Mesas Ocupadas", "Occupied Tables", "Tables Occupées", "Besetzte Tische", "Tavoli Occupati"), value: "18/24", trend: "neutral" },
+        { label: t5("Reservas Hoy", "Reservations Today", "Réservations Aujourd'hui", "Reservierungen Heute", "Prenotazioni Oggi"), value: "12", trend: "neutral" },
+      ],
+      table: {
+        columns: [
+          { key: "order", label: t5("Pedido", "Order", "Commande", "Bestellung", "Ordine") },
+          { key: "table", label: t5("Mesa", "Table", "Table", "Tisch", "Tavolo") },
+          { key: "items", label: "Items" },
+          { key: "total", label: "Total", type: "currency" },
+          { key: "waiter", label: t5("Mesero", "Waiter", "Serveur", "Kellner", "Cameriere") },
+          { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "En Cocina": "orange", "Servido": "green", "Pendiente": "yellow", "Pagado": "blue", "Cancelado": "red" } },
+        ],
+        rows: [
+          { order: "#1247", table: "Mesa 5", items: "3", total: "$67.50", waiter: "Pedro M.", status: "En Cocina" },
+          { order: "#1246", table: "Mesa 12", items: "5", total: "$124.00", waiter: "Ana R.", status: "Servido" },
+          { order: "#1245", table: "Mesa 3", items: "2", total: "$38.90", waiter: "Pedro M.", status: "Pagado" },
+          { order: "#1244", table: "Delivery", items: "4", total: "$52.30", waiter: "—", status: "En Cocina" },
+          { order: "#1243", table: "Mesa 8", items: "6", total: "$189.00", waiter: "Luis G.", status: "Pendiente" },
+        ],
+        searchPlaceholder: t5("Buscar pedidos...", "Search orders...", "Rechercher des commandes...", "Bestellungen suchen...", "Cerca ordini..."),
+      },
+    },
+    {
+      id: "menu",
+      label: t5("Menú", "Menu", "Menu", "Speisekarte", "Menu"),
+      icon: "tag",
+      kpis: [
+        { label: t5("Platos Activos", "Active Dishes", "Plats Actifs", "Aktive Gerichte", "Piatti Attivi"), value: "48", trend: "neutral" },
+        { label: t5("Más Vendido", "Best Seller", "Plus Vendu", "Bestseller", "Più Venduto"), value: "Risotto", trend: "up" },
+        { label: t5("Precio Promedio", "Average Price", "Prix Moyen", "Durchschnittspreis", "Prezzo Medio"), value: "$18.50", trend: "neutral" },
+        { label: t5("Sin Stock", "Out of Stock", "Rupture de Stock", "Nicht auf Lager", "Esaurito"), value: "3", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "dish", label: t5("Plato", "Dish", "Plat", "Gericht", "Piatto"), type: "avatar" },
+          { key: "category", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "badge", badgeColors: { "Entrantes": "blue", "Principales": "green", "Postres": "purple", "Bebidas": "yellow", "Especial": "orange" } },
+          { key: "price", label: t5("Precio", "Price", "Prix", "Preis", "Prezzo"), type: "currency" },
+          { key: "cost", label: t5("Costo", "Cost", "Coût", "Kosten", "Costo") },
+          { key: "soldToday", label: t5("Vendidos Hoy", "Sold Today", "Vendus Aujourd'hui", "Heute Verkauft", "Venduti Oggi") },
+          { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Disponible": "green", "Agotado": "red", "Temporada": "orange" } },
+        ],
+        rows: [
+          { dish: "Risotto de Setas", category: "Principales", price: "$22.00", cost: "$6.80", soldToday: "14", status: "Disponible" },
+          { dish: "Bruschetta Clásica", category: "Entrantes", price: "$12.00", cost: "$3.20", soldToday: "18", status: "Disponible" },
+          { dish: "Tiramisú", category: "Postres", price: "$9.50", cost: "$2.80", soldToday: "11", status: "Disponible" },
+          { dish: "Paella Marinera", category: "Especial", price: "$28.00", cost: "$9.50", soldToday: "8", status: "Temporada" },
+          { dish: "Salmón a la Plancha", category: "Principales", price: "$24.00", cost: "$8.20", soldToday: "0", status: "Agotado" },
+          { dish: "Sangría Jarra", category: "Bebidas", price: "$18.00", cost: "$4.50", soldToday: "6", status: "Disponible" },
+        ],
+        searchPlaceholder: t5("Buscar platos...", "Search dishes...", "Rechercher des plats...", "Gerichte suchen...", "Cerca piatti..."),
+      },
+      modal: {
+        title: t5("Nuevo Plato", "New Dish", "Nouveau Plat", "Neues Gericht", "Nuovo Piatto"),
+        fields: [
+          { name: "dish", label: t5("Nombre del Plato", "Dish Name", "Nom du Plat", "Name des Gerichts", "Nome del Piatto"), type: "text", required: true, placeholder: t5("Ej: Pasta Carbonara", "E.g.: Pasta Carbonara", "Ex : Pasta Carbonara", "Z.B.: Pasta Carbonara", "Es.: Pasta Carbonara") },
+          { name: "category", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "select", required: true, options: [
+            { value: "Entrantes", label: t5("Entrantes", "Starters", "Entrées", "Vorspeisen", "Antipasti") },
+            { value: "Principales", label: t5("Principales", "Main Courses", "Plats Principaux", "Hauptgerichte", "Primi/Secondi") },
+            { value: "Postres", label: t5("Postres", "Desserts", "Desserts", "Nachspeisen", "Dolci") },
+            { value: "Bebidas", label: t5("Bebidas", "Drinks", "Boissons", "Getränke", "Bevande") },
+            { value: "Especial", label: t5("Especial del Día", "Daily Special", "Spécial du Jour", "Tagesspezialität", "Speciale del Giorno") },
+          ]},
+          { name: "price", label: t5("Precio ($)", "Price ($)", "Prix ($)", "Preis ($)", "Prezzo ($)"), type: "number", required: true, placeholder: "0.00" },
+          { name: "cost", label: t5("Costo ($)", "Cost ($)", "Coût ($)", "Kosten ($)", "Costo ($)"), type: "number", placeholder: "0.00" },
+          { name: "description", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "textarea", placeholder: t5("Ingredientes y descripción...", "Ingredients and description...", "Ingrédients et description...", "Zutaten und Beschreibung...", "Ingredienti e descrizione...") },
+          { name: "allergens", label: t5("Alérgenos", "Allergens", "Allergènes", "Allergene", "Allergeni"), type: "text", placeholder: t5("Ej: Gluten, Lácteos", "E.g.: Gluten, Dairy", "Ex : Gluten, Laitiers", "Z.B.: Gluten, Milch", "Es.: Glutine, Latticini") },
+        ],
+      },
+    },
+    {
+      id: "orders",
+      label: t5("Pedidos", "Orders", "Commandes", "Bestellungen", "Ordini"),
+      icon: "clipboard",
+      kpis: [
+        { label: t5("Pedidos Hoy", "Orders Today", "Commandes Aujourd'hui", "Bestellungen Heute", "Ordini Oggi"), value: "67", change: "+12", trend: "up" },
+        { label: t5("En Cocina", "In Kitchen", "En Cuisine", "In der Küche", "In Cucina"), value: "8", trend: "neutral" },
+        { label: t5("Ticket Promedio", "Average Ticket", "Ticket Moyen", "Durchschnittlicher Bon", "Scontrino Medio"), value: "$63.80", change: "+$4.20", trend: "up" },
+        { label: t5("Cancelados", "Cancelled", "Annulés", "Storniert", "Cancellati"), value: "2", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "order", label: t5("Pedido", "Order", "Commande", "Bestellung", "Ordine") },
+          { key: "table", label: t5("Mesa/Tipo", "Table/Type", "Table/Type", "Tisch/Typ", "Tavolo/Tipo") },
+          { key: "customer", label: t5("Cliente", "Customer", "Client", "Kunde", "Cliente"), type: "avatar" },
+          { key: "items", label: "Items" },
+          { key: "total", label: "Total", type: "currency" },
+          { key: "time", label: t5("Hora", "Time", "Heure", "Uhrzeit", "Ora") },
+          { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Nuevo": "blue", "En Cocina": "orange", "Listo": "yellow", "Servido": "green", "Pagado": "gray", "Cancelado": "red" } },
+        ],
+        rows: [
+          { order: "#1247", table: "Mesa 5", customer: "Cliente Local", items: "3", total: "$67.50", time: "1:45 PM", status: "En Cocina" },
+          { order: "#1246", table: "Mesa 12", customer: "Grupo de 6", items: "5", total: "$124.00", time: "1:30 PM", status: "Servido" },
+          { order: "#1245", table: "Mesa 3", customer: "Pareja", items: "2", total: "$38.90", time: "1:15 PM", status: "Pagado" },
+          { order: "#1244", table: "Delivery", customer: "María González", items: "4", total: "$52.30", time: "1:10 PM", status: "En Cocina" },
+          { order: "#1243", table: "Mesa 8", customer: "Reserva VIP", items: "6", total: "$189.00", time: "1:00 PM", status: "Nuevo" },
+          { order: "#1242", table: "Takeaway", customer: "Carlos P.", items: "2", total: "$28.50", time: "12:45 PM", status: "Listo" },
+        ],
+        searchPlaceholder: t5("Buscar pedidos...", "Search orders...", "Rechercher des commandes...", "Bestellungen suchen...", "Cerca ordini..."),
+      },
+      tabs: [
+        { id: "all", label: t5("Todos", "All", "Tous", "Alle", "Tutti"), filterField: "6", filterValue: "all" },
+        { id: "kitchen", label: t5("En Cocina", "In Kitchen", "En Cuisine", "In der Küche", "In Cucina"), filterField: "6", filterValue: "En Cocina" },
+        { id: "ready", label: t5("Listos", "Ready", "Prêts", "Fertig", "Pronti"), filterField: "6", filterValue: "Listo" },
+        { id: "paid", label: t5("Pagados", "Paid", "Payés", "Bezahlt", "Pagati"), filterField: "6", filterValue: "Pagado" },
+      ],
+      modal: {
+        title: t5("Nuevo Pedido", "New Order", "Nouvelle Commande", "Neue Bestellung", "Nuovo Ordine"),
+        fields: [
+          { name: "table", label: t5("Mesa / Tipo", "Table / Type", "Table / Type", "Tisch / Typ", "Tavolo / Tipo"), type: "select", required: true, options: [
+            { value: "Mesa 1", label: "Mesa 1" }, { value: "Mesa 2", label: "Mesa 2" }, { value: "Mesa 3", label: "Mesa 3" },
+            { value: "Mesa 5", label: "Mesa 5" }, { value: "Mesa 8", label: "Mesa 8" }, { value: "Mesa 12", label: "Mesa 12" },
+            { value: "Delivery", label: "Delivery" }, { value: "Takeaway", label: t5("Para Llevar", "Takeaway", "À Emporter", "Zum Mitnehmen", "Da Asporto") },
+          ]},
+          { name: "customer", label: t5("Cliente", "Customer", "Client", "Kunde", "Cliente"), type: "text", placeholder: t5("Nombre (opcional)", "Name (optional)", "Nom (optionnel)", "Name (optional)", "Nome (opzionale)") },
+          { name: "items", label: t5("Items (descripción)", "Items (description)", "Articles (description)", "Artikel (Beschreibung)", "Articoli (descrizione)"), type: "textarea", required: true, placeholder: "1x Risotto, 2x Bruschetta..." },
+          { name: "notes", label: t5("Notas de Cocina", "Kitchen Notes", "Notes de Cuisine", "Küchennotizen", "Note per la Cucina"), type: "textarea", placeholder: t5("Sin gluten, extra picante...", "Gluten-free, extra spicy...", "Sans gluten, extra épicé...", "Glutenfrei, extra scharf...", "Senza glutine, extra piccante...") },
+        ],
+      },
+    },
+    {
+      id: "reservations",
+      label: t5("Reservas", "Reservations", "Réservations", "Reservierungen", "Prenotazioni"),
+      icon: "calendar",
+      kpis: [
+        { label: t5("Reservas Hoy", "Reservations Today", "Réservations Aujourd'hui", "Reservierungen Heute", "Prenotazioni Oggi"), value: "12", trend: "neutral" },
+        { label: t5("Esta Semana", "This Week", "Cette Semaine", "Diese Woche", "Questa Settimana"), value: "45", change: "+8", trend: "up" },
+        { label: t5("No Shows (Mes)", "No Shows (Month)", "No Shows (Mois)", "No-Shows (Monat)", "No Show (Mese)"), value: "6", trend: "down" },
+        { label: t5("Ocupación Prom.", "Avg. Occupancy", "Occupation Moy.", "Durchschn. Auslastung", "Occupaz. Media"), value: "78%", change: "+5%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "guest", label: t5("Cliente", "Guest", "Client", "Gast", "Cliente"), type: "avatar" },
+          { key: "date", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "time", label: t5("Hora", "Time", "Heure", "Uhrzeit", "Ora") },
+          { key: "party", label: t5("Personas", "Guests", "Personnes", "Personen", "Persone") },
+          { key: "table", label: t5("Mesa", "Table", "Table", "Tisch", "Tavolo") },
+          { key: "phone", label: t5("Teléfono", "Phone", "Téléphone", "Telefon", "Telefono") },
+          { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Confirmada": "green", "Pendiente": "yellow", "Llegó": "blue", "No Show": "red", "Cancelada": "gray" } },
+        ],
+        rows: [
+          { guest: "García Family", date: "Mar 7, 2026", time: "8:00 PM", party: "6", table: "Mesa 12", phone: "+34 612-345-678", status: "Confirmada" },
+          { guest: "Marco Rossi", date: "Mar 7, 2026", time: "8:30 PM", party: "2", table: "Mesa 3", phone: "+34 633-456-789", status: "Confirmada" },
+          { guest: "Sophie Klein", date: "Mar 7, 2026", time: "9:00 PM", party: "4", table: "Mesa 8", phone: "+34 655-789-012", status: "Pendiente" },
+          { guest: "David & Ana", date: "Mar 8, 2026", time: "1:00 PM", party: "2", table: "Mesa 5", phone: "+34 677-234-567", status: "Confirmada" },
+          { guest: "Cumpleaños Laura", date: "Mar 8, 2026", time: "8:00 PM", party: "10", table: "Privado", phone: "+34 688-345-678", status: "Pendiente" },
+        ],
+        searchPlaceholder: t5("Buscar reservas...", "Search reservations...", "Rechercher des réservations...", "Reservierungen suchen...", "Cerca prenotazioni..."),
+      },
+      modal: {
+        title: t5("Nueva Reserva", "New Reservation", "Nouvelle Réservation", "Neue Reservierung", "Nuova Prenotazione"),
+        fields: [
+          { name: "guest", label: t5("Nombre del Cliente", "Guest Name", "Nom du Client", "Name des Gastes", "Nome del Cliente"), type: "text", required: true, placeholder: t5("Ej: Juan Pérez", "E.g.: John Smith", "Ex : Jean Dupont", "Z.B.: Max Müller", "Es.: Marco Rossi") },
+          { name: "date", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date", required: true },
+          { name: "time", label: t5("Hora", "Time", "Heure", "Uhrzeit", "Ora"), type: "time", required: true },
+          { name: "party", label: t5("Número de Personas", "Number of Guests", "Nombre de Personnes", "Personenanzahl", "Numero di Persone"), type: "number", required: true, placeholder: "2" },
+          { name: "phone", label: t5("Teléfono", "Phone", "Téléphone", "Telefon", "Telefono"), type: "tel", required: true, placeholder: "+34 600-000-000" },
+          { name: "table", label: t5("Mesa Preferida", "Preferred Table", "Table Préférée", "Bevorzugter Tisch", "Tavolo Preferito"), type: "select", options: [
+            { value: "auto", label: t5("Asignar Automáticamente", "Assign Automatically", "Attribution Automatique", "Automatisch Zuweisen", "Assegna Automaticamente") },
+            { value: "Mesa 3", label: t5("Mesa 3 (2 pers.)", "Table 3 (2 guests)", "Table 3 (2 pers.)", "Tisch 3 (2 Pers.)", "Tavolo 3 (2 pers.)") },
+            { value: "Mesa 5", label: t5("Mesa 5 (4 pers.)", "Table 5 (4 guests)", "Table 5 (4 pers.)", "Tisch 5 (4 Pers.)", "Tavolo 5 (4 pers.)") },
+            { value: "Mesa 8", label: t5("Mesa 8 (4 pers.)", "Table 8 (4 guests)", "Table 8 (4 pers.)", "Tisch 8 (4 Pers.)", "Tavolo 8 (4 pers.)") },
+            { value: "Mesa 12", label: t5("Mesa 12 (6 pers.)", "Table 12 (6 guests)", "Table 12 (6 pers.)", "Tisch 12 (6 Pers.)", "Tavolo 12 (6 pers.)") },
+            { value: "Privado", label: t5("Sala Privada (10 pers.)", "Private Room (10 guests)", "Salle Privée (10 pers.)", "Privater Raum (10 Pers.)", "Sala Privata (10 pers.)") },
+          ]},
+          { name: "occasion", label: t5("Ocasión Especial", "Special Occasion", "Occasion Spéciale", "Besonderer Anlass", "Occasione Speciale"), type: "text", placeholder: t5("Cumpleaños, Aniversario...", "Birthday, Anniversary...", "Anniversaire, Fête...", "Geburtstag, Jubiläum...", "Compleanno, Anniversario...") },
+          { name: "notes", label: t5("Notas", "Notes", "Notes", "Notizen", "Note"), type: "textarea", placeholder: t5("Alergias, preferencias...", "Allergies, preferences...", "Allergies, préférences...", "Allergien, Vorlieben...", "Allergie, preferenze...") },
+        ],
+      },
+    },
+    {
+      id: "delivery",
+      label: "Delivery",
+      icon: "truck",
+      kpis: [
+        { label: t5("Pedidos Hoy", "Orders Today", "Commandes Aujourd'hui", "Bestellungen Heute", "Ordini Oggi"), value: "23", change: "+5", trend: "up" },
+        { label: t5("En Camino", "On the Way", "En Route", "Unterwegs", "In Viaggio"), value: "4", trend: "neutral" },
+        { label: t5("Tiempo Promedio", "Average Time", "Temps Moyen", "Durchschnittliche Zeit", "Tempo Medio"), value: "28 min", change: "-3 min", trend: "up" },
+        { label: "Revenue Delivery", value: "$1,245", trend: "neutral" },
+      ],
+      table: {
+        columns: [
+          { key: "order", label: t5("Pedido", "Order", "Commande", "Bestellung", "Ordine") },
+          { key: "customer", label: t5("Cliente", "Customer", "Client", "Kunde", "Cliente"), type: "avatar" },
+          { key: "address", label: t5("Dirección", "Address", "Adresse", "Adresse", "Indirizzo") },
+          { key: "total", label: "Total", type: "currency" },
+          { key: "driver", label: t5("Repartidor", "Driver", "Livreur", "Fahrer", "Fattorino") },
+          { key: "eta", label: "ETA" },
+          { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Preparando": "orange", "En Camino": "blue", "Entregado": "green", "Cancelado": "red" } },
+        ],
+        rows: [
+          { order: "#D-089", customer: "María González", address: "Calle Mayor 15, 3A", total: "$52.30", driver: "Repartidor 1", eta: "15 min", status: "En Camino" },
+          { order: "#D-088", customer: "Carlos Pérez", address: "Av. Libertad 42", total: "$34.50", driver: "Repartidor 2", eta: "22 min", status: "Preparando" },
+          { order: "#D-087", customer: "Ana Martínez", address: "Plaza Central 8, 1B", total: "$67.80", driver: "Repartidor 1", eta: "—", status: "Entregado" },
+          { order: "#D-086", customer: "Luis Fernández", address: "Calle Sol 23", total: "$28.90", driver: "Repartidor 3", eta: "8 min", status: "En Camino" },
+        ],
+        searchPlaceholder: t5("Buscar delivery...", "Search delivery...", "Rechercher une livraison...", "Lieferung suchen...", "Cerca consegna..."),
+      },
+    },
+    {
+      id: "kitchen",
+      label: t5("Cocina", "Kitchen", "Cuisine", "Küche", "Cucina"),
+      icon: "clock",
+      kpis: [
+        { label: t5("En Cola", "In Queue", "En File", "In Warteschlange", "In Coda"), value: "8", trend: "neutral" },
+        { label: t5("Preparando", "Preparing", "En Préparation", "In Vorbereitung", "In Preparazione"), value: "4", trend: "neutral" },
+        { label: t5("Tiempo Prom.", "Avg. Time", "Temps Moy.", "Durchschn. Zeit", "Tempo Medio"), value: "12 min", trend: "neutral" },
+        { label: t5("Platos Hoy", "Dishes Today", "Plats Aujourd'hui", "Gerichte Heute", "Piatti Oggi"), value: "156", change: "+23", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "order", label: t5("Pedido", "Order", "Commande", "Bestellung", "Ordine") },
+          { key: "table", label: t5("Mesa", "Table", "Table", "Tisch", "Tavolo") },
+          { key: "items", label: t5("Platos", "Dishes", "Plats", "Gerichte", "Piatti") },
+          { key: "time", label: t5("Hora Pedido", "Order Time", "Heure Commande", "Bestellzeit", "Ora Ordine") },
+          { key: "elapsed", label: t5("Tiempo", "Time", "Temps", "Zeit", "Tempo") },
+          { key: "priority", label: t5("Prioridad", "Priority", "Priorité", "Priorität", "Priorità"), type: "badge", badgeColors: { "Normal": "blue", "Urgente": "red", "VIP": "purple" } },
+          { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "En Cola": "yellow", "Preparando": "orange", "Listo": "green" } },
+        ],
+        rows: [
+          { order: "#1247", table: "Mesa 5", items: "Risotto, Bruschetta x2", time: "1:45 PM", elapsed: "5 min", priority: "Normal", status: "Preparando" },
+          { order: "#1244", table: "Delivery", items: "Paella, Tiramisú x2, Sangría", time: "1:10 PM", elapsed: "35 min", priority: "Urgente", status: "Preparando" },
+          { order: "#1243", table: "Mesa 8", items: "Salmón x2, Risotto x2, Bruschetta x2", time: "1:00 PM", elapsed: "45 min", priority: "VIP", status: "En Cola" },
+          { order: "#1248", table: "Mesa 2", items: "Tiramisú, Café x2", time: "1:50 PM", elapsed: "1 min", priority: "Normal", status: "En Cola" },
+        ],
+        searchPlaceholder: t5("Buscar en cocina...", "Search in kitchen...", "Rechercher en cuisine...", "In der Küche suchen...", "Cerca in cucina..."),
+      },
+    },
+  ],
+  superAdmin: {
+    modules: [
+      {
+        id: "tenants",
+        label: t5("Restaurantes", "Restaurants", "Restaurants", "Restaurants", "Ristoranti"),
+        icon: "building",
+        kpis: [
+          { label: t5("Total Restaurantes", "Total Restaurants", "Total Restaurants", "Restaurants Gesamt", "Totale Ristoranti"), value: "34", change: "+4", trend: "up" },
+          { label: "MRR", value: "$2,006", change: "+15%", trend: "up" },
+          { label: t5("Pedidos/Día (Avg)", "Orders/Day (Avg)", "Commandes/Jour (Moy)", "Bestellungen/Tag (Durchschn.)", "Ordini/Giorno (Media)"), value: "1,234", trend: "neutral" },
+          { label: "Churn", value: "2.9%", trend: "down" },
+        ],
+        table: {
+          columns: [
+            { key: "restaurant", label: t5("Restaurante", "Restaurant", "Restaurant", "Restaurant", "Ristorante"), type: "avatar" },
+            { key: "plan", label: "Plan", type: "badge", badgeColors: { "Pro": "purple", "Basic": "blue", "Enterprise": "green" } },
+            { key: "orders", label: t5("Pedidos/Día", "Orders/Day", "Commandes/Jour", "Bestellungen/Tag", "Ordini/Giorno") },
+            { key: "mrr", label: "MRR", type: "currency" },
+            { key: "since", label: t5("Desde", "Since", "Depuis", "Seit", "Dal"), type: "date" },
+            { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Activo": "green", "Trial": "yellow", "Suspendido": "red" } },
+          ],
+          rows: [
+            { restaurant: "La Trattoria", plan: "Pro", orders: "89", mrr: "$59/mo", since: "Jan 2024", status: "Activo" },
+            { restaurant: "Sushi Express", plan: "Enterprise", orders: "145", mrr: "$99/mo", since: "Jun 2023", status: "Activo" },
+            { restaurant: "Burger Lab", plan: "Basic", orders: "56", mrr: "$29/mo", since: "Nov 2025", status: "Activo" },
+            { restaurant: "Taco Loco", plan: "Pro", orders: "78", mrr: "$59/mo", since: "Sep 2025", status: "Trial" },
+          ],
+          searchPlaceholder: t5("Buscar restaurantes...", "Search restaurants...", "Rechercher des restaurants...", "Restaurants suchen...", "Cerca ristoranti..."),
+        },
+        modal: {
+          title: t5("Nuevo Restaurante", "New Restaurant", "Nouveau Restaurant", "Neues Restaurant", "Nuovo Ristorante"),
+          fields: [
+            { name: "restaurant", label: t5("Nombre", "Name", "Nom", "Name", "Nome"), type: "text", required: true },
+            { name: "email", label: "Email Admin", type: "email", required: true },
+            { name: "plan", label: "Plan", type: "select", required: true, options: [
+              { value: "Basic", label: "Basic — $29/mo" }, { value: "Pro", label: "Pro — $59/mo" }, { value: "Enterprise", label: "Enterprise — $99/mo" },
+            ]},
+            { name: "phone", label: t5("Teléfono", "Phone", "Téléphone", "Telefon", "Telefono"), type: "tel" },
+          ],
+        },
+      },
+    ],
+  },
+};

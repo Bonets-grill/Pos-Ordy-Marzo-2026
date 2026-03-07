@@ -1,0 +1,260 @@
+import type { SystemConfig } from "../types";
+import { t5 } from "../types";
+
+export const accounting: SystemConfig = {
+  name: t5("ContaFlow", "ContaFlow", "ContaFlow", "ContaFlow", "ContaFlow"),
+  subtitle: t5("Contabilidad", "Accounting", "Comptabilité", "Buchhaltung", "Contabilità"),
+  brandColor: "#15803d",
+  icon: "📊",
+  modules: [
+    {
+      id: "dashboard",
+      label: t5("Panel Principal", "Main Dashboard", "Tableau Principal", "Hauptübersicht", "Pannello Principale"),
+      icon: "dashboard",
+      kpis: [
+        { label: t5("Ingresos del Mes", "Monthly Revenue", "Revenus du Mois", "Monatseinnahmen", "Entrate del Mese"), value: "€48.320", change: "+12.5%", trend: "up" },
+        { label: t5("Gastos del Mes", "Monthly Expenses", "Dépenses du Mois", "Monatsausgaben", "Spese del Mese"), value: "€31.780", change: "+3.2%", trend: "up" },
+        { label: t5("Balance Neto", "Net Balance", "Solde Net", "Nettobilanz", "Saldo Netto"), value: "€16.540", change: "+28.1%", trend: "up" },
+        { label: t5("Facturas Pendientes", "Pending Invoices", "Factures en Attente", "Ausstehende Rechnungen", "Fatture in Sospeso"), value: "14", change: "-6", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { Ingreso: "green", Gasto: "red", Transferencia: "blue" } },
+          { key: "monto", label: t5("Monto", "Amount", "Montant", "Betrag", "Importo"), type: "currency" },
+          { key: "cuenta", label: t5("Cuenta", "Account", "Compte", "Konto", "Conto"), type: "text" },
+        ],
+        rows: [
+          { fecha: "2026-03-07", descripcion: "Pago cliente Acme Corp", tipo: "Ingreso", monto: "€5.200", cuenta: "Banco Principal" },
+          { fecha: "2026-03-07", descripcion: "Nóminas febrero", tipo: "Gasto", monto: "€12.400", cuenta: "Banco Principal" },
+          { fecha: "2026-03-06", descripcion: "Factura proveedor LogiTrans", tipo: "Gasto", monto: "€1.850", cuenta: "Banco Operaciones" },
+          { fecha: "2026-03-06", descripcion: "Transferencia entre cuentas", tipo: "Transferencia", monto: "€3.000", cuenta: "Banco Principal" },
+          { fecha: "2026-03-05", descripcion: "Cobro suscripción mensual", tipo: "Ingreso", monto: "€890", cuenta: "Stripe" },
+        ],
+        searchPlaceholder: t5("Buscar actividad reciente...", "Search recent activity...", "Rechercher une activité récente...", "Letzte Aktivität suchen...", "Cerca attività recente..."),
+      },
+    },
+    {
+      id: "transactions",
+      label: t5("Transacciones", "Transactions", "Transactions", "Transaktionen", "Transazioni"),
+      icon: "dollar",
+      kpis: [
+        { label: t5("Total Transacciones", "Total Transactions", "Total Transactions", "Transaktionen Gesamt", "Transazioni Totali"), value: "1.247", change: "+89", trend: "up" },
+        { label: t5("Ingresos Totales", "Total Revenue", "Revenus Totaux", "Gesamteinnahmen", "Entrate Totali"), value: "€142.680", change: "+15.3%", trend: "up" },
+        { label: t5("Gastos Totales", "Total Expenses", "Dépenses Totales", "Gesamtausgaben", "Spese Totali"), value: "€98.340", change: "+4.7%", trend: "up" },
+        { label: t5("Pendientes de Conciliar", "Pending Reconciliation", "En Attente de Rapprochement", "Ausstehende Abstimmung", "In Attesa di Riconciliazione"), value: "23", change: "-8", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "referencia", label: t5("Referencia", "Reference", "Référence", "Referenz", "Riferimento"), type: "text" },
+          { key: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { Ingreso: "green", Gasto: "red", Transferencia: "blue" } },
+          { key: "monto", label: t5("Monto", "Amount", "Montant", "Betrag", "Importo"), type: "currency" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { fecha: "2026-03-07", referencia: "TXN-001247", descripcion: "Venta producto premium", tipo: "Ingreso", monto: "€3.450" },
+          { fecha: "2026-03-07", referencia: "TXN-001246", descripcion: "Alquiler oficina marzo", tipo: "Gasto", monto: "€2.100" },
+          { fecha: "2026-03-06", referencia: "TXN-001245", descripcion: "Consultoría externa", tipo: "Gasto", monto: "€4.800" },
+          { fecha: "2026-03-06", referencia: "TXN-001244", descripcion: "Pago cliente MegaSoft", tipo: "Ingreso", monto: "€7.200" },
+          { fecha: "2026-03-05", referencia: "TXN-001243", descripcion: "Transferencia a cuenta ahorro", tipo: "Transferencia", monto: "€5.000" },
+          { fecha: "2026-03-05", referencia: "TXN-001242", descripcion: "Licencias software anual", tipo: "Gasto", monto: "€1.560" },
+        ],
+        searchPlaceholder: t5("Buscar transacciones...", "Search transactions...", "Rechercher des transactions...", "Transaktionen suchen...", "Cerca transazioni..."),
+      },
+      modal: {
+        title: t5("Nueva Transacción", "New Transaction", "Nouvelle Transaction", "Neue Transaktion", "Nuova Transazione"),
+        fields: [
+          { name: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "text", required: true, placeholder: t5("Descripción de la transacción", "Transaction description", "Description de la transaction", "Transaktionsbeschreibung", "Descrizione della transazione") },
+          { name: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "select", required: true, options: [{ value: "ingreso", label: t5("Ingreso", "Revenue", "Revenu", "Einnahme", "Entrata") }, { value: "gasto", label: t5("Gasto", "Expense", "Dépense", "Ausgabe", "Spesa") }, { value: "transferencia", label: t5("Transferencia", "Transfer", "Transfert", "Überweisung", "Trasferimento") }] },
+          { name: "monto", label: t5("Monto (€)", "Amount (€)", "Montant (€)", "Betrag (€)", "Importo (€)"), type: "number", required: true, placeholder: "0.00" },
+          { name: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date", required: true },
+          { name: "cuenta", label: t5("Cuenta", "Account", "Compte", "Konto", "Conto"), type: "select", required: true, options: [{ value: "banco_principal", label: t5("Banco Principal", "Main Bank", "Banque Principale", "Hauptbank", "Banca Principale") }, { value: "banco_operaciones", label: t5("Banco Operaciones", "Operations Bank", "Banque Opérations", "Betriebsbank", "Banca Operazioni") }, { value: "caja", label: t5("Caja", "Cash", "Caisse", "Kasse", "Cassa") }, { value: "stripe", label: "Stripe" }] },
+          { name: "notas", label: t5("Notas", "Notes", "Notes", "Notizen", "Note"), type: "textarea", placeholder: t5("Notas adicionales...", "Additional notes...", "Notes supplémentaires...", "Zusätzliche Notizen...", "Note aggiuntive...") },
+        ],
+      },
+      tabs: [
+        { id: "todas", label: t5("Todas", "All", "Toutes", "Alle", "Tutte"), filterField: "tipo", filterValue: "" },
+        { id: "ingresos", label: t5("Ingresos", "Revenue", "Revenus", "Einnahmen", "Entrate"), filterField: "tipo", filterValue: "Ingreso" },
+        { id: "gastos", label: t5("Gastos", "Expenses", "Dépenses", "Ausgaben", "Spese"), filterField: "tipo", filterValue: "Gasto" },
+        { id: "transferencias", label: t5("Transferencias", "Transfers", "Transferts", "Überweisungen", "Trasferimenti"), filterField: "tipo", filterValue: "Transferencia" },
+      ],
+    },
+    {
+      id: "accounts",
+      label: t5("Cuentas", "Accounts", "Comptes", "Konten", "Conti"),
+      icon: "briefcase",
+      kpis: [
+        { label: t5("Total Cuentas", "Total Accounts", "Total Comptes", "Konten Gesamt", "Conti Totali"), value: "32", change: "+2", trend: "up" },
+        { label: t5("Activos Totales", "Total Assets", "Actifs Totaux", "Gesamtvermögen", "Attivi Totali"), value: "€285.400", change: "+8.9%", trend: "up" },
+        { label: t5("Pasivos Totales", "Total Liabilities", "Passifs Totaux", "Gesamtverbindlichkeiten", "Passivi Totali"), value: "€124.600", change: "-3.1%", trend: "down" },
+        { label: t5("Patrimonio Neto", "Net Equity", "Patrimoine Net", "Nettovermögen", "Patrimonio Netto"), value: "€160.800", change: "+14.2%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "codigo", label: t5("Código", "Code", "Code", "Code", "Codice"), type: "text" },
+          { key: "nombre", label: t5("Nombre de Cuenta", "Account Name", "Nom du Compte", "Kontoname", "Nome del Conto"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { Activo: "blue", Pasivo: "red", Patrimonio: "purple", Ingreso: "green", Gasto: "orange" } },
+          { key: "saldo", label: t5("Saldo", "Balance", "Solde", "Saldo", "Saldo"), type: "currency" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { codigo: "1100", nombre: "Banco Principal", tipo: "Activo", saldo: "€78.450" },
+          { codigo: "1200", nombre: "Cuentas por Cobrar", tipo: "Activo", saldo: "€34.200" },
+          { codigo: "2100", nombre: "Cuentas por Pagar", tipo: "Pasivo", saldo: "€22.800" },
+          { codigo: "3100", nombre: "Capital Social", tipo: "Patrimonio", saldo: "€100.000" },
+          { codigo: "4100", nombre: "Ventas de Servicios", tipo: "Ingreso", saldo: "€142.680" },
+          { codigo: "5100", nombre: "Gastos Operativos", tipo: "Gasto", saldo: "€67.300" },
+        ],
+        searchPlaceholder: t5("Buscar cuentas...", "Search accounts...", "Rechercher des comptes...", "Konten suchen...", "Cerca conti..."),
+      },
+      modal: {
+        title: t5("Nueva Cuenta", "New Account", "Nouveau Compte", "Neues Konto", "Nuovo Conto"),
+        fields: [
+          { name: "codigo", label: t5("Código", "Code", "Code", "Code", "Codice"), type: "text", required: true, placeholder: t5("Ej: 1100", "E.g.: 1100", "Ex : 1100", "Z.B.: 1100", "Es.: 1100") },
+          { name: "nombre", label: t5("Nombre de Cuenta", "Account Name", "Nom du Compte", "Kontoname", "Nome del Conto"), type: "text", required: true, placeholder: t5("Nombre de la cuenta", "Account name", "Nom du compte", "Kontoname", "Nome del conto") },
+          { name: "tipo", label: t5("Tipo de Cuenta", "Account Type", "Type de Compte", "Kontotyp", "Tipo di Conto"), type: "select", required: true, options: [{ value: "activo", label: t5("Activo", "Asset", "Actif", "Vermögen", "Attivo") }, { value: "pasivo", label: t5("Pasivo", "Liability", "Passif", "Verbindlichkeit", "Passivo") }, { value: "patrimonio", label: t5("Patrimonio", "Equity", "Patrimoine", "Eigenkapital", "Patrimonio") }, { value: "ingreso", label: t5("Ingreso", "Revenue", "Revenu", "Einnahme", "Entrata") }, { value: "gasto", label: t5("Gasto", "Expense", "Dépense", "Ausgabe", "Spesa") }] },
+          { name: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "textarea", placeholder: t5("Descripción de la cuenta...", "Account description...", "Description du compte...", "Kontobeschreibung...", "Descrizione del conto...") },
+        ],
+      },
+      tabs: [
+        { id: "todas", label: t5("Todas", "All", "Toutes", "Alle", "Tutte"), filterField: "tipo", filterValue: "" },
+        { id: "activos", label: t5("Activos", "Assets", "Actifs", "Vermögen", "Attivi"), filterField: "tipo", filterValue: "Activo" },
+        { id: "pasivos", label: t5("Pasivos", "Liabilities", "Passifs", "Verbindlichkeiten", "Passivi"), filterField: "tipo", filterValue: "Pasivo" },
+        { id: "patrimonio", label: t5("Patrimonio", "Equity", "Patrimoine", "Eigenkapital", "Patrimonio"), filterField: "tipo", filterValue: "Patrimonio" },
+        { id: "ingresos", label: t5("Ingresos", "Revenue", "Revenus", "Einnahmen", "Entrate"), filterField: "tipo", filterValue: "Ingreso" },
+        { id: "gastos", label: t5("Gastos", "Expenses", "Dépenses", "Ausgaben", "Spese"), filterField: "tipo", filterValue: "Gasto" },
+      ],
+    },
+    {
+      id: "reports",
+      label: t5("Informes", "Reports", "Rapports", "Berichte", "Report"),
+      icon: "chart",
+      kpis: [
+        { label: t5("Informes Generados", "Generated Reports", "Rapports Générés", "Erstellte Berichte", "Report Generati"), value: "48", change: "+12", trend: "up" },
+        { label: t5("Último Balance", "Last Balance", "Dernier Bilan", "Letzte Bilanz", "Ultimo Bilancio"), value: t5("Mar 2026", "Mar 2026", "Mars 2026", "Mär 2026", "Mar 2026"), trend: "neutral" },
+        { label: t5("Margen de Beneficio", "Profit Margin", "Marge Bénéficiaire", "Gewinnmarge", "Margine di Profitto"), value: "34.2%", change: "+2.1%", trend: "up" },
+        { label: "ROI", value: "18.7%", change: "+1.3%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "nombre", label: t5("Informe", "Report", "Rapport", "Bericht", "Report"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { Balance: "blue", "P&L": "green", Flujo: "purple", Fiscal: "orange" } },
+          { key: "periodo", label: t5("Período", "Period", "Période", "Zeitraum", "Periodo"), type: "text" },
+          { key: "generado", label: t5("Generado", "Generated", "Généré", "Erstellt", "Generato"), type: "date" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { nombre: "Balance General Q1 2026", tipo: "Balance", periodo: "Ene - Mar 2026", generado: "2026-03-07" },
+          { nombre: "Estado de Resultados Feb", tipo: "P&L", periodo: "Feb 2026", generado: "2026-03-01" },
+          { nombre: "Flujo de Caja Feb", tipo: "Flujo", periodo: "Feb 2026", generado: "2026-03-01" },
+          { nombre: "Declaración IVA Q4 2025", tipo: "Fiscal", periodo: "Oct - Dic 2025", generado: "2026-01-20" },
+          { nombre: "Balance General 2025", tipo: "Balance", periodo: "Año 2025", generado: "2026-01-15" },
+        ],
+        searchPlaceholder: t5("Buscar informes...", "Search reports...", "Rechercher des rapports...", "Berichte suchen...", "Cerca report..."),
+      },
+    },
+    {
+      id: "tax",
+      label: t5("Impuestos", "Taxes", "Impôts", "Steuern", "Imposte"),
+      icon: "percent",
+      kpis: [
+        { label: t5("IVA a Pagar", "VAT Payable", "TVA à Payer", "Zu zahlende MwSt.", "IVA da Pagare"), value: "€8.430", change: "+€1.200", trend: "up" },
+        { label: t5("Retenciones IRPF", "Income Tax Withholdings", "Retenues à la Source", "Einkommensteuerabzüge", "Ritenute IRPEF"), value: "€4.560", trend: "neutral" },
+        { label: t5("Próximo Vencimiento", "Next Deadline", "Prochaine Échéance", "Nächste Frist", "Prossima Scadenza"), value: t5("20 Abr", "20 Apr", "20 Avr", "20 Apr", "20 Apr"), trend: "neutral" },
+        { label: t5("Declaraciones al Día", "Filings Up to Date", "Déclarations à Jour", "Erklärungen Aktuell", "Dichiarazioni in Regola"), value: "100%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "modelo", label: t5("Modelo", "Form", "Formulaire", "Formular", "Modello"), type: "text" },
+          { key: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "text" },
+          { key: "periodo", label: t5("Período", "Period", "Période", "Zeitraum", "Periodo"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Presentado: "green", Pendiente: "yellow", Borrador: "gray" } },
+          { key: "importe", label: t5("Importe", "Amount", "Montant", "Betrag", "Importo"), type: "currency" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { modelo: "303", descripcion: "Declaración trimestral IVA", periodo: "Q1 2026", estado: "Borrador", importe: "€8.430" },
+          { modelo: "111", descripcion: "Retenciones IRPF", periodo: "Q1 2026", estado: "Pendiente", importe: "€4.560" },
+          { modelo: "303", descripcion: "Declaración trimestral IVA", periodo: "Q4 2025", estado: "Presentado", importe: "€6.890" },
+          { modelo: "200", descripcion: "Impuesto de Sociedades", periodo: "Año 2025", estado: "Pendiente", importe: "€18.300" },
+          { modelo: "347", descripcion: "Operaciones con terceros", periodo: "Año 2025", estado: "Presentado", importe: "€0" },
+        ],
+        searchPlaceholder: t5("Buscar declaraciones...", "Search filings...", "Rechercher des déclarations...", "Erklärungen suchen...", "Cerca dichiarazioni..."),
+      },
+    },
+    {
+      id: "reconciliation",
+      label: t5("Conciliación", "Reconciliation", "Rapprochement", "Abstimmung", "Riconciliazione"),
+      icon: "refresh",
+      kpis: [
+        { label: t5("Movimientos sin Conciliar", "Unreconciled Movements", "Mouvements Non Rapprochés", "Nicht Abgestimmte Bewegungen", "Movimenti Non Riconciliati"), value: "23", change: "-8", trend: "down" },
+        { label: t5("Tasa de Conciliación", "Reconciliation Rate", "Taux de Rapprochement", "Abstimmungsquote", "Tasso di Riconciliazione"), value: "94.2%", change: "+2.1%", trend: "up" },
+        { label: t5("Último Extracto", "Last Statement", "Dernier Relevé", "Letzter Auszug", "Ultimo Estratto"), value: t5("06 Mar", "06 Mar", "06 Mars", "06 Mär", "06 Mar"), trend: "neutral" },
+        { label: t5("Diferencias Detectadas", "Differences Detected", "Différences Détectées", "Erkannte Differenzen", "Differenze Rilevate"), value: "3", change: "-2", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "banco", label: t5("Mov. Banco", "Bank Movement", "Mouv. Banque", "Bankbewegung", "Mov. Banca"), type: "text" },
+          { key: "contabilidad", label: t5("Mov. Contable", "Accounting Entry", "Écriture Comptable", "Buchungssatz", "Mov. Contabile"), type: "text" },
+          { key: "monto", label: t5("Monto", "Amount", "Montant", "Betrag", "Importo"), type: "currency" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Conciliado: "green", Pendiente: "yellow", Diferencia: "red" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { fecha: "2026-03-07", banco: "Transferencia recibida", contabilidad: "Cobro factura F-2026-089", monto: "€5.200", estado: "Conciliado" },
+          { fecha: "2026-03-07", banco: "Cargo domiciliación", contabilidad: "—", monto: "€340", estado: "Pendiente" },
+          { fecha: "2026-03-06", banco: "Pago tarjeta", contabilidad: "Gasto material oficina", monto: "€187", estado: "Diferencia" },
+          { fecha: "2026-03-06", banco: "Transferencia enviada", contabilidad: "Pago proveedor LogiTrans", monto: "€1.850", estado: "Conciliado" },
+          { fecha: "2026-03-05", banco: "Ingreso efectivo", contabilidad: "Venta mostrador", monto: "€420", estado: "Conciliado" },
+        ],
+        searchPlaceholder: t5("Buscar movimientos...", "Search movements...", "Rechercher des mouvements...", "Bewegungen suchen...", "Cerca movimenti..."),
+      },
+    },
+  ],
+  superAdmin: {
+    modules: [
+      {
+        id: "tenants",
+        label: t5("Gestión de Tenants", "Tenant Management", "Gestion des Tenants", "Mandantenverwaltung", "Gestione Tenant"),
+        icon: "building",
+        kpis: [
+          { label: "Total Tenants", value: "42", change: "+5", trend: "up" },
+          { label: t5("Tenants Activos", "Active Tenants", "Tenants Actifs", "Aktive Mandanten", "Tenant Attivi"), value: "38", change: "+3", trend: "up" },
+          { label: t5("Ingresos MRR", "MRR Revenue", "Revenus MRR", "MRR-Einnahmen", "Entrate MRR"), value: "€12.600", change: "+18%", trend: "up" },
+          { label: "Churn Rate", value: "2.1%", change: "-0.5%", trend: "down" },
+        ],
+        table: {
+          columns: [
+            { key: "nombre", label: t5("Empresa", "Company", "Entreprise", "Unternehmen", "Azienda"), type: "text" },
+            { key: "plan", label: "Plan", type: "badge", badgeColors: { Starter: "gray", Professional: "blue", Enterprise: "purple" } },
+            { key: "usuarios", label: t5("Usuarios", "Users", "Utilisateurs", "Benutzer", "Utenti"), type: "text" },
+            { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Activo: "green", Suspendido: "red", Trial: "yellow" } },
+            { key: "creado", label: t5("Alta", "Created", "Création", "Erstellt", "Creazione"), type: "date" },
+            { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+          ],
+          rows: [
+            { nombre: "Constructora Ibérica S.L.", plan: "Enterprise", usuarios: "24", estado: "Activo", creado: "2025-06-15" },
+            { nombre: "Tech Solutions Madrid", plan: "Professional", usuarios: "12", estado: "Activo", creado: "2025-09-20" },
+            { nombre: "Farmacia Central", plan: "Starter", usuarios: "3", estado: "Trial", creado: "2026-02-28" },
+            { nombre: "Grupo Alimentario Norte", plan: "Enterprise", usuarios: "31", estado: "Activo", creado: "2025-04-10" },
+            { nombre: "Estudio Legal Martínez", plan: "Professional", usuarios: "8", estado: "Suspendido", creado: "2025-11-05" },
+          ],
+          searchPlaceholder: t5("Buscar tenants...", "Search tenants...", "Rechercher des tenants...", "Mandanten suchen...", "Cerca tenant..."),
+        },
+        modal: {
+          title: t5("Nuevo Tenant", "New Tenant", "Nouveau Tenant", "Neuer Mandant", "Nuovo Tenant"),
+          fields: [
+            { name: "nombre", label: t5("Nombre de Empresa", "Company Name", "Nom d'Entreprise", "Firmenname", "Nome Azienda"), type: "text", required: true, placeholder: t5("Razón social", "Legal name", "Raison sociale", "Firmenbezeichnung", "Ragione sociale") },
+            { name: "email", label: t5("Email Administrador", "Admin Email", "Email Administrateur", "Admin-E-Mail", "Email Amministratore"), type: "email", required: true, placeholder: "admin@empresa.com" },
+            { name: "plan", label: "Plan", type: "select", required: true, options: [{ value: "starter", label: "Starter" }, { value: "professional", label: "Professional" }, { value: "enterprise", label: "Enterprise" }] },
+            { name: "telefono", label: t5("Teléfono", "Phone", "Téléphone", "Telefon", "Telefono"), type: "tel", placeholder: "+34 600 000 000" },
+          ],
+        },
+      },
+    ],
+  },
+};

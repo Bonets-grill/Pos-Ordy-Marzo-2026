@@ -1,0 +1,317 @@
+import type { SystemConfig } from "../types";
+import { t5 } from "../types";
+
+export const legalFirm: SystemConfig = {
+  name: "LegalDesk",
+  subtitle: t5("Bufete Legal", "Law Firm", "Cabinet d'Avocats", "Anwaltskanzlei", "Studio Legale"),
+  brandColor: "#1e3a5f",
+  icon: "⚖️",
+  modules: [
+    {
+      id: "dashboard",
+      label: t5("Panel Principal", "Dashboard", "Tableau de Bord", "Dashboard", "Pannello Principale"),
+      icon: "dashboard",
+      kpis: [
+        { label: t5("Casos Activos", "Active Cases", "Dossiers Actifs", "Aktive Fälle", "Casi Attivi"), value: "47", change: "+5", trend: "up" },
+        { label: t5("Clientes Totales", "Total Clients", "Total Clients", "Kunden Gesamt", "Clienti Totali"), value: "312", change: "+12", trend: "up" },
+        { label: t5("Facturación Mensual", "Monthly Billing", "Facturation Mensuelle", "Monatliche Abrechnung", "Fatturazione Mensile"), value: "€84.500", change: "+8%", trend: "up" },
+        { label: t5("Casos Cerrados (Mes)", "Closed Cases (Month)", "Dossiers Clôturés (Mois)", "Abgeschlossene Fälle (Monat)", "Casi Chiusi (Mese)"), value: "13", change: "-2", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "actividad", label: t5("Actividad", "Activity", "Activité", "Aktivität", "Attività"), type: "text" },
+          { key: "caso", label: t5("Caso", "Case", "Dossier", "Fall", "Caso"), type: "text" },
+          { key: "abogado", label: t5("Abogado", "Lawyer", "Avocat", "Anwalt", "Avvocato"), type: "text" },
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Completado": "green", "Pendiente": "yellow", "Urgente": "red" } },
+        ],
+        rows: [
+          { actividad: "Audiencia programada", caso: "García vs. López", abogado: "Dr. Martínez", fecha: "2026-03-07", estado: "Pendiente" },
+          { actividad: "Documento presentado", caso: "Herencia Rodríguez", abogado: "Dra. Sánchez", fecha: "2026-03-06", estado: "Completado" },
+          { actividad: "Reunión con cliente", caso: "Despido Fernández", abogado: "Dr. Ruiz", fecha: "2026-03-06", estado: "Completado" },
+          { actividad: "Revisión de contrato", caso: "Fusión TechCorp", abogado: "Dra. Moreno", fecha: "2026-03-05", estado: "Urgente" },
+          { actividad: "Apelación enviada", caso: "Caso Penal Díaz", abogado: "Dr. Martínez", fecha: "2026-03-05", estado: "Completado" },
+        ],
+        searchPlaceholder: t5("Buscar actividad reciente...", "Search recent activity...", "Rechercher activité récente...", "Letzte Aktivität suchen...", "Cerca attività recente..."),
+      },
+    },
+    {
+      id: "cases",
+      label: t5("Casos", "Cases", "Dossiers", "Fälle", "Casi"),
+      icon: "briefcase",
+      kpis: [
+        { label: t5("Total Casos", "Total Cases", "Total Dossiers", "Fälle Gesamt", "Casi Totali"), value: "128", change: "+5", trend: "up" },
+        { label: t5("Casos Activos", "Active Cases", "Dossiers Actifs", "Aktive Fälle", "Casi Attivi"), value: "47", change: "+3", trend: "up" },
+        { label: t5("En Revisión", "Under Review", "En Révision", "In Prüfung", "In Revisione"), value: "18", change: "-1", trend: "down" },
+        { label: t5("Tasa de Éxito", "Success Rate", "Taux de Réussite", "Erfolgsquote", "Tasso di Successo"), value: "87%", change: "+2%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "referencia", label: t5("Referencia", "Reference", "Référence", "Referenz", "Riferimento"), type: "text" },
+          { key: "titulo", label: t5("Título", "Title", "Titre", "Titel", "Titolo"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { "Civil": "blue", "Penal": "red", "Laboral": "green", "Mercantil": "purple", "Familiar": "orange" } },
+          { key: "cliente", label: t5("Cliente", "Client", "Client", "Mandant", "Cliente"), type: "text" },
+          { key: "abogado", label: t5("Abogado Responsable", "Lead Lawyer", "Avocat Responsable", "Zuständiger Anwalt", "Avvocato Responsabile"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Activo": "green", "En Revisión": "yellow", "Cerrado": "gray", "Archivado": "blue" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { referencia: "CAS-2026-001", titulo: "García vs. López - Daños y perjuicios", tipo: "Civil", cliente: "María García", abogado: "Dr. Martínez", estado: "Activo" },
+          { referencia: "CAS-2026-002", titulo: "Herencia Rodríguez Familia", tipo: "Familiar", cliente: "Pedro Rodríguez", abogado: "Dra. Sánchez", estado: "En Revisión" },
+          { referencia: "CAS-2026-003", titulo: "Despido improcedente Fernández", tipo: "Laboral", cliente: "Ana Fernández", abogado: "Dr. Ruiz", estado: "Activo" },
+          { referencia: "CAS-2025-087", titulo: "Fusión TechCorp-DataSoft", tipo: "Mercantil", cliente: "TechCorp S.A.", abogado: "Dra. Moreno", estado: "Activo" },
+          { referencia: "CAS-2025-072", titulo: "Defensa Díaz - Fraude fiscal", tipo: "Penal", cliente: "Roberto Díaz", abogado: "Dr. Martínez", estado: "Cerrado" },
+          { referencia: "CAS-2025-065", titulo: "Divorcio Muñoz-Rivas", tipo: "Familiar", cliente: "Laura Muñoz", abogado: "Dra. Sánchez", estado: "Archivado" },
+        ],
+        searchPlaceholder: t5("Buscar caso por referencia, título o cliente...", "Search case by reference, title or client...", "Rechercher un dossier par référence, titre ou client...", "Fall nach Referenz, Titel oder Mandant suchen...", "Cerca caso per riferimento, titolo o cliente..."),
+      },
+      modal: {
+        title: t5("Nuevo Caso", "New Case", "Nouveau Dossier", "Neuer Fall", "Nuovo Caso"),
+        fields: [
+          { name: "titulo", label: t5("Título del Caso", "Case Title", "Titre du Dossier", "Titel des Falls", "Titolo del Caso"), type: "text", required: true, placeholder: t5("Ej: García vs. López", "E.g.: García vs. López", "Ex : García vs. López", "Z.B.: García vs. López", "Es.: García vs. López") },
+          { name: "tipo", label: t5("Tipo de Caso", "Case Type", "Type de Dossier", "Falltyp", "Tipo di Caso"), type: "select", required: true, options: [
+            { value: "civil", label: t5("Civil", "Civil", "Civil", "Zivilrecht", "Civile") },
+            { value: "penal", label: t5("Penal", "Criminal", "Pénal", "Strafrecht", "Penale") },
+            { value: "laboral", label: t5("Laboral", "Employment", "Travail", "Arbeitsrecht", "Lavoro") },
+            { value: "mercantil", label: t5("Mercantil", "Commercial", "Commercial", "Handelsrecht", "Commerciale") },
+            { value: "familiar", label: t5("Familiar", "Family", "Famille", "Familienrecht", "Famiglia") },
+          ]},
+          { name: "cliente", label: t5("Cliente", "Client", "Client", "Mandant", "Cliente"), type: "text", required: true, placeholder: t5("Nombre del cliente", "Client name", "Nom du client", "Name des Mandanten", "Nome del cliente") },
+          { name: "abogado", label: t5("Abogado Responsable", "Lead Lawyer", "Avocat Responsable", "Zuständiger Anwalt", "Avvocato Responsabile"), type: "select", required: true, options: [
+            { value: "martinez", label: "Dr. Martínez" },
+            { value: "sanchez", label: "Dra. Sánchez" },
+            { value: "ruiz", label: "Dr. Ruiz" },
+            { value: "moreno", label: "Dra. Moreno" },
+          ]},
+          { name: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "textarea", placeholder: t5("Resumen del caso...", "Case summary...", "Résumé du dossier...", "Zusammenfassung des Falls...", "Riepilogo del caso...") },
+          { name: "fecha_apertura", label: t5("Fecha de Apertura", "Opening Date", "Date d'Ouverture", "Eröffnungsdatum", "Data di Apertura"), type: "date", required: true },
+        ],
+      },
+      tabs: [
+        { id: "todos", label: t5("Todos", "All", "Tous", "Alle", "Tutti"), filterField: "estado", filterValue: "" },
+        { id: "activos", label: t5("Activos", "Active", "Actifs", "Aktiv", "Attivi"), filterField: "estado", filterValue: "Activo" },
+        { id: "revision", label: t5("En Revisión", "Under Review", "En Révision", "In Prüfung", "In Revisione"), filterField: "estado", filterValue: "En Revisión" },
+        { id: "cerrados", label: t5("Cerrados", "Closed", "Clôturés", "Abgeschlossen", "Chiusi"), filterField: "estado", filterValue: "Cerrado" },
+        { id: "archivados", label: t5("Archivados", "Archived", "Archivés", "Archiviert", "Archiviati"), filterField: "estado", filterValue: "Archivado" },
+      ],
+    },
+    {
+      id: "clients",
+      label: t5("Clientes", "Clients", "Clients", "Mandanten", "Clienti"),
+      icon: "users",
+      kpis: [
+        { label: t5("Total Clientes", "Total Clients", "Total Clients", "Mandanten Gesamt", "Clienti Totali"), value: "312", change: "+12", trend: "up" },
+        { label: t5("Clientes Activos", "Active Clients", "Clients Actifs", "Aktive Mandanten", "Clienti Attivi"), value: "189", change: "+8", trend: "up" },
+        { label: t5("Nuevos (Mes)", "New (Month)", "Nouveaux (Mois)", "Neu (Monat)", "Nuovi (Mese)"), value: "15", change: "+3", trend: "up" },
+        { label: t5("Retención", "Retention", "Rétention", "Bindungsrate", "Fidelizzazione"), value: "94%", change: "+1%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "nombre", label: t5("Nombre", "Name", "Nom", "Name", "Nome"), type: "avatar" },
+          { key: "email", label: "Email", type: "text" },
+          { key: "telefono", label: t5("Teléfono", "Phone", "Téléphone", "Telefon", "Telefono"), type: "text" },
+          { key: "casos_activos", label: t5("Casos Activos", "Active Cases", "Dossiers Actifs", "Aktive Fälle", "Casi Attivi"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { "Persona Física": "blue", "Empresa": "purple" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { nombre: "María García", email: "m.garcia@email.com", telefono: "+34 612 345 678", casos_activos: 2, tipo: "Persona Física" },
+          { nombre: "TechCorp S.A.", email: "legal@techcorp.es", telefono: "+34 911 234 567", casos_activos: 1, tipo: "Empresa" },
+          { nombre: "Pedro Rodríguez", email: "p.rodriguez@email.com", telefono: "+34 623 456 789", casos_activos: 1, tipo: "Persona Física" },
+          { nombre: "Ana Fernández", email: "a.fernandez@email.com", telefono: "+34 634 567 890", casos_activos: 1, tipo: "Persona Física" },
+          { nombre: "DataSoft S.L.", email: "info@datasoft.es", telefono: "+34 922 345 678", casos_activos: 3, tipo: "Empresa" },
+        ],
+        searchPlaceholder: t5("Buscar cliente por nombre o email...", "Search client by name or email...", "Rechercher un client par nom ou email...", "Mandant nach Name oder E-Mail suchen...", "Cerca cliente per nome o email..."),
+      },
+      modal: {
+        title: t5("Nuevo Cliente", "New Client", "Nouveau Client", "Neuer Mandant", "Nuovo Cliente"),
+        fields: [
+          { name: "nombre", label: t5("Nombre Completo / Razón Social", "Full Name / Company", "Nom Complet / Raison Sociale", "Vollständiger Name / Firma", "Nome Completo / Ragione Sociale"), type: "text", required: true, placeholder: t5("Nombre del cliente", "Client name", "Nom du client", "Name des Mandanten", "Nome del cliente") },
+          { name: "tipo", label: t5("Tipo de Cliente", "Client Type", "Type de Client", "Mandantentyp", "Tipo di Cliente"), type: "select", required: true, options: [
+            { value: "persona", label: t5("Persona Física", "Individual", "Personne Physique", "Natürliche Person", "Persona Fisica") },
+            { value: "empresa", label: t5("Empresa", "Company", "Entreprise", "Unternehmen", "Azienda") },
+          ]},
+          { name: "email", label: "Email", type: "email", required: true, placeholder: "correo@ejemplo.com" },
+          { name: "telefono", label: t5("Teléfono", "Phone", "Téléphone", "Telefon", "Telefono"), type: "tel", placeholder: "+34 600 000 000" },
+          { name: "direccion", label: t5("Dirección", "Address", "Adresse", "Adresse", "Indirizzo"), type: "text", placeholder: t5("Dirección completa", "Full address", "Adresse complète", "Vollständige Adresse", "Indirizzo completo") },
+          { name: "notas", label: t5("Notas", "Notes", "Notes", "Notizen", "Note"), type: "textarea", placeholder: t5("Notas adicionales...", "Additional notes...", "Notes supplémentaires...", "Zusätzliche Anmerkungen...", "Note aggiuntive...") },
+        ],
+      },
+    },
+    {
+      id: "documents",
+      label: t5("Documentos", "Documents", "Documents", "Dokumente", "Documenti"),
+      icon: "file",
+      kpis: [
+        { label: t5("Total Documentos", "Total Documents", "Total Documents", "Dokumente Gesamt", "Documenti Totali"), value: "1.847", change: "+34", trend: "up" },
+        { label: t5("Pendientes Firma", "Pending Signature", "En Attente de Signature", "Unterschrift Ausstehend", "In Attesa di Firma"), value: "12", change: "-3", trend: "down" },
+        { label: t5("Subidos Hoy", "Uploaded Today", "Téléchargés Aujourd'hui", "Heute Hochgeladen", "Caricati Oggi"), value: "8", change: "+2", trend: "up" },
+        { label: t5("Almacenamiento", "Storage", "Stockage", "Speicherplatz", "Archiviazione"), value: "12.4 GB", change: "+0.3 GB", trend: "neutral" },
+      ],
+      table: {
+        columns: [
+          { key: "nombre", label: t5("Documento", "Document", "Document", "Dokument", "Documento"), type: "text" },
+          { key: "caso", label: t5("Caso Asociado", "Associated Case", "Dossier Associé", "Zugehöriger Fall", "Caso Associato"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { "Contrato": "blue", "Demanda": "red", "Escritura": "purple", "Poder": "green", "Sentencia": "orange" } },
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Firmado": "green", "Pendiente": "yellow", "Borrador": "gray" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { nombre: "Demanda_Garcia_Lopez_v3.pdf", caso: "CAS-2026-001", tipo: "Demanda", fecha: "2026-03-06", estado: "Firmado" },
+          { nombre: "Contrato_Fusion_TechCorp.docx", caso: "CAS-2025-087", tipo: "Contrato", fecha: "2026-03-05", estado: "Pendiente" },
+          { nombre: "Poder_Notarial_Rodriguez.pdf", caso: "CAS-2026-002", tipo: "Poder", fecha: "2026-03-04", estado: "Firmado" },
+          { nombre: "Escritura_Herencia_Rodriguez.pdf", caso: "CAS-2026-002", tipo: "Escritura", fecha: "2026-03-03", estado: "Borrador" },
+          { nombre: "Sentencia_Diaz_Fraude.pdf", caso: "CAS-2025-072", tipo: "Sentencia", fecha: "2026-02-28", estado: "Firmado" },
+        ],
+        searchPlaceholder: t5("Buscar documento...", "Search document...", "Rechercher un document...", "Dokument suchen...", "Cerca documento..."),
+      },
+      modal: {
+        title: t5("Subir Documento", "Upload Document", "Télécharger un Document", "Dokument Hochladen", "Carica Documento"),
+        fields: [
+          { name: "nombre", label: t5("Nombre del Documento", "Document Name", "Nom du Document", "Dokumentname", "Nome del Documento"), type: "text", required: true, placeholder: t5("Nombre del archivo", "File name", "Nom du fichier", "Dateiname", "Nome del file") },
+          { name: "caso", label: t5("Caso Asociado", "Associated Case", "Dossier Associé", "Zugehöriger Fall", "Caso Associato"), type: "text", required: true, placeholder: t5("Referencia del caso", "Case reference", "Référence du dossier", "Fallreferenz", "Riferimento del caso") },
+          { name: "tipo", label: t5("Tipo de Documento", "Document Type", "Type de Document", "Dokumenttyp", "Tipo di Documento"), type: "select", required: true, options: [
+            { value: "contrato", label: t5("Contrato", "Contract", "Contrat", "Vertrag", "Contratto") },
+            { value: "demanda", label: t5("Demanda", "Lawsuit", "Plainte", "Klage", "Causa") },
+            { value: "escritura", label: t5("Escritura", "Deed", "Acte", "Urkunde", "Atto") },
+            { value: "poder", label: t5("Poder", "Power of Attorney", "Procuration", "Vollmacht", "Procura") },
+            { value: "sentencia", label: t5("Sentencia", "Verdict", "Jugement", "Urteil", "Sentenza") },
+          ]},
+          { name: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "textarea", placeholder: t5("Descripción del documento...", "Document description...", "Description du document...", "Beschreibung des Dokuments...", "Descrizione del documento...") },
+        ],
+      },
+    },
+    {
+      id: "billing",
+      label: t5("Facturación", "Billing", "Facturation", "Rechnungsstellung", "Fatturazione"),
+      icon: "dollar",
+      kpis: [
+        { label: t5("Facturado (Mes)", "Billed (Month)", "Facturé (Mois)", "Abgerechnet (Monat)", "Fatturato (Mese)"), value: "€84.500", change: "+12%", trend: "up" },
+        { label: t5("Pendiente Cobro", "Pending Collection", "En Attente de Paiement", "Ausstehende Zahlungen", "In Attesa di Pagamento"), value: "€23.200", change: "-8%", trend: "down" },
+        { label: t5("Horas Facturables", "Billable Hours", "Heures Facturables", "Abrechenbare Stunden", "Ore Fatturabili"), value: "342h", change: "+15h", trend: "up" },
+        { label: t5("Tarifa Media", "Average Rate", "Tarif Moyen", "Durchschnittlicher Tarif", "Tariffa Media"), value: "€180/h", change: "+€10", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "factura", label: t5("Nº Factura", "Invoice No.", "Nº Facture", "Rechnungsnr.", "Nº Fattura"), type: "text" },
+          { key: "cliente", label: t5("Cliente", "Client", "Client", "Mandant", "Cliente"), type: "text" },
+          { key: "concepto", label: t5("Concepto", "Concept", "Objet", "Beschreibung", "Descrizione"), type: "text" },
+          { key: "importe", label: t5("Importe", "Amount", "Montant", "Betrag", "Importo"), type: "currency" },
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Pagada": "green", "Pendiente": "yellow", "Vencida": "red", "Borrador": "gray" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { factura: "FAC-2026-089", cliente: "María García", concepto: "Honorarios caso civil", importe: "€4.500", fecha: "2026-03-05", estado: "Pendiente" },
+          { factura: "FAC-2026-088", cliente: "TechCorp S.A.", concepto: "Asesoría fusión empresarial", importe: "€18.000", fecha: "2026-03-01", estado: "Pagada" },
+          { factura: "FAC-2026-087", cliente: "Ana Fernández", concepto: "Representación laboral", importe: "€3.200", fecha: "2026-02-28", estado: "Pagada" },
+          { factura: "FAC-2026-086", cliente: "Pedro Rodríguez", concepto: "Gestión herencia", importe: "€6.800", fecha: "2026-02-25", estado: "Vencida" },
+          { factura: "FAC-2026-085", cliente: "DataSoft S.L.", concepto: "Revisión contratos", importe: "€2.400", fecha: "2026-02-20", estado: "Pagada" },
+        ],
+        searchPlaceholder: t5("Buscar factura...", "Search invoice...", "Rechercher une facture...", "Rechnung suchen...", "Cerca fattura..."),
+      },
+      modal: {
+        title: t5("Nueva Factura", "New Invoice", "Nouvelle Facture", "Neue Rechnung", "Nuova Fattura"),
+        fields: [
+          { name: "cliente", label: t5("Cliente", "Client", "Client", "Mandant", "Cliente"), type: "text", required: true, placeholder: t5("Nombre del cliente", "Client name", "Nom du client", "Name des Mandanten", "Nome del cliente") },
+          { name: "concepto", label: t5("Concepto", "Concept", "Objet", "Beschreibung", "Descrizione"), type: "text", required: true, placeholder: t5("Concepto de la factura", "Invoice concept", "Objet de la facture", "Rechnungsbeschreibung", "Descrizione della fattura") },
+          { name: "importe", label: t5("Importe (€)", "Amount (€)", "Montant (€)", "Betrag (€)", "Importo (€)"), type: "number", required: true, placeholder: "0.00" },
+          { name: "fecha", label: t5("Fecha de Emisión", "Issue Date", "Date d'Émission", "Ausstellungsdatum", "Data di Emissione"), type: "date", required: true },
+          { name: "notas", label: t5("Notas", "Notes", "Notes", "Notizen", "Note"), type: "textarea", placeholder: t5("Notas adicionales...", "Additional notes...", "Notes supplémentaires...", "Zusätzliche Anmerkungen...", "Note aggiuntive...") },
+        ],
+      },
+    },
+    {
+      id: "calendar",
+      label: t5("Agenda", "Calendar", "Agenda", "Kalender", "Agenda"),
+      icon: "calendar",
+      kpis: [
+        { label: t5("Eventos Hoy", "Events Today", "Événements Aujourd'hui", "Termine Heute", "Eventi Oggi"), value: "6", change: "+1", trend: "neutral" },
+        { label: t5("Audiencias (Semana)", "Hearings (Week)", "Audiences (Semaine)", "Anhörungen (Woche)", "Udienze (Settimana)"), value: "4", change: "0", trend: "neutral" },
+        { label: t5("Reuniones Pendientes", "Pending Meetings", "Réunions en Attente", "Ausstehende Meetings", "Riunioni in Sospeso"), value: "12", change: "+3", trend: "up" },
+        { label: t5("Plazos Próximos", "Upcoming Deadlines", "Échéances Proches", "Nahende Fristen", "Scadenze Prossime"), value: "8", change: "-2", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "evento", label: t5("Evento", "Event", "Événement", "Termin", "Evento"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { "Audiencia": "red", "Reunión": "blue", "Plazo": "orange", "Cita": "green" } },
+          { key: "caso", label: t5("Caso", "Case", "Dossier", "Fall", "Caso"), type: "text" },
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "hora", label: t5("Hora", "Time", "Heure", "Uhrzeit", "Ora"), type: "text" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { evento: "Audiencia preliminar García vs. López", tipo: "Audiencia", caso: "CAS-2026-001", fecha: "2026-03-10", hora: "10:00" },
+          { evento: "Reunión cliente TechCorp", tipo: "Reunión", caso: "CAS-2025-087", fecha: "2026-03-08", hora: "16:00" },
+          { evento: "Plazo presentación recurso Díaz", tipo: "Plazo", caso: "CAS-2025-072", fecha: "2026-03-12", hora: "23:59" },
+          { evento: "Cita notaría herencia Rodríguez", tipo: "Cita", caso: "CAS-2026-002", fecha: "2026-03-09", hora: "11:30" },
+          { evento: "Reunión equipo semanal", tipo: "Reunión", caso: "-", fecha: "2026-03-07", hora: "09:00" },
+        ],
+        searchPlaceholder: t5("Buscar evento...", "Search event...", "Rechercher un événement...", "Termin suchen...", "Cerca evento..."),
+      },
+      modal: {
+        title: t5("Nuevo Evento", "New Event", "Nouvel Événement", "Neuer Termin", "Nuovo Evento"),
+        fields: [
+          { name: "evento", label: t5("Nombre del Evento", "Event Name", "Nom de l'Événement", "Name des Termins", "Nome dell'Evento"), type: "text", required: true, placeholder: t5("Descripción del evento", "Event description", "Description de l'événement", "Beschreibung des Termins", "Descrizione dell'evento") },
+          { name: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "select", required: true, options: [
+            { value: "audiencia", label: t5("Audiencia", "Hearing", "Audience", "Anhörung", "Udienza") },
+            { value: "reunion", label: t5("Reunión", "Meeting", "Réunion", "Meeting", "Riunione") },
+            { value: "plazo", label: t5("Plazo", "Deadline", "Échéance", "Frist", "Scadenza") },
+            { value: "cita", label: t5("Cita", "Appointment", "Rendez-vous", "Termin", "Appuntamento") },
+          ]},
+          { name: "caso", label: t5("Caso Asociado", "Associated Case", "Dossier Associé", "Zugehöriger Fall", "Caso Associato"), type: "text", placeholder: t5("Referencia del caso (opcional)", "Case reference (optional)", "Référence du dossier (optionnel)", "Fallreferenz (optional)", "Riferimento del caso (opzionale)") },
+          { name: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date", required: true },
+          { name: "hora", label: t5("Hora", "Time", "Heure", "Uhrzeit", "Ora"), type: "time", required: true },
+          { name: "notas", label: t5("Notas", "Notes", "Notes", "Notizen", "Note"), type: "textarea", placeholder: t5("Notas del evento...", "Event notes...", "Notes de l'événement...", "Anmerkungen zum Termin...", "Note dell'evento...") },
+        ],
+      },
+    },
+  ],
+  superAdmin: {
+    modules: [
+      {
+        id: "tenants",
+        label: t5("Bufetes", "Law Firms", "Cabinets", "Kanzleien", "Studi Legali"),
+        icon: "building",
+        kpis: [
+          { label: t5("Total Bufetes", "Total Law Firms", "Total Cabinets", "Kanzleien Gesamt", "Studi Legali Totali"), value: "24", change: "+3", trend: "up" },
+          { label: t5("Bufetes Activos", "Active Law Firms", "Cabinets Actifs", "Aktive Kanzleien", "Studi Legali Attivi"), value: "21", change: "+2", trend: "up" },
+          { label: t5("Usuarios Totales", "Total Users", "Total Utilisateurs", "Benutzer Gesamt", "Utenti Totali"), value: "156", change: "+18", trend: "up" },
+          { label: "MRR", value: "€12.400", change: "+15%", trend: "up" },
+        ],
+        table: {
+          columns: [
+            { key: "nombre", label: t5("Bufete", "Law Firm", "Cabinet", "Kanzlei", "Studio Legale"), type: "text" },
+            { key: "plan", label: t5("Plan", "Plan", "Plan", "Plan", "Piano"), type: "badge", badgeColors: { "Básico": "gray", "Profesional": "blue", "Enterprise": "purple" } },
+            { key: "usuarios", label: t5("Usuarios", "Users", "Utilisateurs", "Benutzer", "Utenti"), type: "text" },
+            { key: "casos", label: t5("Casos", "Cases", "Dossiers", "Fälle", "Casi"), type: "text" },
+            { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Activo": "green", "Trial": "yellow", "Suspendido": "red" } },
+            { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+          ],
+          rows: [
+            { nombre: "Martínez & Asociados", plan: "Enterprise", usuarios: 12, casos: 87, estado: "Activo" },
+            { nombre: "Bufete Sánchez Legal", plan: "Profesional", usuarios: 6, casos: 45, estado: "Activo" },
+            { nombre: "Ruiz Abogados", plan: "Profesional", usuarios: 4, casos: 32, estado: "Activo" },
+            { nombre: "Despacho Moreno", plan: "Básico", usuarios: 2, casos: 18, estado: "Trial" },
+            { nombre: "Legal Partners S.L.", plan: "Enterprise", usuarios: 15, casos: 120, estado: "Activo" },
+          ],
+          searchPlaceholder: t5("Buscar bufete...", "Search law firm...", "Rechercher un cabinet...", "Kanzlei suchen...", "Cerca studio legale..."),
+        },
+        modal: {
+          title: t5("Nuevo Bufete", "New Law Firm", "Nouveau Cabinet", "Neue Kanzlei", "Nuovo Studio Legale"),
+          fields: [
+            { name: "nombre", label: t5("Nombre del Bufete", "Law Firm Name", "Nom du Cabinet", "Kanzleiname", "Nome dello Studio Legale"), type: "text", required: true, placeholder: t5("Razón social", "Legal name", "Raison sociale", "Firmenname", "Ragione sociale") },
+            { name: "plan", label: t5("Plan", "Plan", "Plan", "Plan", "Piano"), type: "select", required: true, options: [
+              { value: "basico", label: t5("Básico", "Basic", "Basique", "Basis", "Base") },
+              { value: "profesional", label: t5("Profesional", "Professional", "Professionnel", "Professionell", "Professionale") },
+              { value: "enterprise", label: "Enterprise" },
+            ]},
+            { name: "email_admin", label: t5("Email Administrador", "Admin Email", "Email Administrateur", "Admin-E-Mail", "Email Amministratore"), type: "email", required: true, placeholder: "admin@bufete.com" },
+            { name: "telefono", label: t5("Teléfono", "Phone", "Téléphone", "Telefon", "Telefono"), type: "tel", placeholder: "+34 900 000 000" },
+          ],
+        },
+      },
+    ],
+  },
+};

@@ -1,0 +1,255 @@
+import type { SystemConfig } from "../types";
+import { t5 } from "../types";
+
+export const podcastPlatform: SystemConfig = {
+  name: "PodcastHub",
+  subtitle: t5("Plataforma de Podcast", "Podcast Platform", "Plateforme de Podcast", "Podcast-Plattform", "Piattaforma Podcast"),
+  brandColor: "#9333ea",
+  icon: "🎙️",
+  modules: [
+    {
+      id: "dashboard",
+      label: t5("Panel Principal", "Dashboard", "Tableau de Bord", "Übersicht", "Pannello Principale"),
+      icon: "dashboard",
+      kpis: [
+        { label: t5("Reproducciones del Mes", "Monthly Plays", "Écoutes du Mois", "Wiedergaben im Monat", "Riproduzioni del Mese"), value: "45.320", change: "+28%", trend: "up" },
+        { label: t5("Episodios Publicados", "Published Episodes", "Épisodes Publiés", "Veröffentlichte Episoden", "Episodi Pubblicati"), value: "48", change: "+4", trend: "up" },
+        { label: t5("Suscriptores", "Subscribers", "Abonnés", "Abonnenten", "Iscritti"), value: "8.740", change: "+620", trend: "up" },
+        { label: t5("Ingresos del Mes", "Monthly Revenue", "Revenus du Mois", "Einnahmen im Monat", "Ricavi del Mese"), value: "€2.340", change: "+15%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "actividad", label: t5("Actividad", "Activity", "Activité", "Aktivität", "Attività"), type: "text" },
+          { key: "episodio", label: t5("Episodio", "Episode", "Épisode", "Episode", "Episodio"), type: "text" },
+          { key: "plataforma", label: t5("Plataforma", "Platform", "Plateforme", "Plattform", "Piattaforma"), type: "badge", badgeColors: { Spotify: "green", Apple: "gray", Google: "blue", YouTube: "red", Web: "purple" } },
+          { key: "reproducciones", label: t5("Reproducciones", "Plays", "Écoutes", "Wiedergaben", "Riproduzioni"), type: "text" },
+        ],
+        rows: [
+          { fecha: "2026-03-07", actividad: "Episodio publicado", episodio: "EP48: IA en el marketing", plataforma: "Spotify", reproducciones: "1.240" },
+          { fecha: "2026-03-07", actividad: "Hito alcanzado", episodio: "EP45: Entrevista CEO TechCo", plataforma: "Apple", reproducciones: "5.000" },
+          { fecha: "2026-03-06", actividad: "Nuevo patrocinador", episodio: "Temporada 3", plataforma: "Web", reproducciones: "—" },
+          { fecha: "2026-03-06", actividad: "Episodio grabado", episodio: "EP49: Futuro del trabajo", plataforma: "YouTube", reproducciones: "—" },
+          { fecha: "2026-03-05", actividad: "Comentarios nuevos (12)", episodio: "EP47: Productividad remota", plataforma: "Spotify", reproducciones: "3.450" },
+        ],
+        searchPlaceholder: t5("Buscar actividad reciente...", "Search recent activity...", "Rechercher activité récente...", "Letzte Aktivität suchen...", "Cerca attività recente..."),
+      },
+    },
+    {
+      id: "episodes",
+      label: t5("Episodios", "Episodes", "Épisodes", "Episoden", "Episodi"),
+      icon: "mic",
+      kpis: [
+        { label: t5("Total Episodios", "Total Episodes", "Total Épisodes", "Episoden Gesamt", "Totale Episodi"), value: "48", change: "+4", trend: "up" },
+        { label: t5("Duración Promedio", "Average Duration", "Durée Moyenne", "Durchschn. Dauer", "Durata Media"), value: t5("42 min", "42 min", "42 min", "42 Min.", "42 min"), change: "+3 min", trend: "up" },
+        { label: t5("Reproducciones Totales", "Total Plays", "Écoutes Totales", "Wiedergaben Gesamt", "Riproduzioni Totali"), value: "234K", change: "+18%", trend: "up" },
+        { label: t5("Valoración Media", "Average Rating", "Note Moyenne", "Durchschn. Bewertung", "Valutazione Media"), value: "4.7/5", change: "+0.1", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "numero", label: t5("Nº", "No.", "Nº", "Nr.", "N."), type: "text" },
+          { key: "titulo", label: t5("Título", "Title", "Titre", "Titel", "Titolo"), type: "text" },
+          { key: "duracion", label: t5("Duración", "Duration", "Durée", "Dauer", "Durata"), type: "text" },
+          { key: "reproducciones", label: t5("Reproducciones", "Plays", "Écoutes", "Wiedergaben", "Riproduzioni"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Publicado: "green", Grabado: "blue", Editando: "yellow", Borrador: "gray" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { numero: "EP48", titulo: "IA en el marketing digital", duracion: "45 min", reproducciones: "1.240", estado: "Publicado" },
+          { numero: "EP49", titulo: "El futuro del trabajo remoto", duracion: "38 min", reproducciones: "—", estado: "Grabado" },
+          { numero: "EP47", titulo: "Productividad para equipos remotos", duracion: "52 min", reproducciones: "3.450", estado: "Publicado" },
+          { numero: "EP50", titulo: "Entrevista: Fundador StartupXYZ", duracion: "—", reproducciones: "—", estado: "Editando" },
+          { numero: "EP46", titulo: "Monetización de contenido digital", duracion: "41 min", reproducciones: "4.120", estado: "Publicado" },
+          { numero: "EP51", titulo: "Branding personal en 2026", duracion: "—", reproducciones: "—", estado: "Borrador" },
+        ],
+        searchPlaceholder: t5("Buscar episodios...", "Search episodes...", "Rechercher des épisodes...", "Episoden suchen...", "Cerca episodi..."),
+      },
+      modal: {
+        title: t5("Nuevo Episodio", "New Episode", "Nouvel Épisode", "Neue Episode", "Nuovo Episodio"),
+        fields: [
+          { name: "titulo", label: t5("Título del Episodio", "Episode Title", "Titre de l'Épisode", "Episodentitel", "Titolo dell'Episodio"), type: "text", required: true, placeholder: t5("Título del episodio", "Episode title", "Titre de l'épisode", "Episodentitel", "Titolo dell'episodio") },
+          { name: "numero", label: t5("Número de Episodio", "Episode Number", "Numéro d'Épisode", "Episodennummer", "Numero di Episodio"), type: "number", required: true, placeholder: "49" },
+          { name: "temporada", label: t5("Temporada", "Season", "Saison", "Staffel", "Stagione"), type: "select", required: true, options: [{ value: "1", label: t5("Temporada 1", "Season 1", "Saison 1", "Staffel 1", "Stagione 1") }, { value: "2", label: t5("Temporada 2", "Season 2", "Saison 2", "Staffel 2", "Stagione 2") }, { value: "3", label: t5("Temporada 3", "Season 3", "Saison 3", "Staffel 3", "Stagione 3") }] },
+          { name: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "textarea", required: true, placeholder: t5("Descripción del episodio...", "Episode description...", "Description de l'épisode...", "Episodenbeschreibung...", "Descrizione dell'episodio...") },
+          { name: "invitado", label: t5("Invitado/a", "Guest", "Invité/e", "Gast", "Ospite"), type: "text", placeholder: t5("Nombre del invitado (opcional)", "Guest name (optional)", "Nom de l'invité (optionnel)", "Name des Gastes (optional)", "Nome dell'ospite (opzionale)") },
+          { name: "fechaGrabacion", label: t5("Fecha de Grabación", "Recording Date", "Date d'Enregistrement", "Aufnahmedatum", "Data di Registrazione"), type: "date" },
+        ],
+      },
+      tabs: [
+        { id: "todos", label: t5("Todos", "All", "Tous", "Alle", "Tutti"), filterField: "estado", filterValue: "" },
+        { id: "publicados", label: t5("Publicados", "Published", "Publiés", "Veröffentlicht", "Pubblicati"), filterField: "estado", filterValue: "Publicado" },
+        { id: "grabados", label: t5("Grabados", "Recorded", "Enregistrés", "Aufgenommen", "Registrati"), filterField: "estado", filterValue: "Grabado" },
+        { id: "editando", label: t5("En Edición", "Editing", "En Édition", "In Bearbeitung", "In Modifica"), filterField: "estado", filterValue: "Editando" },
+        { id: "borradores", label: t5("Borradores", "Drafts", "Brouillons", "Entwürfe", "Bozze"), filterField: "estado", filterValue: "Borrador" },
+      ],
+    },
+    {
+      id: "hosting",
+      label: "Hosting",
+      icon: "server",
+      kpis: [
+        { label: t5("Almacenamiento Usado", "Storage Used", "Stockage Utilisé", "Genutzter Speicher", "Spazio Utilizzato"), value: "12.4 GB", change: "+1.2 GB", trend: "up" },
+        { label: t5("Ancho de Banda/Mes", "Bandwidth/Month", "Bande Passante/Mois", "Bandbreite/Monat", "Banda/Mese"), value: "89 GB", change: "+24%", trend: "up" },
+        { label: t5("Archivos Subidos", "Uploaded Files", "Fichiers Téléchargés", "Hochgeladene Dateien", "File Caricati"), value: "156", change: "+12", trend: "up" },
+        { label: t5("Tiempo de Carga", "Load Time", "Temps de Chargement", "Ladezeit", "Tempo di Caricamento"), value: "1.2s", change: "-0.3s", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "archivo", label: t5("Archivo", "File", "Fichier", "Datei", "File"), type: "text" },
+          { key: "episodio", label: t5("Episodio", "Episode", "Épisode", "Episode", "Episodio"), type: "text" },
+          { key: "formato", label: t5("Formato", "Format", "Format", "Format", "Formato"), type: "badge", badgeColors: { MP3: "blue", WAV: "purple", AAC: "green", FLAC: "orange" } },
+          { key: "tamaño", label: t5("Tamaño", "Size", "Taille", "Größe", "Dimensione"), type: "text" },
+          { key: "subido", label: t5("Subido", "Uploaded", "Téléchargé", "Hochgeladen", "Caricato"), type: "date" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { archivo: "ep48-ia-marketing.mp3", episodio: "EP48", formato: "MP3", tamaño: "64 MB", subido: "2026-03-07" },
+          { archivo: "ep49-futuro-trabajo-raw.wav", episodio: "EP49", formato: "WAV", tamaño: "420 MB", subido: "2026-03-06" },
+          { archivo: "ep47-productividad.mp3", episodio: "EP47", formato: "MP3", tamaño: "72 MB", subido: "2026-03-03" },
+          { archivo: "ep50-entrevista-raw.wav", episodio: "EP50", formato: "WAV", tamaño: "380 MB", subido: "2026-03-05" },
+          { archivo: "ep46-monetizacion.aac", episodio: "EP46", formato: "AAC", tamaño: "48 MB", subido: "2026-02-28" },
+        ],
+        searchPlaceholder: t5("Buscar archivos...", "Search files...", "Rechercher des fichiers...", "Dateien suchen...", "Cerca file..."),
+      },
+    },
+    {
+      id: "analytics",
+      label: t5("Analíticas", "Analytics", "Analytique", "Analytik", "Analitiche"),
+      icon: "chart",
+      kpis: [
+        { label: t5("Reproducciones Totales", "Total Plays", "Écoutes Totales", "Wiedergaben Gesamt", "Riproduzioni Totali"), value: "234K", change: "+18%", trend: "up" },
+        { label: t5("Oyentes Únicos", "Unique Listeners", "Auditeurs Uniques", "Einzigartige Hörer", "Ascoltatori Unici"), value: "12.340", change: "+22%", trend: "up" },
+        { label: t5("Retención Media", "Average Retention", "Rétention Moyenne", "Durchschn. Retention", "Ritenzione Media"), value: "68%", change: "+4%", trend: "up" },
+        { label: t5("Top País", "Top Country", "Top Pays", "Top-Land", "Top Paese"), value: t5("España", "Spain", "Espagne", "Spanien", "Spagna"), trend: "neutral" },
+      ],
+      table: {
+        columns: [
+          { key: "episodio", label: t5("Episodio", "Episode", "Épisode", "Episode", "Episodio"), type: "text" },
+          { key: "reproducciones", label: t5("Reproducciones", "Plays", "Écoutes", "Wiedergaben", "Riproduzioni"), type: "text" },
+          { key: "oyentes", label: t5("Oyentes Únicos", "Unique Listeners", "Auditeurs Uniques", "Einzigartige Hörer", "Ascoltatori Unici"), type: "text" },
+          { key: "retencion", label: t5("Retención", "Retention", "Rétention", "Retention", "Ritenzione"), type: "text" },
+          { key: "completado", label: t5("% Completado", "% Completed", "% Complété", "% Abgeschlossen", "% Completato"), type: "text" },
+        ],
+        rows: [
+          { episodio: "EP45: Entrevista CEO TechCo", reproducciones: "8.940", oyentes: "6.230", retencion: "78%", completado: "82%" },
+          { episodio: "EP46: Monetización contenido", reproducciones: "4.120", oyentes: "3.450", retencion: "72%", completado: "75%" },
+          { episodio: "EP47: Productividad remota", reproducciones: "3.450", oyentes: "2.890", retencion: "65%", completado: "70%" },
+          { episodio: "EP44: Growth hacking 2026", reproducciones: "5.670", oyentes: "4.120", retencion: "71%", completado: "74%" },
+          { episodio: "EP48: IA en el marketing", reproducciones: "1.240", oyentes: "1.080", retencion: "82%", completado: "—" },
+        ],
+        searchPlaceholder: t5("Buscar episodios...", "Search episodes...", "Rechercher des épisodes...", "Episoden suchen...", "Cerca episodi..."),
+      },
+    },
+    {
+      id: "distribution",
+      label: t5("Distribución", "Distribution", "Distribution", "Vertrieb", "Distribuzione"),
+      icon: "share",
+      kpis: [
+        { label: t5("Plataformas Activas", "Active Platforms", "Plateformes Actives", "Aktive Plattformen", "Piattaforme Attive"), value: "5", trend: "neutral" },
+        { label: t5("Feeds RSS Activos", "Active RSS Feeds", "Flux RSS Actifs", "Aktive RSS-Feeds", "Feed RSS Attivi"), value: "3", trend: "neutral" },
+        { label: t5("Última Sincronización", "Last Sync", "Dernière Synchronisation", "Letzte Synchronisierung", "Ultima Sincronizzazione"), value: t5("Hace 1h", "1h ago", "Il y a 1h", "Vor 1 Std.", "1 ora fa"), trend: "neutral" },
+        { label: t5("Errores de Distribución", "Distribution Errors", "Erreurs de Distribution", "Vertriebsfehler", "Errori di Distribuzione"), value: "0", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "plataforma", label: t5("Plataforma", "Platform", "Plateforme", "Plattform", "Piattaforma"), type: "badge", badgeColors: { Spotify: "green", Apple: "gray", Google: "blue", YouTube: "red", Web: "purple" } },
+          { key: "suscriptores", label: t5("Suscriptores", "Subscribers", "Abonnés", "Abonnenten", "Iscritti"), type: "text" },
+          { key: "reproducciones", label: t5("Reprod./Mes", "Plays/Month", "Écoutes/Mois", "Wiederg./Monat", "Riprod./Mese"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Activo: "green", Pendiente: "yellow", Error: "red" } },
+          { key: "ultimaSync", label: t5("Última Sync", "Last Sync", "Dernière Sync", "Letzte Sync", "Ultima Sync"), type: "date" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { plataforma: "Spotify", suscriptores: "4.230", reproducciones: "22.1K", estado: "Activo", ultimaSync: "2026-03-07" },
+          { plataforma: "Apple", suscriptores: "2.180", reproducciones: "12.4K", estado: "Activo", ultimaSync: "2026-03-07" },
+          { plataforma: "YouTube", suscriptores: "1.450", reproducciones: "6.8K", estado: "Activo", ultimaSync: "2026-03-07" },
+          { plataforma: "Google", suscriptores: "560", reproducciones: "2.3K", estado: "Activo", ultimaSync: "2026-03-07" },
+          { plataforma: "Web", suscriptores: "320", reproducciones: "1.7K", estado: "Activo", ultimaSync: "2026-03-07" },
+        ],
+        searchPlaceholder: t5("Buscar plataformas...", "Search platforms...", "Rechercher des plateformes...", "Plattformen suchen...", "Cerca piattaforme..."),
+      },
+    },
+    {
+      id: "monetization",
+      label: t5("Monetización", "Monetization", "Monétisation", "Monetarisierung", "Monetizzazione"),
+      icon: "dollar",
+      kpis: [
+        { label: t5("Ingresos del Mes", "Monthly Revenue", "Revenus du Mois", "Einnahmen im Monat", "Ricavi del Mese"), value: "€2.340", change: "+15%", trend: "up" },
+        { label: t5("Patrocinadores Activos", "Active Sponsors", "Sponsors Actifs", "Aktive Sponsoren", "Sponsor Attivi"), value: "4", change: "+1", trend: "up" },
+        { label: t5("CPM Medio", "Average CPM", "CPM Moyen", "Durchschn. CPM", "CPM Medio"), value: "€18.50", change: "+€2.30", trend: "up" },
+        { label: t5("Donaciones/Mes", "Donations/Month", "Dons/Mois", "Spenden/Monat", "Donazioni/Mese"), value: "€340", change: "+8%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "fuente", label: t5("Fuente de Ingreso", "Revenue Source", "Source de Revenu", "Einnahmequelle", "Fonte di Ricavo"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { Patrocinio: "blue", Donación: "green", Publicidad: "orange", Premium: "purple" } },
+          { key: "ingresoMes", label: t5("Ingreso/Mes", "Revenue/Month", "Revenu/Mois", "Einnahmen/Monat", "Ricavo/Mese"), type: "currency" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Activo: "green", Negociando: "yellow", Finalizado: "gray" } },
+          { key: "inicio", label: t5("Inicio", "Start", "Début", "Start", "Inizio"), type: "date" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { fuente: "TechCorp - Sponsor Principal", tipo: "Patrocinio", ingresoMes: "€1.200", estado: "Activo", inicio: "2026-01-01" },
+          { fuente: "Anuncios pre-roll Spotify", tipo: "Publicidad", ingresoMes: "€560", estado: "Activo", inicio: "2025-09-15" },
+          { fuente: "Patreon - Membresías", tipo: "Donación", ingresoMes: "€340", estado: "Activo", inicio: "2025-06-01" },
+          { fuente: "Contenido Premium exclusivo", tipo: "Premium", ingresoMes: "€240", estado: "Activo", inicio: "2025-11-01" },
+          { fuente: "StartupABC - Mid-roll", tipo: "Patrocinio", ingresoMes: "€0", estado: "Negociando", inicio: "2026-03-06" },
+        ],
+        searchPlaceholder: t5("Buscar fuentes de ingreso...", "Search revenue sources...", "Rechercher des sources de revenu...", "Einnahmequellen suchen...", "Cerca fonti di ricavo..."),
+      },
+      modal: {
+        title: t5("Nueva Fuente de Ingreso", "New Revenue Source", "Nouvelle Source de Revenu", "Neue Einnahmequelle", "Nuova Fonte di Ricavo"),
+        fields: [
+          { name: "fuente", label: t5("Nombre / Empresa", "Name / Company", "Nom / Entreprise", "Name / Unternehmen", "Nome / Azienda"), type: "text", required: true, placeholder: t5("Nombre del patrocinador o fuente", "Sponsor or source name", "Nom du sponsor ou de la source", "Name des Sponsors oder der Quelle", "Nome dello sponsor o della fonte") },
+          { name: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "select", required: true, options: [{ value: "patrocinio", label: t5("Patrocinio", "Sponsorship", "Parrainage", "Sponsoring", "Sponsorizzazione") }, { value: "publicidad", label: t5("Publicidad", "Advertising", "Publicité", "Werbung", "Pubblicità") }, { value: "donacion", label: t5("Donación", "Donation", "Don", "Spende", "Donazione") }, { value: "premium", label: "Premium" }] },
+          { name: "montoMensual", label: t5("Monto Mensual (€)", "Monthly Amount (€)", "Montant Mensuel (€)", "Monatlicher Betrag (€)", "Importo Mensile (€)"), type: "number", required: true, placeholder: "0.00" },
+          { name: "fechaInicio", label: t5("Fecha de Inicio", "Start Date", "Date de Début", "Startdatum", "Data di Inizio"), type: "date", required: true },
+          { name: "duracion", label: t5("Duración (meses)", "Duration (months)", "Durée (mois)", "Dauer (Monate)", "Durata (mesi)"), type: "number", placeholder: "12" },
+          { name: "notas", label: t5("Notas del Acuerdo", "Agreement Notes", "Notes de l'Accord", "Vereinbarungsnotizen", "Note dell'Accordo"), type: "textarea", placeholder: t5("Condiciones, ubicación del anuncio, etc.", "Conditions, ad placement, etc.", "Conditions, emplacement de l'annonce, etc.", "Bedingungen, Anzeigenplatzierung, etc.", "Condizioni, posizionamento annuncio, ecc.") },
+        ],
+      },
+    },
+  ],
+  superAdmin: {
+    modules: [
+      {
+        id: "tenants",
+        label: t5("Gestión de Tenants", "Tenant Management", "Gestion des Tenants", "Tenant-Verwaltung", "Gestione dei Tenant"),
+        icon: "building",
+        kpis: [
+          { label: "Total Tenants", value: "89", change: "+12", trend: "up" },
+          { label: t5("Tenants Activos", "Active Tenants", "Tenants Actifs", "Aktive Tenants", "Tenant Attivi"), value: "78", change: "+9", trend: "up" },
+          { label: t5("Ingresos MRR", "MRR Revenue", "Revenus MRR", "MRR-Einnahmen", "Ricavi MRR"), value: "€6.430", change: "+19%", trend: "up" },
+          { label: "Churn Rate", value: "3.2%", change: "-0.4%", trend: "down" },
+        ],
+        table: {
+          columns: [
+            { key: "nombre", label: t5("Podcast / Productora", "Podcast / Producer", "Podcast / Producteur", "Podcast / Produzent", "Podcast / Produttore"), type: "text" },
+            { key: "plan", label: t5("Plan", "Plan", "Plan", "Plan", "Piano"), type: "badge", badgeColors: { Indie: "gray", Creator: "blue", Network: "purple" } },
+            { key: "episodios", label: t5("Episodios", "Episodes", "Épisodes", "Episoden", "Episodi"), type: "text" },
+            { key: "reproducciones", label: t5("Reprod./Mes", "Plays/Month", "Écoutes/Mois", "Wiederg./Monat", "Riprod./Mese"), type: "text" },
+            { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Activo: "green", Suspendido: "red", Trial: "yellow" } },
+            { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+          ],
+          rows: [
+            { nombre: "Podcast Diario Tech", plan: "Creator", episodios: "234", reproducciones: "89K", estado: "Activo" },
+            { nombre: "Network Historias FM", plan: "Network", episodios: "1.200", reproducciones: "450K", estado: "Activo" },
+            { nombre: "Salud y Bienestar Pod", plan: "Indie", episodios: "48", reproducciones: "12K", estado: "Activo" },
+            { nombre: "Finanzas Para Todos", plan: "Creator", episodios: "96", reproducciones: "34K", estado: "Trial" },
+            { nombre: "Cuentos para Dormir", plan: "Indie", episodios: "24", reproducciones: "8K", estado: "Suspendido" },
+          ],
+          searchPlaceholder: t5("Buscar tenants...", "Search tenants...", "Rechercher des tenants...", "Tenants suchen...", "Cerca tenant..."),
+        },
+        modal: {
+          title: t5("Nuevo Tenant", "New Tenant", "Nouveau Tenant", "Neuer Tenant", "Nuovo Tenant"),
+          fields: [
+            { name: "nombre", label: t5("Nombre del Podcast/Productora", "Podcast/Producer Name", "Nom du Podcast/Producteur", "Podcast-/Produzentenname", "Nome del Podcast/Produttore"), type: "text", required: true, placeholder: t5("Mi Podcast", "My Podcast", "Mon Podcast", "Mein Podcast", "Il Mio Podcast") },
+            { name: "email", label: t5("Email Administrador", "Admin Email", "Email Administrateur", "Admin-E-Mail", "Email Amministratore"), type: "email", required: true, placeholder: "admin@podcast.com" },
+            { name: "plan", label: t5("Plan", "Plan", "Plan", "Plan", "Piano"), type: "select", required: true, options: [{ value: "indie", label: "Indie" }, { value: "creator", label: "Creator" }, { value: "network", label: "Network" }] },
+            { name: "almacenamiento", label: t5("Almacenamiento (GB)", "Storage (GB)", "Stockage (Go)", "Speicher (GB)", "Spazio (GB)"), type: "number", placeholder: "10" },
+          ],
+        },
+      },
+    ],
+  },
+};

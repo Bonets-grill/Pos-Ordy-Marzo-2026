@@ -1,0 +1,298 @@
+import type { SystemConfig } from "../types";
+import { t5 } from "../types";
+
+export const helpdesk: SystemConfig = {
+  name: t5("SupportDesk", "SupportDesk", "SupportDesk", "SupportDesk", "SupportDesk"),
+  subtitle: t5("Mesa de Ayuda", "Help Desk", "Service d'Assistance", "Helpdesk", "Servizio di Assistenza"),
+  brandColor: "#0ea5e9",
+  icon: "🎧",
+  modules: [
+    {
+      id: "dashboard",
+      label: t5("Panel Principal", "Main Dashboard", "Tableau Principal", "Hauptübersicht", "Pannello Principale"),
+      icon: "dashboard",
+      kpis: [
+        { label: t5("Tickets Abiertos", "Open Tickets", "Tickets Ouverts", "Offene Tickets", "Ticket Aperti"), value: "87", change: "+12", trend: "up" },
+        { label: t5("Tiempo Respuesta Medio", "Average Response Time", "Temps de Réponse Moyen", "Durchschnittliche Antwortzeit", "Tempo di Risposta Medio"), value: "1.4h", change: "-0.3h", trend: "down" },
+        { label: t5("Satisfacción (CSAT)", "Satisfaction (CSAT)", "Satisfaction (CSAT)", "Zufriedenheit (CSAT)", "Soddisfazione (CSAT)"), value: "94%", change: "+2%", trend: "up" },
+        { label: t5("Resueltos Hoy", "Resolved Today", "Résolus Aujourd'hui", "Heute Gelöst", "Risolti Oggi"), value: "23", change: "+5", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "actividad", label: t5("Actividad", "Activity", "Activité", "Aktivität", "Attività"), type: "text" },
+          { key: "agente", label: t5("Agente", "Agent", "Agent", "Agent", "Agente"), type: "text" },
+          { key: "ticket", label: "Ticket", type: "text" },
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Resuelto": "green", "En Progreso": "blue", "Escalado": "red" } },
+        ],
+        rows: [
+          { actividad: "Ticket #1247 resuelto - Error de login", agente: "María López", ticket: "TK-1247", fecha: "2026-03-07", estado: "Resuelto" },
+          { actividad: "Ticket #1252 escalado a L2", agente: "Carlos Ruiz", ticket: "TK-1252", fecha: "2026-03-07", estado: "Escalado" },
+          { actividad: "Respuesta enviada a ticket #1250", agente: "Ana Torres", ticket: "TK-1250", fecha: "2026-03-07", estado: "En Progreso" },
+          { actividad: "Ticket #1245 resuelto - Config. email", agente: "David Sanz", ticket: "TK-1245", fecha: "2026-03-06", estado: "Resuelto" },
+          { actividad: "Nuevo artículo KB publicado", agente: "María López", ticket: "-", fecha: "2026-03-06", estado: "Resuelto" },
+        ],
+        searchPlaceholder: t5("Buscar actividad reciente...", "Search recent activity...", "Rechercher une activité récente...", "Letzte Aktivität suchen...", "Cerca attività recente..."),
+      },
+    },
+    {
+      id: "tickets",
+      label: "Tickets",
+      icon: "clipboard",
+      kpis: [
+        { label: t5("Total Abiertos", "Total Open", "Total Ouverts", "Gesamt Offen", "Totale Aperti"), value: "87", change: "+12", trend: "up" },
+        { label: t5("Críticos", "Critical", "Critiques", "Kritisch", "Critici"), value: "4", change: "+1", trend: "up" },
+        { label: t5("SLA Cumplido", "SLA Met", "SLA Respecté", "SLA Erfüllt", "SLA Rispettato"), value: "96%", change: "+1%", trend: "up" },
+        { label: t5("Resolución Media", "Average Resolution", "Résolution Moyenne", "Durchschnittliche Lösung", "Risoluzione Media"), value: "4.2h", change: "-0.8h", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "ticket", label: t5("Nº Ticket", "Ticket #", "Nº Ticket", "Ticket-Nr.", "N. Ticket"), type: "text" },
+          { key: "asunto", label: t5("Asunto", "Subject", "Objet", "Betreff", "Oggetto"), type: "text" },
+          { key: "solicitante", label: t5("Solicitante", "Requester", "Demandeur", "Antragsteller", "Richiedente"), type: "text" },
+          { key: "prioridad", label: t5("Prioridad", "Priority", "Priorité", "Priorität", "Priorità"), type: "badge", badgeColors: { "Crítico": "red", "Alto": "orange", "Medio": "yellow", "Bajo": "blue" } },
+          { key: "agente", label: t5("Agente", "Agent", "Agent", "Agent", "Agente"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Abierto": "red", "En Progreso": "blue", "Esperando": "yellow", "Resuelto": "green", "Cerrado": "gray" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { ticket: "TK-1252", asunto: "Servidor caído - producción", solicitante: "admin@techcorp.es", prioridad: "Crítico", agente: "Carlos Ruiz", estado: "En Progreso" },
+          { ticket: "TK-1251", asunto: "No puedo exportar informes PDF", solicitante: "laura@empresa.com", prioridad: "Alto", agente: "Ana Torres", estado: "Abierto" },
+          { ticket: "TK-1250", asunto: "Error al sincronizar calendario", solicitante: "pedro@startup.io", prioridad: "Medio", agente: "Ana Torres", estado: "Esperando" },
+          { ticket: "TK-1249", asunto: "Solicitud de nueva integración", solicitante: "info@bigcorp.com", prioridad: "Bajo", agente: "David Sanz", estado: "En Progreso" },
+          { ticket: "TK-1247", asunto: "Error de login con SSO", solicitante: "marcos@retail.es", prioridad: "Alto", agente: "María López", estado: "Resuelto" },
+          { ticket: "TK-1245", asunto: "Configuración servidor email", solicitante: "soporte@pyme.com", prioridad: "Medio", agente: "David Sanz", estado: "Cerrado" },
+        ],
+        searchPlaceholder: t5("Buscar ticket por número o asunto...", "Search ticket by number or subject...", "Rechercher un ticket par numéro ou objet...", "Ticket nach Nummer oder Betreff suchen...", "Cerca ticket per numero o oggetto..."),
+      },
+      modal: {
+        title: t5("Nuevo Ticket", "New Ticket", "Nouveau Ticket", "Neues Ticket", "Nuovo Ticket"),
+        fields: [
+          { name: "asunto", label: t5("Asunto", "Subject", "Objet", "Betreff", "Oggetto"), type: "text", required: true, placeholder: t5("Descripción breve del problema", "Brief problem description", "Description brève du problème", "Kurze Problembeschreibung", "Breve descrizione del problema") },
+          { name: "solicitante", label: t5("Email del Solicitante", "Requester Email", "Email du Demandeur", "E-Mail des Antragstellers", "Email del Richiedente"), type: "email", required: true, placeholder: t5("correo@ejemplo.com", "email@example.com", "email@exemple.com", "email@beispiel.com", "email@esempio.com") },
+          { name: "prioridad", label: t5("Prioridad", "Priority", "Priorité", "Priorität", "Priorità"), type: "select", required: true, options: [
+            { value: "critico", label: t5("Crítico", "Critical", "Critique", "Kritisch", "Critico") },
+            { value: "alto", label: t5("Alto", "High", "Haut", "Hoch", "Alto") },
+            { value: "medio", label: t5("Medio", "Medium", "Moyen", "Mittel", "Medio") },
+            { value: "bajo", label: t5("Bajo", "Low", "Bas", "Niedrig", "Basso") },
+          ]},
+          { name: "agente", label: t5("Agente Asignado", "Assigned Agent", "Agent Assigné", "Zugewiesener Agent", "Agente Assegnato"), type: "select", options: [
+            { value: "lopez", label: "María López" },
+            { value: "ruiz", label: "Carlos Ruiz" },
+            { value: "torres", label: "Ana Torres" },
+            { value: "sanz", label: "David Sanz" },
+          ]},
+          { name: "categoria", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "select", required: true, options: [
+            { value: "tecnico", label: t5("Problema Técnico", "Technical Issue", "Problème Technique", "Technisches Problem", "Problema Tecnico") },
+            { value: "facturacion", label: t5("Facturación", "Billing", "Facturation", "Rechnungsstellung", "Fatturazione") },
+            { value: "funcionalidad", label: t5("Solicitud de Funcionalidad", "Feature Request", "Demande de Fonctionnalité", "Funktionsanfrage", "Richiesta di Funzionalità") },
+            { value: "cuenta", label: t5("Gestión de Cuenta", "Account Management", "Gestion de Compte", "Kontoverwaltung", "Gestione Account") },
+          ]},
+          { name: "descripcion", label: t5("Descripción Detallada", "Detailed Description", "Description Détaillée", "Detaillierte Beschreibung", "Descrizione Dettagliata"), type: "textarea", required: true, placeholder: t5("Describe el problema con detalle...", "Describe the problem in detail...", "Décrivez le problème en détail...", "Beschreiben Sie das Problem im Detail...", "Descrivi il problema in dettaglio...") },
+        ],
+      },
+      tabs: [
+        { id: "todos", label: t5("Todos", "All", "Tous", "Alle", "Tutti"), filterField: "estado", filterValue: "" },
+        { id: "abiertos", label: t5("Abiertos", "Open", "Ouverts", "Offen", "Aperti"), filterField: "estado", filterValue: "Abierto" },
+        { id: "en_progreso", label: t5("En Progreso", "In Progress", "En Cours", "In Bearbeitung", "In Corso"), filterField: "estado", filterValue: "En Progreso" },
+        { id: "esperando", label: t5("Esperando", "Waiting", "En Attente", "Wartend", "In Attesa"), filterField: "estado", filterValue: "Esperando" },
+        { id: "resueltos", label: t5("Resueltos", "Resolved", "Résolus", "Gelöst", "Risolti"), filterField: "estado", filterValue: "Resuelto" },
+        { id: "cerrados", label: t5("Cerrados", "Closed", "Fermés", "Geschlossen", "Chiusi"), filterField: "estado", filterValue: "Cerrado" },
+      ],
+    },
+    {
+      id: "knowledge_base",
+      label: t5("Base de Conocimiento", "Knowledge Base", "Base de Connaissances", "Wissensdatenbank", "Base di Conoscenza"),
+      icon: "book",
+      kpis: [
+        { label: t5("Total Artículos", "Total Articles", "Total Articles", "Artikel Gesamt", "Articoli Totali"), value: "234", change: "+12", trend: "up" },
+        { label: t5("Vistas (Mes)", "Views (Month)", "Vues (Mois)", "Aufrufe (Monat)", "Visualizzazioni (Mese)"), value: "12.400", change: "+18%", trend: "up" },
+        { label: t5("Tasa Resolución Autoservicio", "Self-Service Resolution Rate", "Taux Résolution Self-Service", "Selbstbedienungs-Lösungsrate", "Tasso Risoluzione Self-Service"), value: "45%", change: "+5%", trend: "up" },
+        { label: t5("Artículos Populares", "Popular Articles", "Articles Populaires", "Beliebte Artikel", "Articoli Popolari"), value: "Top 10", change: "", trend: "neutral" },
+      ],
+      table: {
+        columns: [
+          { key: "titulo", label: t5("Título del Artículo", "Article Title", "Titre de l'Article", "Artikeltitel", "Titolo dell'Articolo"), type: "text" },
+          { key: "categoria", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "badge", badgeColors: { "Guía": "blue", "FAQ": "green", "Tutorial": "purple", "Solución": "orange" } },
+          { key: "autor", label: t5("Autor", "Author", "Auteur", "Autor", "Autore"), type: "text" },
+          { key: "vistas", label: t5("Vistas", "Views", "Vues", "Aufrufe", "Visualizzazioni"), type: "text" },
+          { key: "actualizado", label: t5("Actualizado", "Updated", "Mis à Jour", "Aktualisiert", "Aggiornato"), type: "date" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Publicado": "green", "Borrador": "yellow", "Archivado": "gray" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { titulo: "Cómo configurar SSO con Azure AD", categoria: "Guía", autor: "María López", vistas: 1240, actualizado: "2026-03-05", estado: "Publicado" },
+          { titulo: "Preguntas frecuentes sobre facturación", categoria: "FAQ", autor: "David Sanz", vistas: 890, actualizado: "2026-03-01", estado: "Publicado" },
+          { titulo: "Tutorial: Integración API REST", categoria: "Tutorial", autor: "Carlos Ruiz", vistas: 756, actualizado: "2026-02-28", estado: "Publicado" },
+          { titulo: "Solución: Error de exportación PDF", categoria: "Solución", autor: "Ana Torres", vistas: 432, actualizado: "2026-03-06", estado: "Publicado" },
+          { titulo: "Guía de migración de datos v3", categoria: "Guía", autor: "María López", vistas: 45, actualizado: "2026-03-07", estado: "Borrador" },
+        ],
+        searchPlaceholder: t5("Buscar artículo...", "Search article...", "Rechercher un article...", "Artikel suchen...", "Cerca articolo..."),
+      },
+      modal: {
+        title: t5("Nuevo Artículo", "New Article", "Nouvel Article", "Neuer Artikel", "Nuovo Articolo"),
+        fields: [
+          { name: "titulo", label: t5("Título", "Title", "Titre", "Titel", "Titolo"), type: "text", required: true, placeholder: t5("Título del artículo", "Article title", "Titre de l'article", "Artikeltitel", "Titolo dell'articolo") },
+          { name: "categoria", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "select", required: true, options: [
+            { value: "guia", label: t5("Guía", "Guide", "Guide", "Leitfaden", "Guida") },
+            { value: "faq", label: "FAQ" },
+            { value: "tutorial", label: "Tutorial" },
+            { value: "solucion", label: t5("Solución", "Solution", "Solution", "Lösung", "Soluzione") },
+          ]},
+          { name: "contenido", label: t5("Contenido", "Content", "Contenu", "Inhalt", "Contenuto"), type: "textarea", required: true, placeholder: t5("Escribe el contenido del artículo...", "Write the article content...", "Rédigez le contenu de l'article...", "Schreiben Sie den Artikelinhalt...", "Scrivi il contenuto dell'articolo...") },
+          { name: "etiquetas", label: t5("Etiquetas", "Tags", "Étiquettes", "Tags", "Etichette"), type: "text", placeholder: t5("sso, azure, configuración", "sso, azure, configuration", "sso, azure, configuration", "sso, azure, konfiguration", "sso, azure, configurazione") },
+          { name: "publicar", label: t5("Publicar inmediatamente", "Publish immediately", "Publier immédiatement", "Sofort veröffentlichen", "Pubblica immediatamente"), type: "checkbox" },
+        ],
+      },
+    },
+    {
+      id: "agents",
+      label: t5("Agentes", "Agents", "Agents", "Agenten", "Agenti"),
+      icon: "headphones",
+      kpis: [
+        { label: t5("Total Agentes", "Total Agents", "Total Agents", "Agenten Gesamt", "Agenti Totali"), value: "12", change: "+2", trend: "up" },
+        { label: t5("En Línea Ahora", "Online Now", "En Ligne Maintenant", "Jetzt Online", "Online Adesso"), value: "8", change: "0", trend: "neutral" },
+        { label: t5("Carga Media", "Average Load", "Charge Moyenne", "Durchschnittliche Auslastung", "Carico Medio"), value: t5("7.2 tickets", "7.2 tickets", "7.2 tickets", "7.2 Tickets", "7.2 ticket"), change: "-0.5", trend: "down" },
+        { label: t5("CSAT Equipo", "Team CSAT", "CSAT Équipe", "Team-CSAT", "CSAT Team"), value: "94%", change: "+2%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "nombre", label: t5("Agente", "Agent", "Agent", "Agent", "Agente"), type: "avatar" },
+          { key: "email", label: "Email", type: "text" },
+          { key: "nivel", label: t5("Nivel", "Level", "Niveau", "Stufe", "Livello"), type: "badge", badgeColors: { "L1": "blue", "L2": "purple", "L3": "indigo", "Lead": "orange" } },
+          { key: "tickets_asignados", label: t5("Tickets Asignados", "Assigned Tickets", "Tickets Assignés", "Zugewiesene Tickets", "Ticket Assegnati"), type: "text" },
+          { key: "resueltos_mes", label: t5("Resueltos/Mes", "Resolved/Month", "Résolus/Mois", "Gelöst/Monat", "Risolti/Mese"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "En Línea": "green", "Ocupado": "orange", "Ausente": "gray", "Desconectado": "red" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { nombre: "María López", email: "m.lopez@soporte.com", nivel: "Lead", tickets_asignados: 5, resueltos_mes: 67, estado: "En Línea" },
+          { nombre: "Carlos Ruiz", email: "c.ruiz@soporte.com", nivel: "L2", tickets_asignados: 8, resueltos_mes: 54, estado: "Ocupado" },
+          { nombre: "Ana Torres", email: "a.torres@soporte.com", nivel: "L1", tickets_asignados: 10, resueltos_mes: 48, estado: "En Línea" },
+          { nombre: "David Sanz", email: "d.sanz@soporte.com", nivel: "L2", tickets_asignados: 6, resueltos_mes: 52, estado: "En Línea" },
+          { nombre: "Elena Mora", email: "e.mora@soporte.com", nivel: "L1", tickets_asignados: 9, resueltos_mes: 41, estado: "Ausente" },
+        ],
+        searchPlaceholder: t5("Buscar agente...", "Search agent...", "Rechercher un agent...", "Agent suchen...", "Cerca agente..."),
+      },
+      modal: {
+        title: t5("Nuevo Agente", "New Agent", "Nouvel Agent", "Neuer Agent", "Nuovo Agente"),
+        fields: [
+          { name: "nombre", label: t5("Nombre Completo", "Full Name", "Nom Complet", "Vollständiger Name", "Nome Completo"), type: "text", required: true, placeholder: t5("Nombre del agente", "Agent name", "Nom de l'agent", "Name des Agenten", "Nome dell'agente") },
+          { name: "email", label: "Email", type: "email", required: true, placeholder: t5("agente@soporte.com", "agent@support.com", "agent@support.com", "agent@support.com", "agente@supporto.com") },
+          { name: "nivel", label: t5("Nivel de Soporte", "Support Level", "Niveau de Support", "Support-Stufe", "Livello di Supporto"), type: "select", required: true, options: [
+            { value: "l1", label: t5("L1 - Soporte Básico", "L1 - Basic Support", "L1 - Support Basique", "L1 - Basis-Support", "L1 - Supporto Base") },
+            { value: "l2", label: t5("L2 - Soporte Avanzado", "L2 - Advanced Support", "L2 - Support Avancé", "L2 - Erweiterter Support", "L2 - Supporto Avanzato") },
+            { value: "l3", label: t5("L3 - Especialista", "L3 - Specialist", "L3 - Spécialiste", "L3 - Spezialist", "L3 - Specialista") },
+            { value: "lead", label: t5("Lead - Supervisor", "Lead - Supervisor", "Lead - Superviseur", "Lead - Supervisor", "Lead - Supervisore") },
+          ]},
+          { name: "especialidades", label: t5("Especialidades", "Specialties", "Spécialités", "Fachgebiete", "Specializzazioni"), type: "text", placeholder: t5("Redes, Servidores, API...", "Networks, Servers, API...", "Réseaux, Serveurs, API...", "Netzwerke, Server, API...", "Reti, Server, API...") },
+          { name: "max_tickets", label: t5("Máx. Tickets Simultáneos", "Max Simultaneous Tickets", "Max. Tickets Simultanés", "Max. gleichzeitige Tickets", "Max. Ticket Simultanei"), type: "number", placeholder: "10" },
+        ],
+      },
+    },
+    {
+      id: "sla",
+      label: "SLA",
+      icon: "clock",
+      kpis: [
+        { label: t5("Cumplimiento SLA", "SLA Compliance", "Conformité SLA", "SLA-Einhaltung", "Conformità SLA"), value: "96%", change: "+1%", trend: "up" },
+        { label: t5("Brechas SLA (Mes)", "SLA Breaches (Month)", "Violations SLA (Mois)", "SLA-Verletzungen (Monat)", "Violazioni SLA (Mese)"), value: "7", change: "-3", trend: "down" },
+        { label: t5("Tiempo Respuesta (P95)", "Response Time (P95)", "Temps de Réponse (P95)", "Antwortzeit (P95)", "Tempo di Risposta (P95)"), value: "2.1h", change: "-0.4h", trend: "down" },
+        { label: t5("Tiempo Resolución (P95)", "Resolution Time (P95)", "Temps de Résolution (P95)", "Lösungszeit (P95)", "Tempo di Risoluzione (P95)"), value: "8.3h", change: "-1.2h", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "politica", label: t5("Política SLA", "SLA Policy", "Politique SLA", "SLA-Richtlinie", "Politica SLA"), type: "text" },
+          { key: "prioridad", label: t5("Prioridad", "Priority", "Priorité", "Priorität", "Priorità"), type: "badge", badgeColors: { "Crítico": "red", "Alto": "orange", "Medio": "yellow", "Bajo": "blue" } },
+          { key: "tiempo_respuesta", label: t5("Respuesta Máx.", "Max Response", "Réponse Max.", "Max. Antwort", "Risposta Max."), type: "text" },
+          { key: "tiempo_resolucion", label: t5("Resolución Máx.", "Max Resolution", "Résolution Max.", "Max. Lösung", "Risoluzione Max."), type: "text" },
+          { key: "cumplimiento", label: t5("Cumplimiento", "Compliance", "Conformité", "Einhaltung", "Conformità"), type: "text" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Activa": "green", "En Revisión": "yellow", "Inactiva": "gray" } },
+        ],
+        rows: [
+          { politica: "SLA Enterprise - Crítico", prioridad: "Crítico", tiempo_respuesta: "15 min", tiempo_resolucion: "2h", cumplimiento: "98%", estado: "Activa" },
+          { politica: "SLA Enterprise - Alto", prioridad: "Alto", tiempo_respuesta: "1h", tiempo_resolucion: "4h", cumplimiento: "96%", estado: "Activa" },
+          { politica: "SLA Estándar - Medio", prioridad: "Medio", tiempo_respuesta: "4h", tiempo_resolucion: "12h", cumplimiento: "97%", estado: "Activa" },
+          { politica: "SLA Estándar - Bajo", prioridad: "Bajo", tiempo_respuesta: "8h", tiempo_resolucion: "24h", cumplimiento: "99%", estado: "Activa" },
+          { politica: "SLA Free - General", prioridad: "Bajo", tiempo_respuesta: "24h", tiempo_resolucion: "72h", cumplimiento: "95%", estado: "En Revisión" },
+        ],
+        searchPlaceholder: t5("Buscar política SLA...", "Search SLA policy...", "Rechercher une politique SLA...", "SLA-Richtlinie suchen...", "Cerca politica SLA..."),
+      },
+    },
+    {
+      id: "reports",
+      label: t5("Informes", "Reports", "Rapports", "Berichte", "Report"),
+      icon: "chart",
+      kpis: [
+        { label: t5("Tickets Totales (Mes)", "Total Tickets (Month)", "Tickets Totaux (Mois)", "Tickets Gesamt (Monat)", "Ticket Totali (Mese)"), value: "342", change: "+28", trend: "up" },
+        { label: t5("Resueltos", "Resolved", "Résolus", "Gelöst", "Risolti"), value: "298", change: "+32", trend: "up" },
+        { label: t5("Tasa Reapertura", "Reopen Rate", "Taux de Réouverture", "Wiedereröffnungsrate", "Tasso di Riapertura"), value: "3.8%", change: "-0.5%", trend: "down" },
+        { label: t5("NPS Soporte", "Support NPS", "NPS Support", "Support-NPS", "NPS Supporto"), value: "78", change: "+4", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "informe", label: t5("Informe", "Report", "Rapport", "Bericht", "Report"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { "Rendimiento": "blue", "SLA": "purple", "Satisfacción": "green", "Volumen": "orange" } },
+          { key: "periodo", label: t5("Período", "Period", "Période", "Zeitraum", "Periodo"), type: "text" },
+          { key: "generado", label: t5("Generado", "Generated", "Généré", "Erstellt", "Generato"), type: "date" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Listo": "green", "Generando": "blue", "Programado": "yellow" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { informe: "Rendimiento de Agentes - Marzo 2026", tipo: "Rendimiento", periodo: "Marzo 2026", generado: "2026-03-07", estado: "Listo" },
+          { informe: "Cumplimiento SLA - Q1 2026", tipo: "SLA", periodo: "Q1 2026", generado: "2026-03-07", estado: "Generando" },
+          { informe: "Encuesta CSAT - Febrero 2026", tipo: "Satisfacción", periodo: "Febrero 2026", generado: "2026-03-01", estado: "Listo" },
+          { informe: "Volumen de Tickets - Semanal", tipo: "Volumen", periodo: "Sem. 10/2026", generado: "2026-03-07", estado: "Listo" },
+          { informe: "Análisis Tendencias - Q1 2026", tipo: "Volumen", periodo: "Q1 2026", generado: "2026-03-15", estado: "Programado" },
+        ],
+        searchPlaceholder: t5("Buscar informe...", "Search report...", "Rechercher un rapport...", "Bericht suchen...", "Cerca report..."),
+      },
+    },
+  ],
+  superAdmin: {
+    modules: [
+      {
+        id: "tenants",
+        label: t5("Mesas de Ayuda", "Help Desks", "Services d'Assistance", "Helpdesks", "Servizi di Assistenza"),
+        icon: "building",
+        kpis: [
+          { label: t5("Total Instancias", "Total Instances", "Total Instances", "Instanzen Gesamt", "Istanze Totali"), value: "42", change: "+6", trend: "up" },
+          { label: t5("Activas", "Active", "Actives", "Aktiv", "Attive"), value: "38", change: "+5", trend: "up" },
+          { label: t5("Agentes Totales", "Total Agents", "Agents Totaux", "Agenten Gesamt", "Agenti Totali"), value: "320", change: "+28", trend: "up" },
+          { label: "MRR", value: "€21.600", change: "+19%", trend: "up" },
+        ],
+        table: {
+          columns: [
+            { key: "nombre", label: t5("Organización", "Organization", "Organisation", "Organisation", "Organizzazione"), type: "text" },
+            { key: "plan", label: "Plan", type: "badge", badgeColors: { "Básico": "gray", "Profesional": "blue", "Enterprise": "purple" } },
+            { key: "agentes", label: t5("Agentes", "Agents", "Agents", "Agenten", "Agenti"), type: "text" },
+            { key: "tickets_mes", label: t5("Tickets/Mes", "Tickets/Month", "Tickets/Mois", "Tickets/Monat", "Ticket/Mese"), type: "text" },
+            { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Activo": "green", "Trial": "yellow", "Suspendido": "red" } },
+            { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+          ],
+          rows: [
+            { nombre: "TechCorp Soporte", plan: "Enterprise", agentes: 24, tickets_mes: 1240, estado: "Activo" },
+            { nombre: "Banco Nacional IT", plan: "Enterprise", agentes: 45, tickets_mes: 3200, estado: "Activo" },
+            { nombre: "RetailGroup España", plan: "Profesional", agentes: 12, tickets_mes: 560, estado: "Activo" },
+            { nombre: "StartupHub Support", plan: "Básico", agentes: 3, tickets_mes: 87, estado: "Trial" },
+            { nombre: "CloudServices Pro", plan: "Profesional", agentes: 8, tickets_mes: 420, estado: "Activo" },
+          ],
+          searchPlaceholder: t5("Buscar organización...", "Search organization...", "Rechercher une organisation...", "Organisation suchen...", "Cerca organizzazione..."),
+        },
+        modal: {
+          title: t5("Nueva Mesa de Ayuda", "New Help Desk", "Nouveau Service d'Assistance", "Neuer Helpdesk", "Nuovo Servizio di Assistenza"),
+          fields: [
+            { name: "nombre", label: t5("Nombre de la Organización", "Organization Name", "Nom de l'Organisation", "Organisationsname", "Nome dell'Organizzazione"), type: "text", required: true, placeholder: t5("Nombre de la empresa", "Company name", "Nom de l'entreprise", "Firmenname", "Nome dell'azienda") },
+            { name: "plan", label: "Plan", type: "select", required: true, options: [
+              { value: "basico", label: t5("Básico", "Basic", "Basique", "Basis", "Base") },
+              { value: "profesional", label: t5("Profesional", "Professional", "Professionnel", "Professionell", "Professionale") },
+              { value: "enterprise", label: "Enterprise" },
+            ]},
+            { name: "email_admin", label: t5("Email Administrador", "Admin Email", "Email Administrateur", "Admin-E-Mail", "Email Amministratore"), type: "email", required: true, placeholder: "admin@empresa.com" },
+            { name: "agentes_max", label: t5("Máx. Agentes", "Max Agents", "Max. Agents", "Max. Agenten", "Max. Agenti"), type: "number", placeholder: "10" },
+          ],
+        },
+      },
+    ],
+  },
+};

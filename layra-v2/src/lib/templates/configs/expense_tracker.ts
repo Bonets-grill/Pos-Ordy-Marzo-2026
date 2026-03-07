@@ -1,0 +1,270 @@
+import type { SystemConfig } from "../types";
+import { t5 } from "../types";
+
+export const expenseTracker: SystemConfig = {
+  name: "ExpenseWise",
+  subtitle: t5("Control de Gastos", "Expense Tracking", "Suivi des Dépenses", "Ausgabenkontrolle", "Controllo Spese"),
+  brandColor: "#ca8a04",
+  icon: "💳",
+  modules: [
+    {
+      id: "dashboard",
+      label: t5("Panel Principal", "Main Dashboard", "Tableau Principal", "Hauptübersicht", "Pannello Principale"),
+      icon: "dashboard",
+      kpis: [
+        { label: t5("Gastos del Mes", "Monthly Expenses", "Dépenses du Mois", "Monatsausgaben", "Spese del Mese"), value: "€14.820", change: "+8.3%", trend: "up" },
+        { label: t5("Presupuesto Restante", "Remaining Budget", "Budget Restant", "Verbleibendes Budget", "Budget Rimanente"), value: "€5.180", change: "-26%", trend: "down" },
+        { label: t5("Solicitudes Pendientes", "Pending Requests", "Demandes en Attente", "Ausstehende Anträge", "Richieste in Sospeso"), value: "7", change: "+3", trend: "up" },
+        { label: t5("Ahorro vs Mes Anterior", "Savings vs Last Month", "Économies vs Mois Précédent", "Einsparungen vs Vormonat", "Risparmio vs Mese Precedente"), value: "€1.340", change: "+12%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "empleado", label: t5("Empleado", "Employee", "Employé", "Mitarbeiter", "Dipendente"), type: "text" },
+          { key: "concepto", label: t5("Concepto", "Concept", "Description", "Beschreibung", "Descrizione"), type: "text" },
+          { key: "categoria", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "badge", badgeColors: { Viajes: "blue", Oficina: "gray", Marketing: "purple", Software: "indigo", "Alimentación": "orange" } },
+          { key: "monto", label: t5("Monto", "Amount", "Montant", "Betrag", "Importo"), type: "currency" },
+        ],
+        rows: [
+          { fecha: "2026-03-07", empleado: "Carlos Ruiz", concepto: "Vuelo Madrid-Barcelona", categoria: "Viajes", monto: "€245" },
+          { fecha: "2026-03-07", empleado: "Laura Gómez", concepto: "Licencia Adobe Creative", categoria: "Software", monto: "€59.99" },
+          { fecha: "2026-03-06", empleado: "Pedro Sánchez", concepto: "Almuerzo con cliente", categoria: "Alimentación", monto: "€87" },
+          { fecha: "2026-03-06", empleado: "Ana Torres", concepto: "Material de oficina", categoria: "Oficina", monto: "€134" },
+          { fecha: "2026-03-05", empleado: "Miguel Fernández", concepto: "Campaña Google Ads", categoria: "Marketing", monto: "€500" },
+        ],
+        searchPlaceholder: t5("Buscar actividad reciente...", "Search recent activity...", "Rechercher une activité récente...", "Letzte Aktivität suchen...", "Cerca attività recente..."),
+      },
+    },
+    {
+      id: "expenses",
+      label: t5("Gastos", "Expenses", "Dépenses", "Ausgaben", "Spese"),
+      icon: "dollar",
+      kpis: [
+        { label: t5("Total Gastos Q1", "Total Expenses Q1", "Total Dépenses T1", "Gesamtausgaben Q1", "Spese Totali Q1"), value: "€42.350", change: "+5.2%", trend: "up" },
+        { label: t5("Gasto Promedio", "Average Expense", "Dépense Moyenne", "Durchschnittliche Ausgabe", "Spesa Media"), value: "€187", change: "-€12", trend: "down" },
+        { label: t5("Gastos Aprobados", "Approved Expenses", "Dépenses Approuvées", "Genehmigte Ausgaben", "Spese Approvate"), value: "189", change: "+23", trend: "up" },
+        { label: t5("Monto Rechazado", "Rejected Amount", "Montant Rejeté", "Abgelehnter Betrag", "Importo Rifiutato"), value: "€2.140", change: "-34%", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "fecha", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date" },
+          { key: "empleado", label: t5("Empleado", "Employee", "Employé", "Mitarbeiter", "Dipendente"), type: "text" },
+          { key: "concepto", label: t5("Concepto", "Concept", "Description", "Beschreibung", "Descrizione"), type: "text" },
+          { key: "categoria", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "badge", badgeColors: { Viajes: "blue", Oficina: "gray", Marketing: "purple", Software: "indigo", "Alimentación": "orange" } },
+          { key: "monto", label: t5("Monto", "Amount", "Montant", "Betrag", "Importo"), type: "currency" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Aprobado: "green", Pendiente: "yellow", Rechazado: "red", Borrador: "gray" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { fecha: "2026-03-07", empleado: "Carlos Ruiz", concepto: "Hotel 2 noches Barcelona", categoria: "Viajes", monto: "€320", estado: "Pendiente" },
+          { fecha: "2026-03-07", empleado: "Laura Gómez", concepto: "Suscripción Figma Team", categoria: "Software", monto: "€45", estado: "Aprobado" },
+          { fecha: "2026-03-06", empleado: "Pedro Sánchez", concepto: "Taxi aeropuerto", categoria: "Viajes", monto: "€38", estado: "Aprobado" },
+          { fecha: "2026-03-06", empleado: "Ana Torres", concepto: "Impresora multifunción", categoria: "Oficina", monto: "€890", estado: "Rechazado" },
+          { fecha: "2026-03-05", empleado: "Miguel Fernández", concepto: "Stand feria tech", categoria: "Marketing", monto: "€2.500", estado: "Borrador" },
+          { fecha: "2026-03-05", empleado: "Sofía López", concepto: "Catering reunión equipo", categoria: "Alimentación", monto: "€156", estado: "Aprobado" },
+        ],
+        searchPlaceholder: t5("Buscar gastos...", "Search expenses...", "Rechercher des dépenses...", "Ausgaben suchen...", "Cerca spese..."),
+      },
+      modal: {
+        title: t5("Nuevo Gasto", "New Expense", "Nouvelle Dépense", "Neue Ausgabe", "Nuova Spesa"),
+        fields: [
+          { name: "concepto", label: t5("Concepto", "Concept", "Description", "Beschreibung", "Descrizione"), type: "text", required: true, placeholder: t5("Descripción del gasto", "Expense description", "Description de la dépense", "Ausgabenbeschreibung", "Descrizione della spesa") },
+          { name: "categoria", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "select", required: true, options: [{ value: "viajes", label: t5("Viajes", "Travel", "Voyages", "Reisen", "Viaggi") }, { value: "oficina", label: t5("Oficina", "Office", "Bureau", "Büro", "Ufficio") }, { value: "marketing", label: "Marketing" }, { value: "software", label: "Software" }, { value: "alimentacion", label: t5("Alimentación", "Food", "Alimentation", "Verpflegung", "Alimentazione") }] },
+          { name: "monto", label: t5("Monto (€)", "Amount (€)", "Montant (€)", "Betrag (€)", "Importo (€)"), type: "number", required: true, placeholder: "0.00" },
+          { name: "fecha", label: t5("Fecha del Gasto", "Expense Date", "Date de la Dépense", "Ausgabendatum", "Data della Spesa"), type: "date", required: true },
+          { name: "proveedor", label: t5("Proveedor", "Vendor", "Fournisseur", "Lieferant", "Fornitore"), type: "text", placeholder: t5("Nombre del proveedor", "Vendor name", "Nom du fournisseur", "Name des Lieferanten", "Nome del fornitore") },
+          { name: "notas", label: t5("Notas", "Notes", "Notes", "Notizen", "Note"), type: "textarea", placeholder: t5("Justificación o notas adicionales...", "Justification or additional notes...", "Justification ou notes supplémentaires...", "Begründung oder zusätzliche Notizen...", "Giustificazione o note aggiuntive...") },
+        ],
+      },
+      tabs: [
+        { id: "todos", label: t5("Todos", "All", "Tous", "Alle", "Tutti"), filterField: "estado", filterValue: "" },
+        { id: "aprobados", label: t5("Aprobados", "Approved", "Approuvés", "Genehmigt", "Approvati"), filterField: "estado", filterValue: "Aprobado" },
+        { id: "pendientes", label: t5("Pendientes", "Pending", "En Attente", "Ausstehend", "In Sospeso"), filterField: "estado", filterValue: "Pendiente" },
+        { id: "rechazados", label: t5("Rechazados", "Rejected", "Rejetés", "Abgelehnt", "Rifiutati"), filterField: "estado", filterValue: "Rechazado" },
+        { id: "borradores", label: t5("Borradores", "Drafts", "Brouillons", "Entwürfe", "Bozze"), filterField: "estado", filterValue: "Borrador" },
+      ],
+    },
+    {
+      id: "categories",
+      label: t5("Categorías", "Categories", "Catégories", "Kategorien", "Categorie"),
+      icon: "tag",
+      kpis: [
+        { label: t5("Total Categorías", "Total Categories", "Total Catégories", "Kategorien Gesamt", "Categorie Totali"), value: "12", change: "+2", trend: "up" },
+        { label: t5("Categoría Mayor Gasto", "Highest Spending Category", "Catégorie Plus Grande Dépense", "Kategorie Höchste Ausgabe", "Categoria Spesa Maggiore"), value: t5("Viajes", "Travel", "Voyages", "Reisen", "Viaggi"), trend: "neutral" },
+        { label: t5("% Viajes", "% Travel", "% Voyages", "% Reisen", "% Viaggi"), value: "34.2%", change: "+5.1%", trend: "up" },
+        { label: t5("Categorías sin Uso", "Unused Categories", "Catégories Inutilisées", "Unbenutzte Kategorien", "Categorie Non Utilizzate"), value: "1", trend: "neutral" },
+      ],
+      table: {
+        columns: [
+          { key: "nombre", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "text" },
+          { key: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "text" },
+          { key: "gastoMes", label: t5("Gasto del Mes", "Monthly Expense", "Dépense du Mois", "Monatsausgabe", "Spesa del Mese"), type: "currency" },
+          { key: "transacciones", label: t5("Transacciones", "Transactions", "Transactions", "Transaktionen", "Transazioni"), type: "text" },
+          { key: "porcentaje", label: t5("% del Total", "% of Total", "% du Total", "% des Gesamten", "% del Totale"), type: "text" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { nombre: "Viajes", descripcion: "Vuelos, hoteles, transporte", gastoMes: "€5.070", transacciones: "18", porcentaje: "34.2%" },
+          { nombre: "Software", descripcion: "Licencias y suscripciones", gastoMes: "€3.240", transacciones: "12", porcentaje: "21.9%" },
+          { nombre: "Marketing", descripcion: "Publicidad y campañas", gastoMes: "€2.800", transacciones: "8", porcentaje: "18.9%" },
+          { nombre: "Oficina", descripcion: "Material y suministros", gastoMes: "€2.120", transacciones: "15", porcentaje: "14.3%" },
+          { nombre: "Alimentación", descripcion: "Comidas de trabajo y catering", gastoMes: "€1.590", transacciones: "22", porcentaje: "10.7%" },
+        ],
+        searchPlaceholder: t5("Buscar categorías...", "Search categories...", "Rechercher des catégories...", "Kategorien suchen...", "Cerca categorie..."),
+      },
+      modal: {
+        title: t5("Nueva Categoría", "New Category", "Nouvelle Catégorie", "Neue Kategorie", "Nuova Categoria"),
+        fields: [
+          { name: "nombre", label: t5("Nombre", "Name", "Nom", "Name", "Nome"), type: "text", required: true, placeholder: t5("Nombre de la categoría", "Category name", "Nom de la catégorie", "Kategoriename", "Nome della categoria") },
+          { name: "descripcion", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "textarea", placeholder: t5("Descripción de la categoría", "Category description", "Description de la catégorie", "Kategoriebeschreibung", "Descrizione della categoria") },
+          { name: "limite", label: t5("Límite Mensual (€)", "Monthly Limit (€)", "Limite Mensuel (€)", "Monatliches Limit (€)", "Limite Mensile (€)"), type: "number", placeholder: t5("Sin límite", "No limit", "Sans limite", "Kein Limit", "Senza limite") },
+          { name: "requiereAprobacion", label: t5("Requiere Aprobación", "Requires Approval", "Nécessite Approbation", "Erfordert Genehmigung", "Richiede Approvazione"), type: "checkbox" },
+        ],
+      },
+    },
+    {
+      id: "budgets",
+      label: t5("Presupuestos", "Budgets", "Budgets", "Budgets", "Budget"),
+      icon: "target",
+      kpis: [
+        { label: t5("Presupuesto Total", "Total Budget", "Budget Total", "Gesamtbudget", "Budget Totale"), value: "€20.000", trend: "neutral" },
+        { label: t5("Consumido", "Consumed", "Consommé", "Verbraucht", "Consumato"), value: "€14.820", change: "74.1%", trend: "up" },
+        { label: t5("Disponible", "Available", "Disponible", "Verfügbar", "Disponibile"), value: "€5.180", change: "25.9%", trend: "down" },
+        { label: t5("Alertas Activas", "Active Alerts", "Alertes Actives", "Aktive Warnungen", "Avvisi Attivi"), value: "2", change: "+1", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "departamento", label: t5("Departamento", "Department", "Département", "Abteilung", "Dipartimento"), type: "text" },
+          { key: "presupuesto", label: t5("Presupuesto", "Budget", "Budget", "Budget", "Budget"), type: "currency" },
+          { key: "consumido", label: t5("Consumido", "Consumed", "Consommé", "Verbraucht", "Consumato"), type: "currency" },
+          { key: "disponible", label: t5("Disponible", "Available", "Disponible", "Verfügbar", "Disponibile"), type: "currency" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "En rango": "green", Alerta: "yellow", Excedido: "red" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { departamento: "Comercial", presupuesto: "€6.000", consumido: "€5.340", disponible: "€660", estado: "Alerta" },
+          { departamento: "Tecnología", presupuesto: "€5.000", consumido: "€3.800", disponible: "€1.200", estado: "En rango" },
+          { departamento: "Marketing", presupuesto: "€4.000", consumido: "€2.800", disponible: "€1.200", estado: "En rango" },
+          { departamento: "Operaciones", presupuesto: "€3.000", consumido: "€1.680", disponible: "€1.320", estado: "En rango" },
+          { departamento: "Dirección", presupuesto: "€2.000", consumido: "€2.200", disponible: "-€200", estado: "Excedido" },
+        ],
+        searchPlaceholder: t5("Buscar presupuestos...", "Search budgets...", "Rechercher des budgets...", "Budgets suchen...", "Cerca budget..."),
+      },
+      modal: {
+        title: t5("Nuevo Presupuesto", "New Budget", "Nouveau Budget", "Neues Budget", "Nuovo Budget"),
+        fields: [
+          { name: "departamento", label: t5("Departamento", "Department", "Département", "Abteilung", "Dipartimento"), type: "text", required: true, placeholder: t5("Nombre del departamento", "Department name", "Nom du département", "Abteilungsname", "Nome del dipartimento") },
+          { name: "monto", label: t5("Monto Mensual (€)", "Monthly Amount (€)", "Montant Mensuel (€)", "Monatlicher Betrag (€)", "Importo Mensile (€)"), type: "number", required: true, placeholder: "0.00" },
+          { name: "alertaPorcentaje", label: t5("Alerta al (%)", "Alert at (%)", "Alerte à (%)", "Warnung bei (%)", "Avviso al (%)"), type: "number", placeholder: "80" },
+          { name: "notas", label: t5("Notas", "Notes", "Notes", "Notizen", "Note"), type: "textarea", placeholder: t5("Observaciones...", "Observations...", "Observations...", "Bemerkungen...", "Osservazioni...") },
+        ],
+      },
+    },
+    {
+      id: "reports",
+      label: t5("Informes", "Reports", "Rapports", "Berichte", "Report"),
+      icon: "chart",
+      kpis: [
+        { label: t5("Informes Generados", "Generated Reports", "Rapports Générés", "Erstellte Berichte", "Report Generati"), value: "24", change: "+6", trend: "up" },
+        { label: t5("Último Informe", "Last Report", "Dernier Rapport", "Letzter Bericht", "Ultimo Report"), value: t5("Hoy", "Today", "Aujourd'hui", "Heute", "Oggi"), trend: "neutral" },
+        { label: t5("Tendencia Gastos", "Expense Trend", "Tendance Dépenses", "Ausgabentrend", "Tendenza Spese"), value: "+5.2%", trend: "up" },
+        { label: t5("Categoría en Alza", "Rising Category", "Catégorie en Hausse", "Steigende Kategorie", "Categoria in Crescita"), value: "Software", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "nombre", label: t5("Informe", "Report", "Rapport", "Bericht", "Report"), type: "text" },
+          { key: "tipo", label: t5("Tipo", "Type", "Type", "Typ", "Tipo"), type: "badge", badgeColors: { Mensual: "blue", Trimestral: "purple", Anual: "indigo", Especial: "orange" } },
+          { key: "periodo", label: t5("Período", "Period", "Période", "Zeitraum", "Periodo"), type: "text" },
+          { key: "generado", label: t5("Generado", "Generated", "Généré", "Erstellt", "Generato"), type: "date" },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { nombre: "Resumen de Gastos Marzo 2026", tipo: "Mensual", periodo: "Mar 2026", generado: "2026-03-07" },
+          { nombre: "Comparativa Q1 2026 vs Q1 2025", tipo: "Trimestral", periodo: "Q1 2026", generado: "2026-03-05" },
+          { nombre: "Gastos por Empleado Feb", tipo: "Mensual", periodo: "Feb 2026", generado: "2026-03-01" },
+          { nombre: "Análisis Categorías 2025", tipo: "Anual", periodo: "Año 2025", generado: "2026-01-15" },
+          { nombre: "Auditoría Viajes Q4 2025", tipo: "Especial", periodo: "Q4 2025", generado: "2026-01-10" },
+        ],
+        searchPlaceholder: t5("Buscar informes...", "Search reports...", "Rechercher des rapports...", "Berichte suchen...", "Cerca report..."),
+      },
+    },
+    {
+      id: "approvals",
+      label: t5("Aprobaciones", "Approvals", "Approbations", "Genehmigungen", "Approvazioni"),
+      icon: "shield",
+      kpis: [
+        { label: t5("Pendientes de Aprobar", "Pending Approval", "En Attente d'Approbation", "Genehmigung Ausstehend", "In Attesa di Approvazione"), value: "7", change: "+3", trend: "up" },
+        { label: t5("Aprobados Hoy", "Approved Today", "Approuvés Aujourd'hui", "Heute Genehmigt", "Approvati Oggi"), value: "4", trend: "neutral" },
+        { label: t5("Tiempo Medio Aprobación", "Average Approval Time", "Temps Moyen d'Approbation", "Durchschnittliche Genehmigungszeit", "Tempo Medio Approvazione"), value: t5("1.2 días", "1.2 days", "1,2 jours", "1,2 Tage", "1,2 giorni"), change: "-0.3", trend: "down" },
+        { label: t5("Tasa de Rechazo", "Rejection Rate", "Taux de Rejet", "Ablehnungsrate", "Tasso di Rifiuto"), value: "8.4%", change: "-1.2%", trend: "down" },
+      ],
+      table: {
+        columns: [
+          { key: "empleado", label: t5("Solicitante", "Requester", "Demandeur", "Antragsteller", "Richiedente"), type: "text" },
+          { key: "concepto", label: t5("Concepto", "Concept", "Description", "Beschreibung", "Descrizione"), type: "text" },
+          { key: "monto", label: t5("Monto", "Amount", "Montant", "Betrag", "Importo"), type: "currency" },
+          { key: "fecha", label: t5("Fecha Solicitud", "Request Date", "Date de Demande", "Antragsdatum", "Data Richiesta"), type: "date" },
+          { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Aprobado: "green", Pendiente: "yellow", Rechazado: "red" } },
+          { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+        ],
+        rows: [
+          { empleado: "Carlos Ruiz", concepto: "Hotel Barcelona 2 noches", monto: "€320", fecha: "2026-03-07", estado: "Pendiente" },
+          { empleado: "Miguel Fernández", concepto: "Stand feria tecnológica", monto: "€2.500", fecha: "2026-03-06", estado: "Pendiente" },
+          { empleado: "Laura Gómez", concepto: "Curso UX certificado", monto: "€890", fecha: "2026-03-06", estado: "Pendiente" },
+          { empleado: "Ana Torres", concepto: "Impresora multifunción", monto: "€890", fecha: "2026-03-05", estado: "Rechazado" },
+          { empleado: "Pedro Sánchez", concepto: "Vuelo Madrid-Lisboa", monto: "€178", fecha: "2026-03-05", estado: "Aprobado" },
+          { empleado: "Sofía López", concepto: "Material papelería", monto: "€67", fecha: "2026-03-04", estado: "Aprobado" },
+        ],
+        searchPlaceholder: t5("Buscar aprobaciones...", "Search approvals...", "Rechercher des approbations...", "Genehmigungen suchen...", "Cerca approvazioni..."),
+      },
+      tabs: [
+        { id: "todas", label: t5("Todas", "All", "Toutes", "Alle", "Tutte"), filterField: "estado", filterValue: "" },
+        { id: "pendientes", label: t5("Pendientes", "Pending", "En Attente", "Ausstehend", "In Sospeso"), filterField: "estado", filterValue: "Pendiente" },
+        { id: "aprobadas", label: t5("Aprobadas", "Approved", "Approuvées", "Genehmigt", "Approvate"), filterField: "estado", filterValue: "Aprobado" },
+        { id: "rechazadas", label: t5("Rechazadas", "Rejected", "Rejetées", "Abgelehnt", "Rifiutate"), filterField: "estado", filterValue: "Rechazado" },
+      ],
+    },
+  ],
+  superAdmin: {
+    modules: [
+      {
+        id: "tenants",
+        label: t5("Gestión de Tenants", "Tenant Management", "Gestion des Tenants", "Mandantenverwaltung", "Gestione Tenant"),
+        icon: "building",
+        kpis: [
+          { label: "Total Tenants", value: "67", change: "+8", trend: "up" },
+          { label: t5("Tenants Activos", "Active Tenants", "Tenants Actifs", "Aktive Mandanten", "Tenant Attivi"), value: "61", change: "+6", trend: "up" },
+          { label: t5("Ingresos MRR", "MRR Revenue", "Revenus MRR", "MRR-Einnahmen", "Entrate MRR"), value: "€8.940", change: "+22%", trend: "up" },
+          { label: "Churn Rate", value: "1.8%", change: "-0.3%", trend: "down" },
+        ],
+        table: {
+          columns: [
+            { key: "nombre", label: t5("Empresa", "Company", "Entreprise", "Unternehmen", "Azienda"), type: "text" },
+            { key: "plan", label: "Plan", type: "badge", badgeColors: { Free: "gray", Pro: "blue", Business: "purple" } },
+            { key: "empleados", label: t5("Empleados", "Employees", "Employés", "Mitarbeiter", "Dipendenti"), type: "text" },
+            { key: "gastoMes", label: t5("Gasto/Mes", "Expense/Month", "Dépense/Mois", "Ausgabe/Monat", "Spesa/Mese"), type: "currency" },
+            { key: "estado", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { Activo: "green", Suspendido: "red", Trial: "yellow" } },
+            { key: "acciones", label: t5("Acciones", "Actions", "Actions", "Aktionen", "Azioni"), type: "actions" },
+          ],
+          rows: [
+            { nombre: "Agencia Creativa Sol", plan: "Business", empleados: "45", gastoMes: "€23.400", estado: "Activo" },
+            { nombre: "Consultoría Deloitte", plan: "Business", empleados: "120", gastoMes: "€87.600", estado: "Activo" },
+            { nombre: "Startup FinTech Nova", plan: "Pro", empleados: "18", gastoMes: "€6.230", estado: "Activo" },
+            { nombre: "Restaurante Grupo Norte", plan: "Pro", empleados: "8", gastoMes: "€3.100", estado: "Trial" },
+            { nombre: "Bufete Abogados García", plan: "Free", empleados: "5", gastoMes: "€1.200", estado: "Suspendido" },
+          ],
+          searchPlaceholder: t5("Buscar tenants...", "Search tenants...", "Rechercher des tenants...", "Mandanten suchen...", "Cerca tenant..."),
+        },
+        modal: {
+          title: t5("Nuevo Tenant", "New Tenant", "Nouveau Tenant", "Neuer Mandant", "Nuovo Tenant"),
+          fields: [
+            { name: "nombre", label: t5("Nombre de Empresa", "Company Name", "Nom d'Entreprise", "Firmenname", "Nome Azienda"), type: "text", required: true, placeholder: t5("Razón social", "Legal name", "Raison sociale", "Firmenbezeichnung", "Ragione sociale") },
+            { name: "email", label: t5("Email Administrador", "Admin Email", "Email Administrateur", "Admin-E-Mail", "Email Amministratore"), type: "email", required: true, placeholder: "admin@empresa.com" },
+            { name: "plan", label: "Plan", type: "select", required: true, options: [{ value: "free", label: "Free" }, { value: "pro", label: "Pro" }, { value: "business", label: "Business" }] },
+            { name: "empleados", label: t5("Nº Empleados", "No. of Employees", "Nbre d'Employés", "Anzahl Mitarbeiter", "N. Dipendenti"), type: "number", placeholder: t5("Cantidad de empleados", "Number of employees", "Nombre d'employés", "Anzahl der Mitarbeiter", "Numero di dipendenti") },
+          ],
+        },
+      },
+    ],
+  },
+};

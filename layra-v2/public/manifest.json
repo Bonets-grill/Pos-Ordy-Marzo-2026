@@ -1,0 +1,17 @@
+{
+  "name": "Layra",
+  "short_name": "Layra",
+  "description": "Premium AI Platform for White-Label Systems",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060608",
+  "theme_color": "#00e5b8",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -24,6 +24,13 @@ import {
   type CodeBlock,
 } from "@/lib/codeExtractor";
 import { getTemplateConfig } from "@/lib/templates/configs";
+import type { I18nString } from "@/lib/templates/types";
+
+function resolveI18n(s: I18nString | undefined): string {
+  if (!s) return "";
+  if (typeof s === "string") return s;
+  return s.es || s.en || Object.values(s)[0] || "";
+}
 import { renderSystemHtml } from "@/lib/templates/engine";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -147,9 +154,10 @@ export function SystemBuilder() {
 
   useEffect(() => {
     if (!loaded || !systemId || !templateConfig) return;
-    // Only auto-render if no existing build
-    if (htmlContent && htmlContent.length > 500) return;
-    if (messages.length > 0) return;
+
+    // Template ALWAYS wins — clear any old AI builder cache
+    const lsKey = `layra_build_${systemId}`;
+    try { localStorage.removeItem(lsKey); } catch { /* ignore */ }
 
     const html = renderSystemHtml(templateConfig);
     setHtmlContent(html);
@@ -160,7 +168,7 @@ export function SystemBuilder() {
     // Add a system message so the chat shows the build is done
     setMessages([{
       role: "assistant",
-      content: `Sistema **${templateConfig.name}** generado con el motor de templates.\n\nTodos los ${templateConfig.modules.length} modulos estan listos con:\n- Navegacion funcional\n- Tablas con datos reales\n- Modales de creacion\n- Busqueda y filtros\n- Notificaciones toast\n\nPuedes personalizarlo usando el chat.`,
+      content: `Sistema **${resolveI18n(templateConfig.name)}** generado con el motor de templates.\n\nTodos los ${templateConfig.modules.length} modulos estan listos con:\n- Navegacion funcional\n- Tablas con datos reales\n- Modales de creacion\n- Busqueda y filtros\n- Notificaciones toast\n\nPuedes personalizarlo usando el chat.`,
     }]);
   }, [loaded, systemId, templateConfig]);
 

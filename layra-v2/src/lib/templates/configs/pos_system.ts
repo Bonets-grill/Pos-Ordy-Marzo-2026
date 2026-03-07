@@ -1,0 +1,281 @@
+import { t5 } from "../types";
+import type { SystemConfig } from "../types";
+
+export const posSystemConfig: SystemConfig = {
+  name: "QuickPOS",
+  subtitle: t5("Punto de Venta", "Point of Sale", "Point de Vente", "Kassensystem", "Punto Vendita"),
+  brandColor: "#e11d48",
+  icon: "🏪",
+  modules: [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: "dashboard",
+      kpis: [
+        { label: t5("Ventas Hoy", "Sales Today", "Ventes Aujourd'hui", "Verkäufe Heute", "Vendite Oggi"), value: "$4,280", change: "+12%", trend: "up" },
+        { label: t5("Transacciones", "Transactions", "Transactions", "Transaktionen", "Transazioni"), value: "87", change: "+15", trend: "up" },
+        { label: t5("Ticket Promedio", "Average Ticket", "Ticket Moyen", "Durchschnittlicher Bon", "Scontrino Medio"), value: "$49.20", change: "+$3.10", trend: "up" },
+        { label: t5("Productos Vendidos", "Products Sold", "Produits Vendus", "Verkaufte Produkte", "Prodotti Venduti"), value: "234", change: "+28", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "activity", label: t5("Actividad Reciente", "Recent Activity", "Activité Récente", "Letzte Aktivität", "Attività Recente") },
+          { key: "amount", label: t5("Monto", "Amount", "Montant", "Betrag", "Importo"), type: "currency" },
+          { key: "payment", label: t5("Pago", "Payment", "Paiement", "Zahlung", "Pagamento"), type: "badge", badgeColors: { "Efectivo": "green", "Tarjeta": "blue", "QR": "purple", "Mixto": "orange" } },
+          { key: "cashier", label: t5("Cajero", "Cashier", "Caissier", "Kassierer", "Cassiere") },
+          { key: "time", label: t5("Hora", "Time", "Heure", "Uhrzeit", "Ora") },
+        ],
+        rows: [
+          { activity: "Venta #4521 — 3 artículos", amount: "$67.50", payment: "Tarjeta", cashier: "Patricia Mora", time: "14:32" },
+          { activity: "Venta #4520 — 1 artículo", amount: "$12.90", payment: "Efectivo", cashier: "Raúl Domínguez", time: "14:28" },
+          { activity: "Devolución #4518 — Camisa talla M", amount: "-$29.90", payment: "Tarjeta", cashier: "Patricia Mora", time: "14:15" },
+          { activity: "Venta #4519 — 5 artículos", amount: "$124.80", payment: "QR", cashier: "Raúl Domínguez", time: "14:05" },
+          { activity: "Venta #4517 — 2 artículos", amount: "$45.00", payment: "Mixto", cashier: "Lucía Campos", time: "13:52" },
+        ],
+        searchPlaceholder: t5("Buscar transacciones...", "Search transactions...", "Rechercher des transactions...", "Transaktionen suchen...", "Cerca transazioni..."),
+      },
+    },
+    {
+      id: "sales",
+      label: t5("Ventas", "Sales", "Ventes", "Verkäufe", "Vendite"),
+      icon: "shopping",
+      kpis: [
+        { label: t5("Ventas (Mes)", "Sales (Month)", "Ventes (Mois)", "Verkäufe (Monat)", "Vendite (Mese)"), value: "$98,450", change: "+18%", trend: "up" },
+        { label: t5("Transacciones (Mes)", "Transactions (Month)", "Transactions (Mois)", "Transaktionen (Monat)", "Transazioni (Mese)"), value: "2,134", change: "+12%", trend: "up" },
+        { label: t5("Devoluciones", "Returns", "Retours", "Retouren", "Resi"), value: "$1,240", change: "-5%", trend: "up" },
+        { label: t5("Margen Bruto", "Gross Margin", "Marge Brute", "Bruttomarge", "Margine Lordo"), value: "42.3%", change: "+1.8%", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "ticket", label: "Ticket" },
+          { key: "items", label: t5("Artículos", "Items", "Articles", "Artikel", "Articoli") },
+          { key: "total", label: "Total", type: "currency" },
+          { key: "payment", label: t5("Pago", "Payment", "Paiement", "Zahlung", "Pagamento"), type: "badge", badgeColors: { "Efectivo": "green", "Tarjeta": "blue", "QR": "purple", "Mixto": "orange" } },
+          { key: "cashier", label: t5("Cajero", "Cashier", "Caissier", "Kassierer", "Cassiere") },
+          { key: "date", label: t5("Fecha/Hora", "Date/Time", "Date/Heure", "Datum/Uhrzeit", "Data/Ora"), type: "date" },
+        ],
+        rows: [
+          { ticket: "#4521", items: "3", total: "$67.50", payment: "Tarjeta", cashier: "Patricia Mora", date: "Mar 7, 14:32" },
+          { ticket: "#4520", items: "1", total: "$12.90", payment: "Efectivo", cashier: "Raúl Domínguez", date: "Mar 7, 14:28" },
+          { ticket: "#4519", items: "5", total: "$124.80", payment: "QR", cashier: "Raúl Domínguez", date: "Mar 7, 14:05" },
+          { ticket: "#4517", items: "2", total: "$45.00", payment: "Mixto", cashier: "Lucía Campos", date: "Mar 7, 13:52" },
+          { ticket: "#4516", items: "4", total: "$89.60", payment: "Tarjeta", cashier: "Patricia Mora", date: "Mar 7, 13:40" },
+          { ticket: "#4515", items: "1", total: "$34.90", payment: "Efectivo", cashier: "Lucía Campos", date: "Mar 7, 13:25" },
+        ],
+        searchPlaceholder: t5("Buscar ventas...", "Search sales...", "Rechercher des ventes...", "Verkäufe suchen...", "Cerca vendite..."),
+      },
+      tabs: [
+        { id: "all", label: t5("Todas", "All", "Toutes", "Alle", "Tutte"), filterField: "payment", filterValue: "all" },
+        { id: "cash", label: t5("Efectivo", "Cash", "Espèces", "Bargeld", "Contanti"), filterField: "payment", filterValue: "Efectivo" },
+        { id: "card", label: t5("Tarjeta", "Card", "Carte", "Karte", "Carta"), filterField: "payment", filterValue: "Tarjeta" },
+        { id: "qr", label: "QR", filterField: "payment", filterValue: "QR" },
+        { id: "mixed", label: t5("Mixto", "Mixed", "Mixte", "Gemischt", "Misto"), filterField: "payment", filterValue: "Mixto" },
+      ],
+    },
+    {
+      id: "products",
+      label: t5("Productos", "Products", "Produits", "Produkte", "Prodotti"),
+      icon: "package",
+      kpis: [
+        { label: t5("Total Productos", "Total Products", "Total Produits", "Produkte Gesamt", "Totale Prodotti"), value: "456", trend: "neutral" },
+        { label: t5("Activos", "Active", "Actifs", "Aktiv", "Attivi"), value: "412", trend: "neutral" },
+        { label: t5("Sin Stock", "Out of Stock", "Rupture de Stock", "Nicht auf Lager", "Esaurito"), value: "8", change: "+2", trend: "down" },
+        { label: t5("Precio Promedio", "Average Price", "Prix Moyen", "Durchschnittspreis", "Prezzo Medio"), value: "$32.50", trend: "neutral" },
+      ],
+      table: {
+        columns: [
+          { key: "name", label: t5("Producto", "Product", "Produit", "Produkt", "Prodotto"), type: "avatar" },
+          { key: "sku", label: "SKU" },
+          { key: "category", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "badge", badgeColors: { "Ropa": "blue", "Calzado": "purple", "Accesorios": "orange", "Electrónica": "green", "Hogar": "indigo" } },
+          { key: "price", label: t5("Precio", "Price", "Prix", "Preis", "Prezzo"), type: "currency" },
+          { key: "stock", label: "Stock" },
+          { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Activo": "green", "Sin Stock": "red", "Descontinuado": "gray", "Bajo Stock": "yellow" } },
+        ],
+        rows: [
+          { name: "Camiseta Premium Algodón", sku: "CAM-001", category: "Ropa", price: "$29.90", stock: "145", status: "Activo" },
+          { name: "Zapatillas Running Pro", sku: "ZAP-015", category: "Calzado", price: "$89.90", stock: "32", status: "Activo" },
+          { name: "Bolso Cuero Artesanal", sku: "ACC-042", category: "Accesorios", price: "$65.00", stock: "5", status: "Bajo Stock" },
+          { name: "Auriculares Bluetooth", sku: "ELE-008", category: "Electrónica", price: "$45.00", stock: "0", status: "Sin Stock" },
+          { name: "Vela Aromática Lavanda", sku: "HOG-023", category: "Hogar", price: "$18.50", stock: "78", status: "Activo" },
+          { name: "Pantalón Chino Slim", sku: "CAM-034", category: "Ropa", price: "$49.90", stock: "67", status: "Activo" },
+        ],
+        searchPlaceholder: t5("Buscar productos...", "Search products...", "Rechercher des produits...", "Produkte suchen...", "Cerca prodotti..."),
+      },
+      modal: {
+        title: t5("Nuevo Producto", "New Product", "Nouveau Produit", "Neues Produkt", "Nuovo Prodotto"),
+        fields: [
+          { name: "name", label: t5("Nombre del Producto", "Product Name", "Nom du Produit", "Produktname", "Nome del Prodotto"), type: "text", required: true, placeholder: t5("Ej: Camiseta Básica", "E.g.: Basic T-Shirt", "Ex : T-Shirt Basique", "Z.B.: Basis T-Shirt", "Es.: Maglietta Base") },
+          { name: "sku", label: "SKU", type: "text", required: true, placeholder: t5("Ej: CAM-001", "E.g.: CAM-001", "Ex : CAM-001", "Z.B.: CAM-001", "Es.: CAM-001") },
+          { name: "category", label: t5("Categoría", "Category", "Catégorie", "Kategorie", "Categoria"), type: "select", required: true, options: [
+            { value: "Ropa", label: t5("Ropa", "Clothing", "Vêtements", "Kleidung", "Abbigliamento") },
+            { value: "Calzado", label: t5("Calzado", "Footwear", "Chaussures", "Schuhe", "Calzature") },
+            { value: "Accesorios", label: t5("Accesorios", "Accessories", "Accessoires", "Zubehör", "Accessori") },
+            { value: "Electrónica", label: t5("Electrónica", "Electronics", "Électronique", "Elektronik", "Elettronica") },
+            { value: "Hogar", label: t5("Hogar", "Home", "Maison", "Haushalt", "Casa") },
+          ]},
+          { name: "price", label: t5("Precio ($)", "Price ($)", "Prix ($)", "Preis ($)", "Prezzo ($)"), type: "number", required: true, placeholder: "0.00" },
+          { name: "cost", label: t5("Coste ($)", "Cost ($)", "Coût ($)", "Kosten ($)", "Costo ($)"), type: "number", placeholder: "0.00" },
+          { name: "stock", label: t5("Stock Inicial", "Initial Stock", "Stock Initial", "Anfangsbestand", "Stock Iniziale"), type: "number", required: true, placeholder: "0" },
+          { name: "description", label: t5("Descripción", "Description", "Description", "Beschreibung", "Descrizione"), type: "textarea", placeholder: t5("Descripción del producto...", "Product description...", "Description du produit...", "Produktbeschreibung...", "Descrizione del prodotto...") },
+        ],
+      },
+    },
+    {
+      id: "inventory",
+      label: t5("Inventario", "Inventory", "Inventaire", "Inventar", "Inventario"),
+      icon: "layers",
+      kpis: [
+        { label: t5("Valor Inventario", "Inventory Value", "Valeur du Stock", "Bestandswert", "Valore Inventario"), value: "$234,500", trend: "neutral" },
+        { label: t5("Artículos Totales", "Total Items", "Articles Totaux", "Artikel Gesamt", "Articoli Totali"), value: "8,945", trend: "neutral" },
+        { label: t5("Alertas Stock Bajo", "Low Stock Alerts", "Alertes Stock Faible", "Niedrigbestand-Warnungen", "Avvisi Scorte Basse"), value: "12", change: "+3", trend: "down" },
+        { label: t5("Rotación (Mes)", "Turnover (Month)", "Rotation (Mois)", "Umschlag (Monat)", "Rotazione (Mese)"), value: "4.2x", change: "+0.3", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "product", label: t5("Producto", "Product", "Produit", "Produkt", "Prodotto") },
+          { key: "sku", label: "SKU" },
+          { key: "currentStock", label: t5("Stock Actual", "Current Stock", "Stock Actuel", "Aktueller Bestand", "Stock Attuale") },
+          { key: "minStock", label: t5("Stock Mínimo", "Minimum Stock", "Stock Minimum", "Mindestbestand", "Stock Minimo") },
+          { key: "lastRestock", label: t5("Último Restock", "Last Restock", "Dernier Réapprovisionnement", "Letzte Auffüllung", "Ultimo Rifornimento"), type: "date" },
+          { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "OK": "green", "Bajo": "yellow", "Crítico": "red", "Agotado": "gray" } },
+        ],
+        rows: [
+          { product: "Camiseta Premium Algodón", sku: "CAM-001", currentStock: "145", minStock: "20", lastRestock: "Feb 28, 2026", status: "OK" },
+          { product: "Zapatillas Running Pro", sku: "ZAP-015", currentStock: "32", minStock: "15", lastRestock: "Feb 20, 2026", status: "OK" },
+          { product: "Bolso Cuero Artesanal", sku: "ACC-042", currentStock: "5", minStock: "10", lastRestock: "Ene 15, 2026", status: "Crítico" },
+          { product: "Auriculares Bluetooth", sku: "ELE-008", currentStock: "0", minStock: "25", lastRestock: "Dic 10, 2025", status: "Agotado" },
+          { product: "Vela Aromática Lavanda", sku: "HOG-023", currentStock: "78", minStock: "30", lastRestock: "Mar 1, 2026", status: "OK" },
+          { product: "Gafas de Sol Polarizadas", sku: "ACC-018", currentStock: "12", minStock: "15", lastRestock: "Feb 5, 2026", status: "Bajo" },
+        ],
+        searchPlaceholder: t5("Buscar inventario...", "Search inventory...", "Rechercher dans l'inventaire...", "Inventar durchsuchen...", "Cerca inventario..."),
+      },
+      modal: {
+        title: t5("Registrar Movimiento", "Register Movement", "Enregistrer un Mouvement", "Bewegung Erfassen", "Registra Movimento"),
+        fields: [
+          { name: "product", label: t5("Producto", "Product", "Produit", "Produkt", "Prodotto"), type: "text", required: true, placeholder: t5("Nombre o SKU del producto", "Product name or SKU", "Nom ou SKU du produit", "Produktname oder SKU", "Nome o SKU del prodotto") },
+          { name: "type", label: t5("Tipo Movimiento", "Movement Type", "Type de Mouvement", "Bewegungsart", "Tipo Movimento"), type: "select", required: true, options: [
+            { value: "entrada", label: t5("Entrada (Restock)", "Inbound (Restock)", "Entrée (Réapprovisionnement)", "Eingang (Auffüllung)", "Entrata (Rifornimento)") },
+            { value: "salida", label: t5("Salida (Ajuste)", "Outbound (Adjustment)", "Sortie (Ajustement)", "Ausgang (Anpassung)", "Uscita (Adeguamento)") },
+            { value: "devolucion", label: t5("Devolución", "Return", "Retour", "Retoure", "Reso") },
+            { value: "merma", label: t5("Merma", "Shrinkage", "Démarque", "Schwund", "Calo") },
+          ]},
+          { name: "quantity", label: t5("Cantidad", "Quantity", "Quantité", "Menge", "Quantità"), type: "number", required: true, placeholder: "0" },
+          { name: "date", label: t5("Fecha", "Date", "Date", "Datum", "Data"), type: "date", required: true },
+          { name: "notes", label: t5("Observaciones", "Observations", "Observations", "Bemerkungen", "Osservazioni"), type: "textarea", placeholder: t5("Motivo del movimiento...", "Reason for movement...", "Motif du mouvement...", "Grund der Bewegung...", "Motivo del movimento...") },
+        ],
+      },
+    },
+    {
+      id: "customers",
+      label: t5("Clientes", "Customers", "Clients", "Kunden", "Clienti"),
+      icon: "users",
+      kpis: [
+        { label: t5("Total Clientes", "Total Customers", "Total Clients", "Kunden Gesamt", "Totale Clienti"), value: "1,234", change: "+45", trend: "up" },
+        { label: t5("Activos (30d)", "Active (30d)", "Actifs (30j)", "Aktiv (30T)", "Attivi (30g)"), value: "456", trend: "neutral" },
+        { label: t5("Gasto Promedio", "Average Spending", "Dépense Moyenne", "Durchschnittliche Ausgaben", "Spesa Media"), value: "$78.50", change: "+$4.20", trend: "up" },
+        { label: t5("Nuevos (Mes)", "New (Month)", "Nouveaux (Mois)", "Neu (Monat)", "Nuovi (Mese)"), value: "67", change: "+12", trend: "up" },
+      ],
+      table: {
+        columns: [
+          { key: "name", label: t5("Cliente", "Customer", "Client", "Kunde", "Cliente"), type: "avatar" },
+          { key: "email", label: "Email" },
+          { key: "phone", label: t5("Teléfono", "Phone", "Téléphone", "Telefon", "Telefono") },
+          { key: "totalSpent", label: t5("Total Gastado", "Total Spent", "Total Dépensé", "Gesamt Ausgegeben", "Totale Speso"), type: "currency" },
+          { key: "visits", label: t5("Visitas", "Visits", "Visites", "Besuche", "Visite") },
+          { key: "tier", label: t5("Nivel", "Tier", "Niveau", "Stufe", "Livello"), type: "badge", badgeColors: { "VIP": "purple", "Frecuente": "blue", "Regular": "green", "Nuevo": "gray" } },
+        ],
+        rows: [
+          { name: "Carmen Ruiz", email: "carmen.r@gmail.com", phone: "+34 612-345-678", totalSpent: "$2,340", visits: "45", tier: "VIP" },
+          { name: "Javier Morales", email: "jmorales@hotmail.com", phone: "+34 655-123-456", totalSpent: "$1,120", visits: "28", tier: "Frecuente" },
+          { name: "Beatriz Soto", email: "bea.soto@gmail.com", phone: "+34 677-890-123", totalSpent: "$680", visits: "15", tier: "Frecuente" },
+          { name: "Manuel Torres", email: "mtorres@outlook.com", phone: "+34 699-456-789", totalSpent: "$340", visits: "8", tier: "Regular" },
+          { name: "Silvia Marín", email: "silvia.m@gmail.com", phone: "+34 622-111-222", totalSpent: "$89", visits: "2", tier: "Nuevo" },
+          { name: "Alberto Díaz", email: "alberto.d@gmail.com", phone: "+34 633-333-444", totalSpent: "$1,890", visits: "38", tier: "VIP" },
+        ],
+        searchPlaceholder: t5("Buscar clientes...", "Search customers...", "Rechercher des clients...", "Kunden suchen...", "Cerca clienti..."),
+      },
+      modal: {
+        title: t5("Nuevo Cliente", "New Customer", "Nouveau Client", "Neuer Kunde", "Nuovo Cliente"),
+        fields: [
+          { name: "name", label: t5("Nombre Completo", "Full Name", "Nom Complet", "Vollständiger Name", "Nome Completo"), type: "text", required: true, placeholder: t5("Ej: María García", "E.g.: María García", "Ex : María García", "Z.B.: María García", "Es.: María García") },
+          { name: "email", label: "Email", type: "email", placeholder: "email@ejemplo.com" },
+          { name: "phone", label: t5("Teléfono", "Phone", "Téléphone", "Telefon", "Telefono"), type: "tel", required: true, placeholder: "+34 600-000-000" },
+          { name: "birthdate", label: t5("Fecha de Nacimiento", "Date of Birth", "Date de Naissance", "Geburtsdatum", "Data di Nascita"), type: "date" },
+          { name: "notes", label: t5("Notas", "Notes", "Notes", "Notizen", "Note"), type: "textarea", placeholder: t5("Preferencias o comentarios...", "Preferences or comments...", "Préférences ou commentaires...", "Vorlieben oder Anmerkungen...", "Preferenze o commenti...") },
+        ],
+      },
+    },
+    {
+      id: "reports",
+      label: t5("Informes", "Reports", "Rapports", "Berichte", "Report"),
+      icon: "chart",
+      kpis: [
+        { label: t5("Revenue (Trimestre)", "Revenue (Quarter)", "Revenu (Trimestre)", "Umsatz (Quartal)", "Entrate (Trimestre)"), value: "$287,400", change: "+22%", trend: "up" },
+        { label: t5("Margen Neto", "Net Margin", "Marge Nette", "Nettomarge", "Margine Netto"), value: "38.5%", change: "+2.1%", trend: "up" },
+        { label: t5("Producto Estrella", "Star Product", "Produit Phare", "Starprodukt", "Prodotto di Punta"), value: "Zapatillas Pro", trend: "neutral" },
+        { label: t5("Hora Pico", "Peak Hour", "Heure de Pointe", "Stoßzeit", "Ora di Punta"), value: "12:00-14:00", trend: "neutral" },
+      ],
+      table: {
+        columns: [
+          { key: "period", label: t5("Periodo", "Period", "Période", "Zeitraum", "Periodo") },
+          { key: "sales", label: t5("Ventas", "Sales", "Ventes", "Verkäufe", "Vendite"), type: "currency" },
+          { key: "transactions", label: t5("Transacciones", "Transactions", "Transactions", "Transaktionen", "Transazioni") },
+          { key: "avgTicket", label: t5("Ticket Medio", "Average Ticket", "Ticket Moyen", "Durchschnittlicher Bon", "Scontrino Medio"), type: "currency" },
+          { key: "returns", label: t5("Devoluciones", "Returns", "Retours", "Retouren", "Resi"), type: "currency" },
+          { key: "trend", label: t5("Tendencia", "Trend", "Tendance", "Trend", "Tendenza"), type: "badge", badgeColors: { "Crecimiento": "green", "Estable": "blue", "Descenso": "red" } },
+        ],
+        rows: [
+          { period: "Marzo 2026 (parcial)", sales: "$98,450", transactions: "2,134", avgTicket: "$46.10", returns: "$1,240", trend: "Crecimiento" },
+          { period: "Febrero 2026", sales: "$91,200", transactions: "1,980", avgTicket: "$46.06", returns: "$980", trend: "Crecimiento" },
+          { period: "Enero 2026", sales: "$97,750", transactions: "2,250", avgTicket: "$43.44", returns: "$1,450", trend: "Estable" },
+          { period: "Diciembre 2025", sales: "$142,800", transactions: "3,120", avgTicket: "$45.77", returns: "$2,100", trend: "Crecimiento" },
+          { period: "Noviembre 2025", sales: "$85,600", transactions: "1,890", avgTicket: "$45.29", returns: "$890", trend: "Descenso" },
+        ],
+        searchPlaceholder: t5("Buscar periodo...", "Search period...", "Rechercher une période...", "Zeitraum suchen...", "Cerca periodo..."),
+      },
+    },
+  ],
+  superAdmin: {
+    modules: [
+      {
+        id: "tenants",
+        label: "Tenants",
+        icon: "building",
+        kpis: [
+          { label: t5("Total Tiendas", "Total Stores", "Total Boutiques", "Shops Gesamt", "Totale Negozi"), value: "178", change: "+14", trend: "up" },
+          { label: "MRR", value: "$8,900", change: "+16%", trend: "up" },
+          { label: t5("Usuarios Activos", "Active Users", "Utilisateurs Actifs", "Aktive Benutzer", "Utenti Attivi"), value: "534", trend: "neutral" },
+          { label: "Churn", value: "1.9%", change: "-0.3%", trend: "up" },
+        ],
+        table: {
+          columns: [
+            { key: "company", label: t5("Tienda", "Store", "Boutique", "Shop", "Negozio"), type: "avatar" },
+            { key: "plan", label: "Plan", type: "badge", badgeColors: { "Pro": "purple", "Basic": "blue", "Enterprise": "green" } },
+            { key: "users", label: t5("Usuarios", "Users", "Utilisateurs", "Benutzer", "Utenti") },
+            { key: "mrr", label: "MRR", type: "currency" },
+            { key: "since", label: t5("Desde", "Since", "Depuis", "Seit", "Dal"), type: "date" },
+            { key: "status", label: t5("Estado", "Status", "Statut", "Status", "Stato"), type: "badge", badgeColors: { "Activa": "green", "Trial": "yellow", "Suspendida": "red" } },
+          ],
+          rows: [
+            { company: "Moda Express", plan: "Enterprise", users: "12", mrr: "$99/mo", since: "Abr 2024", status: "Activa" },
+            { company: "Tienda Natural", plan: "Pro", users: "4", mrr: "$49/mo", since: "Ago 2024", status: "Activa" },
+            { company: "ElectroShop", plan: "Pro", users: "6", mrr: "$49/mo", since: "Nov 2025", status: "Activa" },
+            { company: "Panadería Sol", plan: "Basic", users: "2", mrr: "$19/mo", since: "Feb 2026", status: "Trial" },
+            { company: "MultiTienda SA", plan: "Enterprise", users: "35", mrr: "$199/mo", since: "Mar 2023", status: "Activa" },
+          ],
+          searchPlaceholder: t5("Buscar tiendas...", "Search stores...", "Rechercher des boutiques...", "Shops suchen...", "Cerca negozi..."),
+        },
+        modal: {
+          title: t5("Nueva Tienda", "New Store", "Nouvelle Boutique", "Neuer Shop", "Nuovo Negozio"),
+          fields: [
+            { name: "company", label: t5("Nombre", "Name", "Nom", "Name", "Nome"), type: "text", required: true },
+            { name: "email", label: "Email Admin", type: "email", required: true },
+            { name: "plan", label: "Plan", type: "select", required: true, options: [
+              { value: "Basic", label: "Basic — $19/mo" }, { value: "Pro", label: "Pro — $49/mo" }, { value: "Enterprise", label: "Enterprise — $99/mo" },
+            ]},
+          ],
+        },
+      },
+    ],
+  },
+};

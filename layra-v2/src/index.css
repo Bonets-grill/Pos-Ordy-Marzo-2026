@@ -1,0 +1,281 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 99%;
+    --card-foreground: 0 0% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 0 0% 12%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 0% 25%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 20%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 95%;
+    --accent-foreground: 0 0% 15%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 91%;
+    --input: 0 0% 91%;
+    --ring: 0 0% 12%;
+    --radius: 0.625rem;
+    --surface: 0 0% 97%;
+    --surface-hover: 0 0% 94%;
+    --chat-bg: 0 0% 99%;
+    --code-bg: 0 0% 4%;
+    --success: 152 60% 45%;
+    --warning: 38 92% 50%;
+    --editor-border: 0 0% 91%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 35%;
+    --sidebar-primary: 0 0% 12%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 0 0% 15%;
+    --sidebar-border: 0 0% 91%;
+    --sidebar-ring: 0 0% 12%;
+
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
+
+  .dark {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 97%;
+    --primary-foreground: 0 0% 5%;
+    --primary-glow: 0 0% 75%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 85%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 13%;
+    --accent-foreground: 0 0% 85%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 0 0% 85%;
+    --surface: 0 0% 8%;
+    --surface-hover: 0 0% 12%;
+    --chat-bg: 0 0% 6%;
+    --code-bg: 0 0% 3%;
+    --success: 152 60% 45%;
+    --warning: 38 92% 50%;
+    --editor-border: 0 0% 16%;
+
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 65%;
+    --sidebar-primary: 0 0% 97%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 13%;
+    --sidebar-accent-foreground: 0 0% 85%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-ring: 0 0% 85%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    transition: background-color 0.2s ease;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    /* Native touch behavior */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
+    /* Safe areas */
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
+
+  /* Better focus styles for touch devices */
+  :focus-visible {
+    outline: 2px solid #00e5b8;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Remove default focus ring on touch */
+  @media (pointer: coarse) {
+    :focus:not(:focus-visible) {
+      outline: none;
+    }
+  }
+
+  /* Native-feel inputs on iOS */
+  input, textarea, select {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Disable text selection on UI elements */
+  button, [role="button"], nav, header {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: hsl(var(--primary));
+  }
+  .gradient-text {
+    color: hsl(var(--foreground));
+  }
+  .glass {
+    backdrop-filter: blur(16px) saturate(1.2);
+    background: hsl(var(--background) / 0.85);
+  }
+  .glow-sm {
+    box-shadow: 0 0 12px hsl(var(--primary) / 0.08);
+  }
+
+  /* Touch-friendly minimum sizes */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Safe area utilities */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Native scrolling */
+  .native-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 5px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.35);
+  }
+  .scrollbar-thin::-webkit-scrollbar-horizontal {
+    height: 4px;
+  }
+
+  /* Hide scrollbar on mobile */
+  @media (pointer: coarse) {
+    .scrollbar-thin::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-thin {
+      scrollbar-width: none;
+    }
+  }
+}
+
+/* Haptic-feel active states */
+@media (pointer: coarse) {
+  button:active, [role="button"]:active, a:active {
+    transform: scale(0.97);
+    transition: transform 0.08s ease;
+  }
+}
+
+/* ─── Native Mobile Enhancements ─── */
+
+/* Larger touch targets on mobile */
+@media (pointer: coarse) {
+  .mobile-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Smooth tab transitions */
+.tab-transition {
+  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* iOS-style bottom bar blur */
+.bottom-bar-blur {
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  background: hsl(var(--background) / 0.82);
+}
+
+/* Native-feel sheet overlay */
+.sheet-backdrop {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Smooth keyboard-aware resize */
+@supports (height: 100dvh) {
+  .keyboard-aware {
+    transition: height 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+}
+
+/* Mobile chat message sizes */
+@media (max-width: 768px) {
+  .chat-message-text {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+}
+
+/* Native-style input focus */
+@media (pointer: coarse) {
+  .native-input:focus {
+    border-color: #00e5b8;
+    box-shadow: 0 0 0 3px rgba(0, 229, 184, 0.12);
+  }
+}
+
+/* Prevent layout shift when virtual keyboard opens */
+@media (pointer: coarse) {
+  .input-container {
+    position: sticky;
+    bottom: 0;
+  }
+}
