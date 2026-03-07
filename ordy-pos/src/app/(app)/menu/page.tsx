@@ -930,12 +930,22 @@ export default function MenuPage() {
     const selected = aiModGroups.filter((g) => g.selected);
     if (selected.length === 0) return;
     setAiModImporting(true);
+    setAiModError(null);
     try {
       const supabase = createClient();
+
+      // Load all product IDs for validation
+      const { data: allProds } = await supabase
+        .from("menu_items")
+        .select("id")
+        .eq("tenant_id", tenantId);
+      const allProductIds = new Set((allProds || []).map((p: { id: string }) => p.id));
+
       let sortOrder = modifierGroups.length;
+      let imported = 0;
       for (const group of selected) {
         // Create modifier group
-        const { data: gData } = await supabase
+        const { data: gData, error: gErr } = await supabase
           .from("menu_modifier_groups")
           .insert({
             tenant_id: tenantId,
@@ -948,8 +958,13 @@ export default function MenuPage() {
           })
           .select("id")
           .single();
+        if (gErr) {
+          console.error("Failed to insert modifier group:", gErr.message, group.name);
+          continue;
+        }
         if (!gData) continue;
         const groupId = gData.id;
+        imported++;
 
         // Create options
         if (group.options.length > 0) {
@@ -960,23 +975,25 @@ export default function MenuPage() {
             price_delta: opt.price_delta,
             sort_order: idx,
           }));
-          await supabase.from("menu_modifier_options").insert(optRows);
+          const { error: optErr } = await supabase.from("menu_modifier_options").insert(optRows);
+          if (optErr) console.error("Failed to insert options:", optErr.message);
         }
 
         // Link to products
         if (group.product_ids && group.product_ids.length > 0) {
-          // Only link to products that actually exist in our DB
-          const validIds = group.product_ids.filter((pid) =>
-            products.some((p) => p.id === pid)
-          );
+          const validIds = group.product_ids.filter((pid) => allProductIds.has(pid));
           if (validIds.length > 0) {
             const junctionRows = validIds.map((pid) => ({
               menu_item_id: pid,
               modifier_group_id: groupId,
             }));
-            await supabase.from("menu_item_modifier_groups").insert(junctionRows);
+            const { error: jErr } = await supabase.from("menu_item_modifier_groups").insert(junctionRows);
+            if (jErr) console.error("Failed to link products:", jErr.message);
           }
         }
+      }
+      if (imported === 0) {
+        throw new Error("No se pudieron guardar los modificadores. Verifica permisos de la base de datos.");
       }
       setAiModModal(false);
       await Promise.all([loadModifierGroups(), loadModifierOptions()]);
