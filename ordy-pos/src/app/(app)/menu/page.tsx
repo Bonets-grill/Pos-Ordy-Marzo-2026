@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useI18n } from "@/lib/i18n-provider";
-import { Search, Plus, Minus, GripVertical, Image as ImageIcon, CheckSquare, Square, ToggleLeft, ToggleRight } from "lucide-react";
+import { Search, Plus, Minus, GripVertical, Image as ImageIcon, CheckSquare, Square, ToggleLeft, ToggleRight, Sparkles, Loader2, Wand2, Globe, Check, X as XIcon, Download } from "lucide-react";
 
 /* ── Types ────────────────────────────────────────────── */
 
@@ -82,6 +82,19 @@ const COLOR_PICKS = [
   "#ef4444", "#f97316", "#f59e0b", "#84cc16", "#22c55e",
   "#14b8a6", "#06b6d4", "#3b82f6", "#6366f1", "#a855f7",
   "#ec4899", "#f43f5e", "#78716c", "#64748b", "#ffffff",
+];
+
+const AI_BACKGROUNDS = [
+  { key: "dark_wood", emoji: "🪵", label: "menu.ai_bg_dark_wood" },
+  { key: "marble", emoji: "⬜", label: "menu.ai_bg_marble" },
+  { key: "slate", emoji: "⬛", label: "menu.ai_bg_slate" },
+  { key: "rustic", emoji: "🌾", label: "menu.ai_bg_rustic" },
+  { key: "modern", emoji: "🍽️", label: "menu.ai_bg_modern" },
+  { key: "garden", emoji: "🌿", label: "menu.ai_bg_garden" },
+  { key: "italian", emoji: "🇮🇹", label: "menu.ai_bg_italian" },
+  { key: "asian", emoji: "🥢", label: "menu.ai_bg_asian" },
+  { key: "colorful", emoji: "🎨", label: "menu.ai_bg_colorful" },
+  { key: "transparent", emoji: "📸", label: "menu.ai_bg_transparent" },
 ];
 
 const blankCategory: Omit<Category, "id" | "tenant_id"> = {
@@ -217,6 +230,42 @@ export default function MenuPage() {
   // Item modifier group assignments (for product modal)
   const [itemModGroups, setItemModGroups] = useState<string[]>([]);
 
+  // AI Assistant state
+  const [aiIngredients, setAiIngredients] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiImageGenerating, setAiImageGenerating] = useState(false);
+  const [aiImagePrompt, setAiImagePrompt] = useState("");
+  const [aiBackground, setAiBackground] = useState("dark_wood");
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  // Scraper state
+  interface ScrapedProduct { name: string; description: string | null; price: number | null; category: string | null; image_url: string | null; selected: boolean; }
+  const [scrapeModal, setScrapeModal] = useState(false);
+  const [scrapeUrl, setScrapeUrl] = useState("");
+  const [scrapeLoading, setScrapeLoading] = useState(false);
+  const [scrapeProducts, setScrapeProducts] = useState<ScrapedProduct[]>([]);
+  const [scrapeCategories, setScrapeCategories] = useState<string[]>([]);
+  const [scrapeError, setScrapeError] = useState<string | null>(null);
+  const [scrapeImporting, setScrapeImporting] = useState(false);
+  const [scrapeDone, setScrapeDone] = useState(false);
+
+  // AI Modifier generation state
+  interface AiModGroup {
+    name: string;
+    type: "single_select" | "multi_select";
+    required: boolean;
+    min_select: number;
+    max_select: number;
+    product_ids: string[];
+    options: { name: string; price_delta: number }[];
+    selected: boolean;
+  }
+  const [aiModModal, setAiModModal] = useState(false);
+  const [aiModLoading, setAiModLoading] = useState(false);
+  const [aiModGroups, setAiModGroups] = useState<AiModGroup[]>([]);
+  const [aiModError, setAiModError] = useState<string | null>(null);
+  const [aiModImporting, setAiModImporting] = useState(false);
+
   const [saving, setSaving] = useState(false);
 
   /* ── Init: get tenant ─────────────────────────────── */
@@ -256,6 +305,7 @@ export default function MenuPage() {
       .from("menu_items")
       .select("*")
       .eq("tenant_id", tenantId)
+      .order("sort_order", { ascending: true, nullsFirst: false })
       .order("name_es", { ascending: true });
     if (filterCat !== "all") q = q.eq("category_id", filterCat);
     const { data } = await q;
@@ -425,6 +475,75 @@ export default function MenuPage() {
     await supabase.from("menu_items").delete().eq("id", id);
     setProdDeleting(null);
     await loadProducts();
+  };
+
+  /* ── AI Handlers ──────────────────────────────────── */
+
+  const handleAiGenerate = async () => {
+    if (!prodForm.name_es) return;
+    setAiGenerating(true);
+    setAiError(null);
+    try {
+      const res = await fetch("/api/ai/describe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ingredients: aiIngredients,
+          dishName: prodForm.name_es || prodForm.name_en,
+          lang: "es",
+          existingDescription: prodForm.description_es || prodForm.description_en || "",
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "AI generation failed");
+      }
+      const data = await res.json();
+      setProdForm((prev) => ({
+        ...prev,
+        description_es: data.es || prev.description_es,
+        description_en: data.en || prev.description_en,
+      }));
+      if (data.image_prompt) {
+        setAiImagePrompt(data.image_prompt);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error generating description";
+      setAiError(message);
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleAiImage = async () => {
+    if (!aiImagePrompt && !prodForm.description_es && !prodForm.name_es) return;
+    setAiImageGenerating(true);
+    setAiError(null);
+    try {
+      const res = await fetch("/api/ai/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imagePrompt: aiImagePrompt,
+          dishName: prodForm.name_es || prodForm.name_en,
+          backgroundStyle: aiBackground,
+          description: prodForm.description_es || prodForm.description_en || "",
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Image generation failed");
+      }
+      const data = await res.json();
+      if (data.url) {
+        setProdForm((prev) => ({ ...prev, image_url: data.url }));
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error generating image";
+      setAiError(message);
+    } finally {
+      setAiImageGenerating(false);
+    }
   };
 
   const toggleProdAvailable = async (prod: Product) => {
@@ -630,6 +749,245 @@ export default function MenuPage() {
     </Overlay>
   );
 
+  /* ── Scraper functions ─────────────────────────────── */
+
+  const handleScrape = async () => {
+    if (!scrapeUrl.trim()) return;
+    setScrapeLoading(true);
+    setScrapeError(null);
+    setScrapeProducts([]);
+    setScrapeCategories([]);
+    setScrapeDone(false);
+    try {
+      const res = await fetch("/api/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: scrapeUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Scrape failed");
+      if (!data.products || data.products.length === 0) {
+        setScrapeError(t("menu.scrape_no_products"));
+        return;
+      }
+      setScrapeProducts(data.products.map((p: Omit<ScrapedProduct, "selected">) => ({ ...p, selected: true })));
+      setScrapeCategories(data.categories || []);
+    } catch (err) {
+      setScrapeError(err instanceof Error ? err.message : t("menu.scrape_error"));
+    } finally {
+      setScrapeLoading(false);
+    }
+  };
+
+  const handleScrapeImport = async () => {
+    if (!tenantId) return;
+    const selected = scrapeProducts.filter((p) => p.selected);
+    if (selected.length === 0) return;
+    setScrapeImporting(true);
+    try {
+      const supabase = createClient();
+      // Category icons mapping
+      const catIcons: Record<string, string> = {
+        burgers: "🍔", hamburguesas: "🍔", burger: "🍔",
+        entrantes: "🥗", starters: "🥗", appetizers: "🥗", aperitivos: "🥗",
+        compartir: "🫕", sharing: "🫕", para_compartir: "🫕",
+        bebidas: "🥤", drinks: "🥤", refrescos: "🥤", beverages: "🥤",
+        cervezas: "🍺", beers: "🍺", cerveza: "🍺",
+        postres: "🍰", desserts: "🍰", dulces: "🍰",
+        salsas: "🫙", sauces: "🫙", extras: "➕",
+        pizzas: "🍕", pizza: "🍕", pastas: "🍝", pasta: "🍝",
+        ensaladas: "🥗", salads: "🥗", carnes: "🥩", meat: "🥩",
+        pescados: "🐟", fish: "🐟", mariscos: "🦐", seafood: "🦐",
+        sopas: "🍜", soups: "🍜", vinos: "🍷", wines: "🍷",
+        cafe: "☕", coffee: "☕", cocktails: "🍹", cocteles: "🍹",
+        principales: "🍽️", mains: "🍽️", sandwiches: "🥪", wraps: "🌯",
+        infantil: "👶", kids: "👶", desayunos: "🍳", breakfast: "🍳",
+      };
+      const getCatIcon = (name: string) => catIcons[name.toLowerCase().replace(/\s+/g, "_")] || "🍽️";
+
+      // Create categories in order, preserving original order from source
+      const uniqueCats = [...new Set(selected.map((p) => p.category).filter(Boolean))] as string[];
+      const catMap: Record<string, string> = {};
+      let catOrder = categories.length;
+      for (const catName of uniqueCats) {
+        const existing = categories.find((c) => c.name_es.toLowerCase() === catName.toLowerCase() || c.name_en.toLowerCase() === catName.toLowerCase());
+        if (existing) {
+          catMap[catName] = existing.id;
+        } else {
+          const { data: newCat } = await supabase
+            .from("menu_categories")
+            .insert({
+              tenant_id: tenantId,
+              name_es: catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase(),
+              name_en: catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase(),
+              icon: getCatIcon(catName),
+              sort_order: catOrder++,
+              active: true,
+            })
+            .select("id")
+            .single();
+          if (newCat) catMap[catName] = newCat.id;
+        }
+      }
+      // Sort products by category, then by original order — assign sort_order
+      const sorted = [...selected].sort((a, b) => {
+        const catA = a.category || "";
+        const catB = b.category || "";
+        const idxA = uniqueCats.indexOf(catA);
+        const idxB = uniqueCats.indexOf(catB);
+        return idxA - idxB;
+      });
+      const inserts = sorted.map((p, idx) => ({
+        tenant_id: tenantId,
+        name_es: p.name,
+        name_en: p.name,
+        description_es: p.description || null,
+        description_en: p.description || null,
+        price: p.price || 0,
+        category_id: p.category ? catMap[p.category] || null : null,
+        image_url: p.image_url || null,
+        available: true,
+        allergens: [],
+        sort_order: idx,
+      }));
+      const { error } = await supabase.from("menu_items").insert(inserts);
+      if (error) throw error;
+      // Reload
+      await loadCategories();
+      await loadProducts();
+      setScrapeDone(true);
+      setTimeout(() => {
+        setScrapeModal(false);
+        setScrapeUrl("");
+        setScrapeProducts([]);
+        setScrapeDone(false);
+      }, 2000);
+    } catch (err) {
+      setScrapeError(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setScrapeImporting(false);
+    }
+  };
+
+  const toggleScrapeProduct = (idx: number) => {
+    setScrapeProducts((prev) => prev.map((p, i) => i === idx ? { ...p, selected: !p.selected } : p));
+  };
+
+  const toggleAllScrape = (val: boolean) => {
+    setScrapeProducts((prev) => prev.map((p) => ({ ...p, selected: val })));
+  };
+
+  /* ── AI Modifier Generation ─────────────────────────── */
+
+  const handleAiModifiers = async () => {
+    if (!tenantId) return;
+    setAiModLoading(true);
+    setAiModError(null);
+    setAiModGroups([]);
+    setAiModModal(true);
+    try {
+      // Load ALL products (ignore current category filter)
+      const supabase = createClient();
+      const { data: allProducts } = await supabase
+        .from("menu_items")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .order("name_es", { ascending: true });
+      if (!allProducts || allProducts.length === 0) {
+        setAiModError("No hay productos en el menu");
+        setAiModLoading(false);
+        return;
+      }
+      const productData = (allProducts as Product[]).map((p) => ({
+        id: p.id,
+        name: p.name_es || p.name_en,
+        description: p.description_es || p.description_en || null,
+        category: catName(p.category_id),
+      }));
+      const res = await fetch("/api/ai/modifiers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ products: productData }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to generate modifiers");
+      }
+      const data = await res.json();
+      if (data.groups && Array.isArray(data.groups)) {
+        setAiModGroups(data.groups.map((g: AiModGroup) => ({ ...g, selected: true })));
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error";
+      setAiModError(message);
+    } finally {
+      setAiModLoading(false);
+    }
+  };
+
+  const handleAiModImport = async () => {
+    if (!tenantId) return;
+    const selected = aiModGroups.filter((g) => g.selected);
+    if (selected.length === 0) return;
+    setAiModImporting(true);
+    try {
+      const supabase = createClient();
+      let sortOrder = modifierGroups.length;
+      for (const group of selected) {
+        // Create modifier group
+        const { data: gData } = await supabase
+          .from("menu_modifier_groups")
+          .insert({
+            tenant_id: tenantId,
+            name: group.name,
+            type: group.type,
+            required: group.required,
+            min_select: group.min_select,
+            max_select: group.max_select,
+            sort_order: sortOrder++,
+          })
+          .select("id")
+          .single();
+        if (!gData) continue;
+        const groupId = gData.id;
+
+        // Create options
+        if (group.options.length > 0) {
+          const optRows = group.options.map((opt, idx) => ({
+            group_id: groupId,
+            tenant_id: tenantId,
+            name: opt.name,
+            price_delta: opt.price_delta,
+            sort_order: idx,
+          }));
+          await supabase.from("menu_modifier_options").insert(optRows);
+        }
+
+        // Link to products
+        if (group.product_ids && group.product_ids.length > 0) {
+          // Only link to products that actually exist in our DB
+          const validIds = group.product_ids.filter((pid) =>
+            products.some((p) => p.id === pid)
+          );
+          if (validIds.length > 0) {
+            const junctionRows = validIds.map((pid) => ({
+              menu_item_id: pid,
+              modifier_group_id: groupId,
+            }));
+            await supabase.from("menu_item_modifier_groups").insert(junctionRows);
+          }
+        }
+      }
+      setAiModModal(false);
+      await Promise.all([loadModifierGroups(), loadModifierOptions()]);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error importing";
+      setAiModError(message);
+    } finally {
+      setAiModImporting(false);
+    }
+  };
+
   /* ── Add button action ─────────────────────────────── */
 
   const handleAddButton = () => {
@@ -647,13 +1005,31 @@ export default function MenuPage() {
   /* ── Render ───────────────────────────────────────── */
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 24, flex: 1, minHeight: 0, overflowY: "auto" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <h1 style={{ color: "var(--text-primary)", fontSize: 28, fontWeight: 700, margin: 0 }}>
           {t("menu.title")}
         </h1>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Import from web (items tab only) */}
+          {tab === "items" && (
+            <button
+              style={{
+                ...btnSecondary,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "rgba(59,130,246,0.08)",
+                borderColor: "rgba(59,130,246,0.3)",
+                color: "#3b82f6",
+              }}
+              onClick={() => { setScrapeModal(true); setScrapeError(null); setScrapeProducts([]); setScrapeDone(false); }}
+            >
+              <Globe size={16} />
+              {t("menu.scrape_import")}
+            </button>
+          )}
           {/* Bulk mode toggle (items tab only) */}
           {tab === "items" && (
             <button
@@ -673,6 +1049,25 @@ export default function MenuPage() {
             >
               {bulkMode ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
               {t("menu.bulk_mode")}
+            </button>
+          )}
+          {/* AI Generate Modifiers (modifiers tab only) */}
+          {tab === "modifiers" && (
+            <button
+              style={{
+                ...btnSecondary,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "rgba(168,85,247,0.08)",
+                borderColor: "rgba(168,85,247,0.3)",
+                color: "#c084fc",
+              }}
+              onClick={handleAiModifiers}
+              disabled={aiModLoading}
+            >
+              <Sparkles size={16} />
+              {t("menu.ai_generate_modifiers")}
             </button>
           )}
           <button style={btnPrimary} onClick={handleAddButton}>
@@ -884,16 +1279,52 @@ export default function MenuPage() {
             </p>
           )}
 
-          {/* Products grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 16,
-            }}
-            className="max-lg:!grid-cols-3 max-md:!grid-cols-2"
-          >
-            {filteredProducts.map((prod) => {
+          {/* Products grid — grouped by category when showing all */}
+          {(() => {
+            // Group products by category
+            const grouped: { cat: Category | null; prods: Product[] }[] = [];
+            if (filterCat === "all" && !searchQuery.trim()) {
+              const catMap = new Map<string, Product[]>();
+              const noCat: Product[] = [];
+              for (const p of filteredProducts) {
+                if (p.category_id) {
+                  const arr = catMap.get(p.category_id) || [];
+                  arr.push(p);
+                  catMap.set(p.category_id, arr);
+                } else {
+                  noCat.push(p);
+                }
+              }
+              for (const cat of categories) {
+                const prods = catMap.get(cat.id);
+                if (prods && prods.length > 0) grouped.push({ cat, prods });
+              }
+              if (noCat.length > 0) grouped.push({ cat: null, prods: noCat });
+            } else {
+              grouped.push({ cat: null, prods: filteredProducts });
+            }
+
+            return grouped.map((group, gi) => (
+              <div key={group.cat?.id || `nocat-${gi}`} style={{ marginBottom: group.cat ? 24 : 0 }}>
+                {group.cat && (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 8, marginBottom: 12,
+                    paddingBottom: 8, borderBottom: "1px solid var(--border)",
+                  }}>
+                    <span style={{ fontSize: 22 }}>{group.cat.icon || "🍽️"}</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>
+                      {group.cat.name_es}
+                    </span>
+                    <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 400 }}>
+                      ({group.prods.length})
+                    </span>
+                  </div>
+                )}
+                <div
+                  style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}
+                  className="max-lg:!grid-cols-3 max-md:!grid-cols-2"
+                >
+            {group.prods.map((prod) => {
               const isSelected = selectedItems.has(prod.id);
               return (
                 <div
@@ -1013,7 +1444,10 @@ export default function MenuPage() {
                 </div>
               );
             })}
-          </div>
+                </div>
+              </div>
+            ));
+          })()}
         </>
       )}
 
@@ -1333,6 +1767,67 @@ export default function MenuPage() {
               </div>
             </div>
 
+            {/* ═══ AI DESCRIPTION ASSISTANT ═══ */}
+            <div
+              style={{
+                background: "linear-gradient(135deg, rgba(249,115,22,0.08), rgba(168,85,247,0.08))",
+                border: "1px solid rgba(249,115,22,0.25)",
+                borderRadius: 12,
+                padding: "14px 16px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <Sparkles size={18} color="var(--accent)" />
+                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--accent)" }}>
+                  {t("menu.ai_assistant")}
+                </span>
+                <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 500 }}>
+                  {t("menu.ai_assistant_hint")}
+                </span>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ ...labelStyle, fontSize: "0.7rem" }}>{t("menu.ai_ingredients")}</label>
+                  <input
+                    style={inputStyle}
+                    placeholder={t("menu.ai_ingredients_placeholder")}
+                    value={aiIngredients}
+                    onChange={(e) => setAiIngredients(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAiGenerate();
+                      }
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={handleAiGenerate}
+                  disabled={aiGenerating || !prodForm.name_es}
+                  style={{
+                    ...btnPrimary,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    opacity: aiGenerating || !prodForm.name_es ? 0.5 : 1,
+                    cursor: aiGenerating || !prodForm.name_es ? "not-allowed" : "pointer",
+                    whiteSpace: "nowrap",
+                    background: "linear-gradient(135deg, var(--accent), #a855f7)",
+                  }}
+                >
+                  {aiGenerating ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Wand2 size={15} />}
+                  {aiGenerating ? t("menu.ai_generating") : t("menu.ai_generate")}
+                </button>
+              </div>
+
+              {aiError && (
+                <div style={{ marginTop: 8, fontSize: "0.78rem", color: "var(--danger)", fontWeight: 500 }}>
+                  {aiError}
+                </div>
+              )}
+            </div>
+
             {/* description_es, description_en */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
@@ -1415,31 +1910,94 @@ export default function MenuPage() {
               </div>
             </div>
 
-            {/* Image URL + preview */}
+            {/* ═══ AI IMAGE GENERATION ═══ */}
             <div>
               <label style={labelStyle}>{t("menu.image_url")}</label>
+
+              {/* Background style selector */}
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ ...labelStyle, fontSize: "0.7rem", marginBottom: 6, display: "block" }}>
+                  {t("menu.ai_bg_style")}
+                </label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {AI_BACKGROUNDS.map((bg) => (
+                    <button
+                      key={bg.key}
+                      onClick={() => setAiBackground(bg.key)}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: 6,
+                        border: aiBackground === bg.key ? "2px solid var(--accent)" : "1px solid var(--border)",
+                        background: aiBackground === bg.key ? "rgba(249,115,22,0.12)" : "var(--bg-secondary)",
+                        color: aiBackground === bg.key ? "var(--accent)" : "var(--text-secondary)",
+                        cursor: "pointer",
+                        fontSize: "0.72rem",
+                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      <span>{bg.emoji}</span>
+                      <span>{t(bg.label)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Image URL input + generate button + preview */}
               <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                   <input
                     style={inputStyle}
                     placeholder="https://..."
                     value={prodForm.image_url || ""}
                     onChange={(e) => setProdForm({ ...prodForm, image_url: e.target.value || null })}
                   />
+                  <button
+                    onClick={handleAiImage}
+                    disabled={aiImageGenerating || !aiImagePrompt}
+                    style={{
+                      ...btnPrimary,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      opacity: aiImageGenerating || !aiImagePrompt ? 0.5 : 1,
+                      cursor: aiImageGenerating || !aiImagePrompt ? "not-allowed" : "pointer",
+                      background: "linear-gradient(135deg, var(--accent), #a855f7)",
+                      fontSize: "0.8rem",
+                      padding: "8px 14px",
+                    }}
+                  >
+                    {aiImageGenerating ? (
+                      <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
+                    ) : (
+                      <ImageIcon size={15} />
+                    )}
+                    {aiImageGenerating ? t("menu.ai_image_generating") : t("menu.ai_generate_image")}
+                  </button>
+                  {!aiImagePrompt && (
+                    <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
+                      {t("menu.ai_image_hint")}
+                    </span>
+                  )}
                 </div>
-                {prodForm.image_url && (
+                {prodForm.image_url ? (
                   <div
                     style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 8,
+                      width: 100,
+                      height: 100,
+                      borderRadius: 10,
                       overflow: "hidden",
-                      border: "1px solid var(--border)",
+                      border: "2px solid var(--border)",
                       background: "var(--bg-secondary)",
                       flexShrink: 0,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      position: "relative",
                     }}
                   >
                     <img
@@ -1448,26 +2006,29 @@ export default function MenuPage() {
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = "none";
-                        (e.target as HTMLImageElement).parentElement!.innerHTML = '<span style="color:var(--text-muted);font-size:0.7rem;">Error</span>';
                       }}
                     />
                   </div>
-                )}
-                {!prodForm.image_url && (
+                ) : (
                   <div
                     style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 8,
-                      border: "1px dashed var(--border)",
+                      width: 100,
+                      height: 100,
+                      borderRadius: 10,
+                      border: "2px dashed var(--border)",
                       background: "var(--bg-secondary)",
                       flexShrink: 0,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      flexDirection: "column",
+                      gap: 4,
                     }}
                   >
-                    <ImageIcon size={20} color="var(--text-muted)" />
+                    <ImageIcon size={24} color="var(--text-muted)" />
+                    <span style={{ fontSize: "0.6rem", color: "var(--text-muted)" }}>
+                      {t("menu.ai_no_image")}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1749,6 +2310,308 @@ export default function MenuPage() {
           onConfirm={() => deleteModOpt(modOptDeleting)}
           onCancel={() => setModOptDeleting(null)}
         />
+      )}
+
+      {/* ── Scraper Modal ──────────────────────────────── */}
+      {scrapeModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)" }} onClick={() => !scrapeLoading && !scrapeImporting && setScrapeModal(false)} />
+          <div style={{
+            position: "relative", background: "var(--bg-card)", borderRadius: 16, width: "90%", maxWidth: 800,
+            maxHeight: "85vh", display: "flex", flexDirection: "column", border: "1px solid var(--border)",
+            boxShadow: "0 24px 48px rgba(0,0,0,0.3)",
+          }}>
+            {/* Modal header */}
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Globe size={22} style={{ color: "#3b82f6" }} />
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{t("menu.scrape_title")}</h2>
+              </div>
+              <button onClick={() => !scrapeLoading && !scrapeImporting && setScrapeModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", padding: 4 }}>
+                <XIcon size={20} />
+              </button>
+            </div>
+
+            {/* URL input */}
+            <div style={{ padding: "16px 24px", borderBottom: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 10px" }}>{t("menu.scrape_hint")}</p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="url"
+                  value={scrapeUrl}
+                  onChange={(e) => setScrapeUrl(e.target.value)}
+                  placeholder={t("menu.scrape_url_placeholder")}
+                  style={{ ...inputStyle, flex: 1 }}
+                  onKeyDown={(e) => e.key === "Enter" && handleScrape()}
+                  disabled={scrapeLoading}
+                />
+                <button
+                  style={{ ...btnPrimary, display: "flex", alignItems: "center", gap: 6, opacity: scrapeLoading ? 0.7 : 1, minWidth: 120 }}
+                  onClick={handleScrape}
+                  disabled={scrapeLoading || !scrapeUrl.trim()}
+                >
+                  {scrapeLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                  {scrapeLoading ? t("menu.scrape_scanning") : t("menu.scrape_import")}
+                </button>
+              </div>
+              {scrapeError && (
+                <p style={{ color: "#f87171", fontSize: 13, marginTop: 8, margin: "8px 0 0" }}>{scrapeError}</p>
+              )}
+            </div>
+
+            {/* Products list */}
+            {scrapeProducts.length > 0 && (
+              <>
+                <div style={{ padding: "12px 24px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
+                    {scrapeProducts.filter((p) => p.selected).length}/{scrapeProducts.length} {t("menu.scrape_found")}
+                  </span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button style={{ ...btnSecondary, padding: "4px 12px", fontSize: 12 }} onClick={() => toggleAllScrape(true)}>
+                      {t("menu.scrape_select_all")}
+                    </button>
+                    <button style={{ ...btnSecondary, padding: "4px 12px", fontSize: 12 }} onClick={() => toggleAllScrape(false)}>
+                      {t("menu.scrape_deselect_all")}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ flex: 1, overflowY: "auto", padding: "8px 16px" }}>
+                  {scrapeProducts.map((product, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => toggleScrapeProduct(idx)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 12, padding: "10px 12px",
+                        borderRadius: 10, marginBottom: 4, cursor: "pointer",
+                        background: product.selected ? "rgba(59,130,246,0.06)" : "transparent",
+                        border: `1px solid ${product.selected ? "rgba(59,130,246,0.2)" : "var(--border)"}`,
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      {/* Checkbox */}
+                      <div style={{
+                        width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                        border: product.selected ? "none" : "2px solid var(--border)",
+                        background: product.selected ? "#3b82f6" : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {product.selected && <Check size={14} style={{ color: "#fff" }} />}
+                      </div>
+
+                      {/* Image */}
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--bg-secondary)" }}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        <div style={{ width: 48, height: 48, borderRadius: 8, background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <ImageIcon size={20} style={{ color: "var(--text-muted)" }} />
+                        </div>
+                      )}
+
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {product.name}
+                        </div>
+                        {product.description && (
+                          <div style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }}>
+                            {product.description}
+                          </div>
+                        )}
+                        {product.category && (
+                          <span style={{ fontSize: 11, background: "rgba(59,130,246,0.1)", color: "#3b82f6", padding: "1px 8px", borderRadius: 100, marginTop: 3, display: "inline-block" }}>
+                            {product.category}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Price */}
+                      {product.price != null && (
+                        <span style={{ fontWeight: 700, fontSize: 15, color: "var(--accent)", flexShrink: 0 }}>
+                          ${product.price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Footer */}
+            {scrapeProducts.length > 0 && (
+              <div style={{ padding: "16px 24px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button
+                  style={btnSecondary}
+                  onClick={() => { setScrapeModal(false); setScrapeProducts([]); }}
+                  disabled={scrapeImporting}
+                >
+                  {t("menu.scrape_cancel")}
+                </button>
+                {scrapeDone ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#22c55e", fontWeight: 600 }}>
+                    <Check size={18} />
+                    {scrapeProducts.filter((p) => p.selected).length} {t("menu.scrape_success")}
+                  </div>
+                ) : (
+                  <button
+                    style={{ ...btnPrimary, display: "flex", alignItems: "center", gap: 6, opacity: scrapeImporting ? 0.7 : 1 }}
+                    onClick={handleScrapeImport}
+                    disabled={scrapeImporting || scrapeProducts.filter((p) => p.selected).length === 0}
+                  >
+                    {scrapeImporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                    {scrapeImporting ? t("menu.scrape_importing") : `${t("menu.scrape_import_selected")} (${scrapeProducts.filter((p) => p.selected).length})`}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── AI Modifier Generation Modal ──────────────── */}
+      {aiModModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)" }} onClick={() => { if (!aiModLoading && !aiModImporting) setAiModModal(false); }} />
+          <div style={{
+            position: "relative", background: "var(--bg-card)", borderRadius: 16, width: "90%", maxWidth: 700,
+            maxHeight: "85vh", overflowY: "auto", border: "1px solid var(--border)",
+            boxShadow: "0 24px 48px rgba(0,0,0,0.3)", padding: "1.5rem",
+          }}>
+            <h2 style={{ color: "var(--text-primary)", fontSize: "1.2rem", fontWeight: 700, margin: "0 0 16px" }}>
+              <Sparkles size={20} style={{ display: "inline", marginRight: 8, color: "#c084fc" }} />
+              {t("menu.ai_modifiers_preview")}
+            </h2>
+
+            {aiModLoading && (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>
+                <Loader2 size={32} style={{ animation: "spin 1s linear infinite", marginBottom: 12 }} />
+                <p>{t("menu.ai_modifiers_loading")}</p>
+                <p style={{ fontSize: "0.78rem" }}>{products.length} {t("menu.products_count") || "productos"}</p>
+              </div>
+            )}
+
+            {aiModError && (
+              <div style={{
+                background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)",
+                borderRadius: 8, padding: "10px 14px", color: "#f87171", fontSize: "0.85rem", marginBottom: 12,
+              }}>
+                {aiModError}
+              </div>
+            )}
+
+            {!aiModLoading && aiModGroups.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {aiModGroups.map((group, gi) => (
+                  <div
+                    key={gi}
+                    style={{
+                      background: group.selected ? "var(--bg-card)" : "var(--bg-secondary)",
+                      border: group.selected ? "2px solid rgba(168,85,247,0.4)" : "1px solid var(--border)",
+                      borderRadius: 12,
+                      padding: 14,
+                      opacity: group.selected ? 1 : 0.5,
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {/* Group header with checkbox */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <button
+                        onClick={() => setAiModGroups((prev) => prev.map((g, i) => i === gi ? { ...g, selected: !g.selected } : g))}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                      >
+                        {group.selected
+                          ? <CheckSquare size={20} style={{ color: "#c084fc" }} />
+                          : <Square size={20} style={{ color: "var(--text-muted)" }} />
+                        }
+                      </button>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: "0.95rem" }}>
+                          {group.name}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 3 }}>
+                          <span style={{
+                            padding: "1px 8px", borderRadius: 999, fontSize: "0.7rem", fontWeight: 600,
+                            background: group.type === "single_select" ? "rgba(59,130,246,0.15)" : "rgba(168,85,247,0.15)",
+                            color: group.type === "single_select" ? "#60a5fa" : "#c084fc",
+                          }}>
+                            {group.type === "single_select" ? "Seleccion unica" : "Multi seleccion"}
+                          </span>
+                          {group.required && (
+                            <span style={{
+                              padding: "1px 8px", borderRadius: 999, fontSize: "0.7rem", fontWeight: 600,
+                              background: "rgba(249,115,22,0.15)", color: "var(--accent)",
+                            }}>
+                              {t("menu.required")}
+                            </span>
+                          )}
+                          <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                            {group.options.length} {t("menu.ai_modifiers_options")} · {group.product_ids.length} {t("menu.ai_modifiers_products")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Options list */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginLeft: 30 }}>
+                      {group.options.map((opt, oi) => (
+                        <span
+                          key={oi}
+                          style={{
+                            padding: "3px 10px",
+                            borderRadius: 6,
+                            background: "var(--bg-secondary)",
+                            border: "1px solid var(--border)",
+                            fontSize: "0.78rem",
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          {opt.name}
+                          {opt.price_delta > 0 && (
+                            <span style={{ color: "var(--accent)", marginLeft: 4, fontWeight: 600 }}>
+                              +{opt.price_delta.toFixed(2)}
+                            </span>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Import button */}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+                  <button
+                    style={{ ...btnSecondary }}
+                    onClick={() => setAiModModal(false)}
+                  >
+                    {t("menu.scrape_cancel")}
+                  </button>
+                  <button
+                    style={{ ...btnPrimary, display: "flex", alignItems: "center", gap: 6 }}
+                    onClick={handleAiModImport}
+                    disabled={aiModImporting || aiModGroups.filter((g) => g.selected).length === 0}
+                  >
+                    {aiModImporting ? (
+                      <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> {t("menu.ai_modifiers_importing")}</>
+                    ) : (
+                      <><Download size={16} /> {t("menu.ai_modifiers_import")} ({aiModGroups.filter((g) => g.selected).length})</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!aiModLoading && aiModGroups.length === 0 && !aiModError && (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>
+                {t("menu.no_modifier_groups")}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
