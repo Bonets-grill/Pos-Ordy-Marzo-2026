@@ -273,7 +273,7 @@ export default function PaymentsPage() {
         tip_amount: 0,
         status: "refunded",
         received_by: userId,
-        notes: refundReason || null,
+        reference: refundReason || null,
       });
 
       // Update original payment status
@@ -366,7 +366,7 @@ export default function PaymentsPage() {
         tip_amount: 0,
         status: "completed",
         received_by: userId,
-        notes: manualNotes || null,
+        reference: manualNotes || null,
       });
 
       // Update order status to completed/paid

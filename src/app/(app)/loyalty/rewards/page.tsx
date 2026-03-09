@@ -22,7 +22,7 @@ interface Reward {
   starts_at: string | null;
   ends_at: string | null;
   active: boolean;
-  redemption_count: number;
+  current_redemptions: number;
 }
 
 const REWARD_TYPES = ["discount_fixed", "discount_percent", "free_product", "custom"];
@@ -344,7 +344,7 @@ export default function LoyaltyRewardsPage() {
 
               {/* Redemption count */}
               <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
-                {r.redemption_count || 0} {t("loyalty.redeem")}
+                {r.current_redemptions || 0} {t("loyalty.redeem")}
               </span>
 
               {/* Active toggle */}
