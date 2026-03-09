@@ -1872,6 +1872,47 @@ export default function SuperAdminPage() {
   return (
     <div style={{ padding: "24px", maxWidth: 1440, margin: "0 auto" }}>
 
+      {/* ── Top bar ── */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 16, padding: "8px 0",
+        borderBottom: "1px solid var(--border)",
+      }}>
+        <button
+          onClick={() => router.push("/dashboard")}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: "none", border: "none", cursor: "pointer",
+            color: "var(--text-secondary)", fontSize: 13, fontWeight: 500,
+            padding: "6px 0",
+          }}
+        >
+          <ArrowLeft size={16} />
+          Volver al POS
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            Ordy POS SaaS
+          </span>
+          <button
+            onClick={async () => {
+              const supabase = createClient();
+              await supabase.auth.signOut();
+              router.push("/login");
+            }}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: "none", border: "1px solid var(--border)", borderRadius: 8,
+              cursor: "pointer", color: "var(--text-secondary)", fontSize: 12,
+              padding: "6px 12px",
+            }}
+          >
+            <Power size={13} />
+            Cerrar sesion
+          </button>
+        </div>
+      </div>
+
       {/* ── Header ── */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
