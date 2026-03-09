@@ -819,12 +819,26 @@ export default function PosPage() {
         }
       }
 
-      // Free table for dine-in
-      if (orderType === "dine_in" && selectedTable) {
+      // Free table for dine-in (check both selectedTable and existing order's table_id)
+      const tableToFree = selectedTable || null;
+      if (tableToFree) {
         await supabase
           .from("restaurant_tables")
           .update({ status: "available", current_order_id: null })
-          .eq("id", selectedTable);
+          .eq("id", tableToFree);
+      } else if (existingOrderId) {
+        // If we paid an existing order, check if it had a table_id
+        const { data: paidOrder } = await supabase
+          .from("orders")
+          .select("table_id")
+          .eq("id", existingOrderId)
+          .single();
+        if (paidOrder?.table_id) {
+          await supabase
+            .from("restaurant_tables")
+            .update({ status: "available", current_order_id: null })
+            .eq("id", paidOrder.table_id);
+        }
       }
 
       // Earn loyalty points if customer is linked
@@ -1010,6 +1024,13 @@ export default function PosPage() {
 
         // Check if all bills are paid
         if (newPaid.size === splitBills.length) {
+          // Free table
+          if (selectedTable) {
+            await supabase
+              .from("restaurant_tables")
+              .update({ status: "available", current_order_id: null })
+              .eq("id", selectedTable);
+          }
           setShowSplitModal(false);
           resetCart();
           showToast(t("pos.split_all_paid"));
