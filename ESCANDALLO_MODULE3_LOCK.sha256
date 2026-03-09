@@ -1,0 +1,9 @@
+# ============================================================
+# ESCANDALLO — MODULE 3: SUPPLIERS & PURCHASING BASE — LOCK
+# Locked: 2026-03-09
+# Status: COMPLETE — DO NOT MODIFY WITHOUT JUSTIFICATION
+# ============================================================
+
+66aaa39ba4266aa0e9dfe8ec86ed26fdc89b3f5a3dd9e2f099295bb40269ac4b  src/lib/escandallo/suppliers/service.ts
+7654950c1c77b4cf88b7780686c2daad56262f11986f5d1afaa20ba3a5a711bd  src/lib/escandallo/suppliers/index.ts
+01d44b23525bc1f4a88ef814cfa72669856d8d2e66c68b7629ec425a7e83de9c  src/app/(app)/escandallo/suppliers/page.tsx

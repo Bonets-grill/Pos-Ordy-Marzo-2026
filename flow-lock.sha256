@@ -1,0 +1,26 @@
+# ORDY POS - Order Flow Integrity Lock
+# Generated: 2026-03-07T16:25:00Z
+# Scope: Complete QR → Order → KDS → Payment → Receipt flow
+#
+# DO NOT MODIFY these files without running verify-flow-lock.sh
+# Any hash mismatch means the flow was altered.
+#
+# ── Customer-facing (QR Menu + Order) ────────────────────────
+a46b1500f142f0775ea5c5262889ad86437a500944c97e67b184e78e5c3ce814  src/app/qr/[slug]/[table]/page.tsx
+c3e056c3654005ba4abb7ebfa78a3e469d945884c549e8e49201aa29d88e70ef  src/app/api/public/menu/route.ts
+dd4d376cec7a714fc4c631d8ca38e35ea6773d39daa779c563eeb71a88cd7e3c  src/app/api/public/order/route.ts
+# ── Staff-facing (KDS + Orders + Payments) ───────────────────
+fd33c1dbae25a2495b6bfc1482575f5fd0c333f7013d6d655413db00ad031d84  src/app/(app)/kds/page.tsx
+855e913a7f35d8d77301a309f3ccf5488b9dee9d556ca921c5d98198d90b41fc  src/app/(app)/orders/page.tsx
+f6ca1c9225b2683207ec45b56168755a71887de20664a7b5d255209fc1bab808  src/app/(app)/payments/page.tsx
+# ── Translation system ───────────────────────────────────────
+41d9c07de4013ccb145ade43750c8eede27342e13d4374f2e5363e261c1b0251  src/lib/translate-memory.ts
+f33793d14b55f85ae6ca96c0bdeddb7f5db86da56472c2e54295f63d56044a08  src/app/api/ai/translate-text/route.ts
+a3155593f181017b5ae21dda6ebceb9d2310a127a9d329d3753ebeab3adef0ba  src/app/api/ai/translate-menu/route.ts
+# ── Infrastructure (auth, middleware, i18n, utils) ───────────
+3578ac9e32242fdd313dae70a461afe2cc63fed7fed7dd74e5c32e27f49087cc  src/middleware.ts
+6c8e82752485cd20f048b345b4ed2037f0a969f26ad396e58f114e485a0a120e  src/lib/supabase-browser.ts
+72c95f35c339743a707321db977a8d5c016da8386dcb9be815796b50f533f86b  src/lib/api-auth.ts
+7f0c62d6a654ac9d059f1002d02e50e6b28a2d717ee310d3ff225670c2aa5852  src/lib/i18n-provider.tsx
+0a8a2fe706d54f7a8681bdbce0281c162c568eecfc17e6b16c3ac37be46002d8  src/lib/translations.ts
+c937f0f3b779d0e72cfcf2dc65e06904c5867305510820c2d48d2ba42eca45f3  src/lib/utils.ts

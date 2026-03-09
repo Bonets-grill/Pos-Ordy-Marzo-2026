@@ -1,0 +1,29 @@
+# ============================================================
+# ESCANDALLO — MODULE 1: CORE FOUNDATION — LOCK
+# Locked: 2026-03-09
+# Status: COMPLETE — DO NOT MODIFY WITHOUT JUSTIFICATION
+# ============================================================
+# Any modification to these files requires:
+#   1. Critical bug fix or security patch
+#   2. Documented justification
+#   3. Re-lock with new hashes
+# ============================================================
+
+# Core Foundation (types, units, money, validation, permissions, constants)
+989336fe644b0dbf18c26dc6d986ee524ed770fcf3abdac517440eaefd9dbebf  src/lib/escandallo/core/types.ts
+3cc92da67a94ade7137eed8c71bb25aca89bec7eb6020c8ceaf8b7d26838382d  src/lib/escandallo/core/units.ts
+07d140ddbde2ea8f751e70ba65aadb67d5e330fe0856bac018d1e7fa236dc740  src/lib/escandallo/core/money.ts
+8a78fd5c9ce655572fb13fe80d848875e9baaea32c3ea4273ff6d7c084a9249d  src/lib/escandallo/core/validation.ts
+826702ca52f610061d551eb96f60f58be58da9d4fa4217f9a298cb293594030a  src/lib/escandallo/core/permissions.ts
+6561d10b86d29ace692b8dd3be3e57e3e125b99fb6f12f240fcf1633040113a5  src/lib/escandallo/core/constants.ts
+1e483e4177cbf5b0f5cc5cc34ecc32eb9bbf784dd7bacea02970ebaeeb0abc0a  src/lib/escandallo/core/index.ts
+
+# i18n (5 languages)
+927460c48fa5c19108f3930bc80d2cb2a969eb4975aaed96d381703fdee92217  src/lib/escandallo/i18n.ts
+
+# Database Migration (14 tables, RLS, triggers)
+f7a2d6552edb9aab3447c8c213f1f3a9ecdd9e54a394aea4681ecaee0621ca89  supabase/migrations/20260309100000_escandallo_system.sql
+
+# Modified external files (Sidebar nav + i18n provider integration)
+c605c99d191ada25d02c4fe45335977bb851a7b0aaef631602812ccadc7dfe44  src/components/layout/Sidebar.tsx
+f5d6795f0bc2b5b22c492e715f005c3b701c34b097ada619978854cd4bfd93ee  src/lib/i18n-provider.tsx
