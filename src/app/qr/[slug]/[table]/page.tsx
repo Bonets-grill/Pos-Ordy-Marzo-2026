@@ -558,7 +558,7 @@ export default function QRMenuPage() {
           <div style={bottomSheetStyle} onClick={(e) => e.stopPropagation()}>
             {detailItem.image_url && (
               <img
-                src={detailItem.image_url.replace(/ /g, "%20")}
+                src={detailItem.image_url}
                 alt={localName(detailItem, lang)}
                 style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: "16px 16px 0 0" }}
               />
@@ -826,7 +826,7 @@ function ItemCard({ item, lang, currency, onTap }: {
       </div>
       {item.image_url && (
         <img
-          src={item.image_url.replace(/ /g, "%20")}
+          src={item.image_url}
           alt=""
           style={{ width: 100, height: 100, objectFit: "cover", flexShrink: 0 }}
         />

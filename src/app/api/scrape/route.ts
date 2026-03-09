@@ -92,7 +92,7 @@ function extractFromEmbeddedJson(html: string): { products: ScrapedProduct[]; ca
 
     // Image URL — must be absolute URL
     const imgM = window.match(/"(?:imageUrl|image_url|image|photo|thumbnail)":"(https?:\/\/[^"]+)"/);
-    const image_url = imgM ? imgM[1] : null;
+    const image_url = imgM ? imgM[1].replace(/ /g, "%20") : null;
 
     // Description — grab until next unescaped quote (handle escaped quotes in content)
     const descM = window.match(/"description":"((?:[^"\\]|\\.)*)"/);
