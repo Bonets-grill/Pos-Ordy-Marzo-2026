@@ -239,7 +239,9 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
 /* ── Component ────────────────────────────────────────── */
 
 export default function MenuPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const ln = (item: { name_es: string; name_en: string; name_fr?: string | null; name_de?: string | null; name_it?: string | null }) =>
+    (item as Record<string, string | null>)[`name_${lang}`] || item.name_es || item.name_en;
   const [tab, setTab] = useState<Tab>("categories");
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -774,7 +776,7 @@ export default function MenuPage() {
 
   const catName = (id: string | null) => {
     const c = categories.find((c) => c.id === id);
-    return c ? c.name_es : "—";
+    return c ? ln(c) : "—";
   };
 
   const catColor = (id: string | null) => {
@@ -1298,7 +1300,7 @@ export default function MenuPage() {
               {/* Name + sort */}
               <div style={{ flex: 1, minWidth: 120 }}>
                 <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.95rem" }}>
-                  {cat.name_es}
+                  {ln(cat)}
                 </div>
                 <div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
                   {t("menu.sort_order")}: {cat.sort_order}
@@ -1347,7 +1349,7 @@ export default function MenuPage() {
             >
               <option value="all">{t("menu.all_categories")}</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.icon} {c.name_es}</option>
+                <option key={c.id} value={c.id}>{c.icon} {ln(c)}</option>
               ))}
             </select>
 
@@ -1437,7 +1439,7 @@ export default function MenuPage() {
                   }}>
                     <span style={{ fontSize: 22 }}>{group.cat.icon || "🍽️"}</span>
                     <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>
-                      {group.cat.name_es}
+                      {ln(group.cat)}
                     </span>
                     <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 400 }}>
                       ({group.prods.length})
@@ -1521,7 +1523,7 @@ export default function MenuPage() {
                   <div style={{ padding: "12px 14px", flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                     {/* Name */}
                     <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.9rem" }}>
-                      {prod.name_es}
+                      {ln(prod)}
                     </div>
 
                     {/* Price */}
@@ -1614,7 +1616,7 @@ export default function MenuPage() {
 
                     <div style={{ flex: 1, minWidth: 140 }}>
                       <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.95rem" }}>
-                        {group.name_es || group.name_en}
+                        {ln(group)}
                       </div>
                       <div style={{ color: "var(--text-muted)", fontSize: "0.78rem", display: "flex", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
                         <span style={{
@@ -1693,7 +1695,7 @@ export default function MenuPage() {
                           }}
                         >
                           <span style={{ color: "var(--text-primary)", fontSize: "0.9rem", flex: 1 }}>
-                            {opt.name_es || opt.name_en}
+                            {ln(opt)}
                           </span>
                           <span style={{
                             color: opt.price_delta > 0 ? "var(--accent)" : opt.price_delta < 0 ? "#22c55e" : "var(--text-muted)",
@@ -2014,7 +2016,7 @@ export default function MenuPage() {
               >
                 <option value="">—</option>
                 {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name_es}</option>
+                  <option key={c.id} value={c.id}>{c.icon} {ln(c)}</option>
                 ))}
               </select>
             </div>
@@ -2223,7 +2225,7 @@ export default function MenuPage() {
                           style={{ width: 16, height: 16, accentColor: "var(--accent)" }}
                         />
                         <span style={{ color: "var(--text-primary)", fontWeight: 500, fontSize: "0.88rem", flex: 1 }}>
-                          {g.name_es || g.name_en}
+                          {ln(g)}
                         </span>
                         <span style={{
                           fontSize: "0.72rem",

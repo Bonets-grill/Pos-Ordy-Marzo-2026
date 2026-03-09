@@ -274,7 +274,7 @@ const TABS: { key: TabKey; icon: React.ElementType; labelKey: string }[] = [
 /* ─── Component ─── */
 
 export default function SettingsPage() {
-  const { t } = useI18n();
+  const { t, setLang } = useI18n();
   const { restart } = useOnboarding();
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
@@ -661,7 +661,7 @@ export default function SettingsPage() {
             <label style={labelStyle}>{t("settings.locale")}</label>
             <select
               value={settings.locale}
-              onChange={(e) => updateField("locale", e.target.value)}
+              onChange={(e) => { updateField("locale", e.target.value); setLang(e.target.value as "es" | "en" | "fr" | "de" | "it"); }}
               style={selectStyle}
             >
               {LOCALES.map((loc) => (
