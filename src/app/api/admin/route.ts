@@ -158,6 +158,8 @@ export async function POST(req: NextRequest) {
       return ok(await postUpdateUserRole(svc, body));
     case "delete_orders":
       return ok(await postDeleteOrders(svc, body));
+    case "impersonate":
+      return ok(await postImpersonate(svc, body, admin));
     default:
       return err("Unknown action");
   }
@@ -947,4 +949,22 @@ async function postDeleteOrders(svc: Svc, body: Row) {
 
   if (error) return { error: error.message };
   return { ok: true, tenant_id, deleted_orders: count || 0 };
+}
+
+/* ── 7. Impersonate tenant ── */
+
+async function postImpersonate(svc: Svc, body: Row, admin: Row) {
+  const { tenant_id } = body;
+  if (!tenant_id) return { error: "Missing tenant_id" };
+
+  // Save original tenant_id so caller can store it
+  const originalTenantId = admin.tenant_id as string;
+
+  const { error } = await svc
+    .from("users")
+    .update({ tenant_id })
+    .eq("id", admin.id);
+
+  if (error) return { error: error.message };
+  return { ok: true, original_tenant_id: originalTenantId, tenant_id };
 }

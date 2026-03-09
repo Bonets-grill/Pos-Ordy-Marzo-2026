@@ -1198,6 +1198,26 @@ export default function SuperAdminPage() {
               </div>
               <div style={{ display: "flex", gap: 4 }}>
                 <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const res = await fetch("/api/admin", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "impersonate", tenant_id: tenant.id }),
+                    });
+                    const data = await res.json();
+                    if (data.ok) {
+                      localStorage.setItem("impersonate_original_tenant", data.original_tenant_id);
+                      localStorage.setItem("impersonate_tenant_name", tenant.name);
+                      router.push("/dashboard");
+                    }
+                  }}
+                  title="Impersonar tenant"
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#8b5cf6" }}
+                >
+                  <Eye size={18} />
+                </button>
+                <button
                   onClick={(e) => { e.stopPropagation(); toggleTenant(tenant.id, tenant.active !== false); }}
                   style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: tenant.active !== false ? "var(--accent)" : "var(--text-muted)" }}
                 >
