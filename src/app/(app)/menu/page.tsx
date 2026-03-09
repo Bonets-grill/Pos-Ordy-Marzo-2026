@@ -1498,11 +1498,12 @@ export default function MenuPage() {
                     </div>
                   )}
 
-                  {/* Image placeholder */}
+                  {/* Image */}
                   <div
                     style={{
                       height: 120,
                       background: "var(--bg-secondary)",
+                      overflow: "hidden",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1511,7 +1512,7 @@ export default function MenuPage() {
                     }}
                   >
                     {prod.image_url ? (
-                      <img src={prod.image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={prod.image_url} alt="" referrerPolicy="no-referrer" style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }} />
                     ) : (
                       "🍽️"
                     )}
