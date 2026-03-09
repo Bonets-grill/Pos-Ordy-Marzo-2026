@@ -33,6 +33,8 @@ interface Order {
   order_type: string | null;
   status: string;
   created_at: string;
+  customer_name: string | null;
+  customer_notes: string | null;
 }
 
 interface KdsStation {
@@ -161,7 +163,7 @@ export default function KdsPage() {
     if (!tenantId) return;
     const { data: ordersData } = await supabase
       .from("orders")
-      .select("id, order_number, table_id, order_type, status, created_at, restaurant_tables(number)")
+      .select("id, order_number, table_id, order_type, status, created_at, customer_name, customer_notes, restaurant_tables(number)")
       .eq("tenant_id", tenantId)
       .in("status", ["confirmed", "preparing", "ready"])
       .order("created_at", { ascending: true });
@@ -649,6 +651,7 @@ export default function KdsPage() {
                       }}
                     >
                       {orderLabel(order, t)}
+                      {order.customer_name ? ` — ${order.customer_name}` : ""}
                     </span>
                   </div>
                   <div
@@ -682,6 +685,25 @@ export default function KdsPage() {
                     </span>
                   </div>
                 </div>
+
+                {/* Customer notes */}
+                {order.customer_notes && (
+                  <div
+                    style={{
+                      margin: "0 12px",
+                      marginTop: 8,
+                      padding: "8px 12px",
+                      background: "var(--warning)15",
+                      borderRadius: 8,
+                      borderLeft: "4px solid var(--warning)",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "var(--warning)",
+                    }}
+                  >
+                    {order.customer_notes}
+                  </div>
+                )}
 
                 {/* Items */}
                 <div
@@ -731,28 +753,34 @@ export default function KdsPage() {
                           {item.name}
                         </span>
                       </div>
-                      {!!item.modifiers && (
-                        <span
-                          style={{
-                            fontSize: 13,
-                            color: "var(--text-secondary)",
-                            paddingLeft: 36,
-                          }}
-                        >
-                          {String(item.modifiers)}
-                        </span>
-                      )}
+                      {(() => {
+                        const mods = Array.isArray(item.modifiers) ? item.modifiers : [];
+                        return mods.length > 0 ? (
+                          <div style={{ paddingLeft: 36, display: "flex", flexDirection: "column", gap: 2 }}>
+                            {mods.map((mod: { name: string; price_delta: number }, mi: number) => (
+                              <span key={mi} style={{ fontSize: 14, color: "var(--accent)", fontWeight: 500 }}>
+                                + {mod.name}{mod.price_delta > 0 ? ` (+${mod.price_delta.toFixed(2)}€)` : ""}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null;
+                      })()}
                       {item.notes && (
-                        <span
+                        <div
                           style={{
-                            fontSize: 13,
+                            fontSize: 14,
                             color: "var(--warning)",
-                            fontWeight: 600,
+                            fontWeight: 700,
                             paddingLeft: 36,
+                            padding: "4px 8px 4px 36px",
+                            marginTop: 2,
+                            background: "var(--warning)11",
+                            borderRadius: 6,
+                            borderLeft: "3px solid var(--warning)",
                           }}
                         >
-                          {item.notes}
-                        </span>
+                          ⚠ {item.notes}
+                        </div>
                       )}
                     </div>
                   ))}

@@ -339,14 +339,42 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState(0);
   const [checked, setChecked] = useState(false);
 
-  // Check if user has completed onboarding
+  // Check if user has completed onboarding — only show once ever
   useEffect(() => {
     const done = localStorage.getItem(STORAGE_KEY);
-    if (!done && pathname === "/dashboard") {
-      // Auto-start on first visit to dashboard
-      setTimeout(() => setActive(true), 800);
+    if (done) {
+      setChecked(true);
+      return;
     }
-    setChecked(true);
+    // Only auto-start for brand new users on their first dashboard visit
+    // Check if this user has any orders (existing user = skip tour)
+    const checkNewUser = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setChecked(true); return; }
+        const { count } = await supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true });
+        if (count && count > 0) {
+          // Existing user with orders — skip tour permanently
+          localStorage.setItem(STORAGE_KEY, "auto-skipped");
+          setChecked(true);
+          return;
+        }
+      } catch {
+        // On error, don't show tour
+        localStorage.setItem(STORAGE_KEY, "auto-skipped");
+        setChecked(true);
+        return;
+      }
+      // Truly new user, no orders — show tour only on dashboard
+      if (pathname === "/dashboard") {
+        setTimeout(() => setActive(true), 800);
+      }
+      setChecked(true);
+    };
+    checkNewUser();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const markDone = useCallback(() => {
