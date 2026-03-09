@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -17,6 +17,8 @@ import {
   LogOut,
   Menu,
   X,
+  Banknote,
+  Crown,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n-provider";
 import { createClient } from "@/lib/supabase-browser";
@@ -33,7 +35,9 @@ const NAV_ITEMS = [
   { href: "/payments", icon: CreditCard, label: "nav.payments" },
   { href: "/loyalty", icon: Heart, label: "nav.loyalty" },
   { href: "/analytics", icon: BarChart3, label: "nav.analytics" },
+  { href: "/cash-register", icon: Banknote, label: "nav.cash_register" },
   { href: "/escandallo", icon: Calculator, label: "nav.escandallo" },
+  { href: "/admin", icon: Crown, label: "nav.admin", adminOnly: true },
   { href: "/settings", icon: Settings, label: "nav.settings" },
 ] as const;
 
@@ -52,6 +56,21 @@ export default function Sidebar() {
   const router = useRouter();
   const { t } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("users").select("role").eq("id", user.id).single().then(({ data }) => {
+        if (data) setUserRole(data.role);
+      });
+    });
+  }, []);
+
+  const visibleItems = NAV_ITEMS.filter((item) =>
+    !("adminOnly" in item && item.adminOnly) || userRole === "super_admin"
+  );
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -108,7 +127,7 @@ export default function Sidebar() {
 
       {/* Nav items */}
       <nav style={{ flex: 1, overflowY: "auto", padding: "12px 8px" }}>
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const active = isActive(item.href);
           const Icon = item.icon;
           return (
@@ -298,7 +317,7 @@ export default function Sidebar() {
 
         {/* Drawer nav */}
         <nav style={{ flex: 1, overflowY: "auto", padding: "12px 8px" }}>
-          {NAV_ITEMS.map((item) => {
+          {visibleItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
             return (

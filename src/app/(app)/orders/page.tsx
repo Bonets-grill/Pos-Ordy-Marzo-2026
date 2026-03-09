@@ -96,7 +96,7 @@ const DATE_RANGE_OPTIONS = [
 ] as const;
 
 const PAGE_SIZE = 20;
-const TAX_RATE = 0.10; // 10% tax — adjust as needed
+// Tax rate loaded from tenant settings in loadOrders()
 
 /* ── Component ────────────────────────────────────────── */
 
@@ -110,6 +110,7 @@ export default function OrdersPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [tenantId, setTenantId] = useState<string | null>(null);
+  const [tenantTaxRate, setTenantTaxRate] = useState(0.10);
 
   // Date range filter
   const [dateRange, setDateRange] = useState<string>("all");
@@ -168,7 +169,15 @@ export default function OrdersPage() {
         .eq("id", user.id)
         .single();
 
-      if (profile?.tenant_id) setTenantId(profile.tenant_id);
+      if (profile?.tenant_id) {
+        setTenantId(profile.tenant_id);
+        const { data: tenant } = await supabase
+          .from("tenants")
+          .select("tax_rate")
+          .eq("id", profile.tenant_id)
+          .single();
+        if (tenant?.tax_rate != null) setTenantTaxRate(tenant.tax_rate / 100);
+      }
     }
     getTenant();
   }, []);
@@ -560,7 +569,7 @@ export default function OrdersPage() {
       subtotal += added.menuItem.price * added.quantity;
     }
 
-    const tax = subtotal * TAX_RATE;
+    const tax = subtotal * tenantTaxRate;
     const total = subtotal + tax + (editOrder?.tip_amount || 0) - (editOrder?.discount_amount || 0);
 
     return { subtotal, tax, total: Math.max(0, total) };

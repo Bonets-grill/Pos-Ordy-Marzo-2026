@@ -802,7 +802,7 @@ export default function DashboardPage() {
                         color: STATUS_COLORS[order.status] || "var(--text-muted)",
                       }}
                     >
-                      {order.status}
+                      {t(`orders.status_${order.status}`) || order.status}
                     </span>
                   </td>
                   <td

@@ -1319,7 +1319,7 @@ export default function MenuPage() {
                   color: cat.active ? "#22c55e" : "#f87171",
                 }}
               >
-                {cat.active ? t("menu.active") : "Off"}
+                {cat.active ? t("menu.active") : t("common.inactive")}
               </button>
 
               {/* Actions */}
@@ -1561,7 +1561,7 @@ export default function MenuPage() {
                           color: prod.available ? "#22c55e" : "#f87171",
                         }}
                       >
-                        {prod.available ? t("menu.available") : "Off"}
+                        {prod.available ? t("menu.available") : t("common.inactive")}
                       </button>
                     </div>
                   </div>

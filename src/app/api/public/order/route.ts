@@ -26,11 +26,11 @@ interface ValidatedItem {
 }
 
 // ---------------------------------------------------------------------------
-// Rate limiter — simple in-memory per-IP, 5 orders / 60s
+// Rate limiter — simple in-memory per-IP, 10 orders / 60s
 // ---------------------------------------------------------------------------
 
 const RATE_WINDOW_MS = 60_000;
-const RATE_MAX = 5;
+const RATE_MAX = 10;
 
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
 
@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
     // -----------------------------------------------------------------------
     const { data: tenant } = await supabase
       .from("tenants")
-      .select("id, tax_rate, tax_included, locale, currency")
+      .select("id, tax_rate, tax_included, locale, currency, business_hours")
       .eq("slug", tenantSlug)
       .eq("active", true)
       .single();
@@ -200,6 +200,36 @@ export async function POST(req: NextRequest) {
     }
     const tenantId = tenant.id;
     const tenantLang: string = (tenant.locale || "es").slice(0, 2);
+
+    // -----------------------------------------------------------------------
+    // 1b. Validate business hours (server-side)
+    // -----------------------------------------------------------------------
+    if (tenant.business_hours && typeof tenant.business_hours === "object" && Object.keys(tenant.business_hours as object).length > 0) {
+      const bh = tenant.business_hours as Record<string, { closed?: boolean; open?: string; close?: string; shifts?: { open: string; close: string }[] }>;
+      const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+      const now = new Date();
+      const dayKey = days[now.getDay()];
+      const dayData = bh[dayKey];
+      if (dayData) {
+        if (dayData.closed) {
+          return NextResponse.json({ error: "Restaurant is currently closed" }, { status: 403 });
+        }
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        const shifts = dayData.shifts || (dayData.open && dayData.close ? [{ open: dayData.open, close: dayData.close }] : []);
+        if (shifts.length > 0) {
+          const isOpen = shifts.some((s) => {
+            const openMin = parseInt(s.open.split(":")[0]) * 60 + parseInt(s.open.split(":")[1]);
+            let closeMin = parseInt(s.close.split(":")[0]) * 60 + parseInt(s.close.split(":")[1]);
+            if (closeMin <= openMin) closeMin += 24 * 60;
+            return nowMin >= openMin && nowMin <= closeMin;
+          });
+          if (!isOpen) {
+            return NextResponse.json({ error: "Restaurant is currently closed" }, { status: 403 });
+          }
+        }
+      }
+      // Day not configured = allow ordering (don't block sales)
+    }
 
     // -----------------------------------------------------------------------
     // 2. Resolve table

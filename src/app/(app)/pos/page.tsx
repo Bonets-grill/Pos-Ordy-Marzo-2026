@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n-provider";
 import { formatCurrency } from "@/lib/utils";
 import { Search, Plus, Minus, Trash2, X, CheckCircle, Split, Clock, ChevronDown, Users, ListChecks, UtensilsCrossed, ShoppingBag, Truck, ArrowLeft } from "lucide-react";
 import PosLoyaltyPanel from "@/components/loyalty/PosLoyaltyPanel";
+import ReceiptModal from "@/components/receipt/ReceiptModal";
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -155,12 +156,18 @@ export default function PosPage() {
   const [originalCartSnapshot, setOriginalCartSnapshot] = useState<string>("");
   const [originalItemIds, setOriginalItemIds] = useState<Set<string>>(new Set());
 
+  /* ── Receipt modal state ──────────────────────────────── */
+  const [receiptData, setReceiptData] = useState<{ order: any; items: any[]; tenantName: string; receiptConfig?: any } | null>(null);
+
   /* ── Recent orders state ───────────────────────────────── */
   const [showRecentOrders, setShowRecentOrders] = useState(false);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
   const [viewingOrder, setViewingOrder] = useState<RecentOrder | null>(null);
   const recentRef = useRef<HTMLDivElement>(null);
+  const tenantNameRef = useRef("Restaurant");
+  const receiptConfigRef = useRef<any>(null);
+  const currencyRef = useRef("EUR");
 
   /* ── Close recent dropdown on outside click ────────────── */
   useEffect(() => {
@@ -197,13 +204,16 @@ export default function PosPage() {
         const tid = profile.tenant_id;
         setTenantId(tid);
 
-        // Fetch tenant tax_rate + settings
+        // Fetch tenant tax_rate + settings + name + receipt_config
         const { data: tenant } = await supabase
           .from("tenants")
-          .select("tax_rate, settings")
+          .select("name, tax_rate, settings, receipt_config, currency")
           .eq("id", tid)
           .single();
 
+        if (tenant?.name) tenantNameRef.current = tenant.name;
+        if (tenant?.receipt_config) receiptConfigRef.current = tenant.receipt_config;
+        if (tenant?.currency) currencyRef.current = tenant.currency;
         if (tenant?.tax_rate) setTaxRate(tenant.tax_rate);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const s = tenant?.settings as any;
@@ -707,6 +717,7 @@ export default function PosPage() {
 
     try {
       let orderId = existingOrderId;
+      let orderNumber: number | null = null;
 
       if (existingOrderId) {
         // Update existing order → paid
@@ -754,7 +765,7 @@ export default function PosPage() {
             metadata: deliveryAddress ? { delivery_address: deliveryAddress } : null,
             created_by: userId,
           })
-          .select("id")
+          .select("id, order_number")
           .single();
 
         if (orderErr || !order) {
@@ -764,6 +775,7 @@ export default function PosPage() {
         }
 
         orderId = order.id;
+        orderNumber = order.order_number;
 
         const orderItems = buildOrderItems(order.id, cart);
         await supabase.from("order_items").insert(orderItems);
@@ -825,6 +837,36 @@ export default function PosPage() {
           p_source: "pos",
         });
       }
+
+      // Show receipt
+      const selectedTableObj = tables.find((t: any) => t.id === selectedTable);
+      setReceiptData({
+        order: {
+          id: orderId,
+          order_number: orderNumber || 0,
+          order_type: orderType,
+          status: "paid",
+          customer_name: loyaltyCustomer?.name || customerName || undefined,
+          subtotal,
+          tax_amount: taxAmount,
+          discount_amount: discount + loyaltyDiscount,
+          tip_amount: tip,
+          total,
+          payment_method: payMethod,
+          created_at: new Date().toISOString(),
+          restaurant_tables: selectedTableObj ? { number: selectedTableObj.number } : undefined,
+        },
+        items: cart.map((c) => ({
+          name: c.name,
+          quantity: c.qty,
+          unit_price: c.price,
+          subtotal: c.price * c.qty,
+          modifiers: c.modifiers?.map((m) => ({ name: m.name, price_delta: m.price_delta || 0 })),
+          notes: c.notes,
+        })),
+        tenantName: tenantNameRef.current,
+        receiptConfig: receiptConfigRef.current,
+      });
 
       resetCart();
       setExistingOrderId(null);
@@ -3231,6 +3273,19 @@ export default function PosPage() {
           to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
       `}</style>
+
+      {/* Receipt Modal */}
+      {receiptData && (
+        <ReceiptModal
+          open={!!receiptData}
+          onClose={() => setReceiptData(null)}
+          order={receiptData.order}
+          items={receiptData.items}
+          tenantName={receiptData.tenantName}
+          receiptConfig={receiptData.receiptConfig}
+          currency={currencyRef.current}
+        />
+      )}
     </div>
   );
 }

@@ -541,7 +541,7 @@ export default function AnalyticsPage() {
   const totalDiscounts = useMemo(() => orders.reduce((s, o) => s + (o.discount_amount || 0), 0), [orders]);
   const totalTaxes = useMemo(() => orders.reduce((s, o) => s + (o.tax_amount || 0), 0), [orders]);
   const taxBase = grossSales - totalDiscounts;
-  const netSales = taxBase + totalTaxes;
+  const netSales = taxBase;
 
   // ── Revenue by source ──
   const bySource: SourceBucket[] = useMemo(() => {

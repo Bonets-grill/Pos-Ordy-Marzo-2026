@@ -358,7 +358,7 @@ export default function LoyaltyRewardsPage() {
                     color: r.active ? "#22c55e" : "#f87171",
                   }}
                 >
-                  {r.active ? t("menu.active") : "Off"}
+                  {r.active ? t("menu.active") : t("common.inactive")}
                 </button>
               </div>
             </div>
