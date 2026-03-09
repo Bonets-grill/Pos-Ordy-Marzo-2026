@@ -597,8 +597,9 @@ export default function AnalyticsPage() {
 
   // ── Open bills (non-closed dine-in orders) ──
   const openBills = useMemo(() => {
+    const closedStatuses = ["closed", "cancelled", "refunded", "paid", "served", "completed"];
     return allOrdersIncCancelled.filter((o) =>
-      o.status !== "closed" && o.status !== "cancelled" && o.status !== "refunded" && o.table_id
+      !closedStatuses.includes(o.status) && o.table_id
     );
   }, [allOrdersIncCancelled]);
 
