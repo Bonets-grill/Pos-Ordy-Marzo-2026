@@ -156,12 +156,12 @@ interface AuditRow {
    ══════════════════════════════════════════════════════ */
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "#f59e0b",
+  open: "#f59e0b",
   confirmed: "#3b82f6",
   preparing: "#8b5cf6",
   ready: "#10b981",
-  delivered: "#10b981",
-  paid: "#06b6d4",
+  served: "#10b981",
+  closed: "#06b6d4",
   cancelled: "#ef4444",
   refunded: "#ef4444",
 };
@@ -385,14 +385,29 @@ export default function SuperAdminPage() {
   const [auditTenantFilter, setAuditTenantFilter] = useState("all");
 
   /* ── System tab state ── */
-  const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({
-    qr_ordering: true,
-    whatsapp_agent: true,
-    loyalty_program: true,
-    delivery: false,
-    ai_menu_translation: true,
+  const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("admin_feature_flags");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {
+      qr_ordering: true,
+      whatsapp_agent: true,
+      loyalty_program: true,
+      delivery: false,
+      ai_menu_translation: true,
+    };
   });
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem("admin_maintenance_mode") === "true";
+      } catch {}
+    }
+    return false;
+  });
   const [broadcastMessage, setBroadcastMessage] = useState("");
 
   /* ══════════════════════════════════════════════════════
@@ -1785,7 +1800,7 @@ export default function SuperAdminPage() {
                 <span style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 500 }}>{ff.label}</span>
               </div>
               <button
-                onClick={() => setFeatureFlags(prev => ({ ...prev, [ff.key]: !prev[ff.key] }))}
+                onClick={() => setFeatureFlags(prev => { const next = { ...prev, [ff.key]: !prev[ff.key] }; try { localStorage.setItem("admin_feature_flags", JSON.stringify(next)); } catch {} return next; })}
                 style={{ background: "none", border: "none", cursor: "pointer", color: featureFlags[ff.key] ? "var(--accent)" : "var(--text-muted)" }}
               >
                 {featureFlags[ff.key] ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
@@ -1808,7 +1823,7 @@ export default function SuperAdminPage() {
             </div>
           </div>
           <button
-            onClick={() => setMaintenanceMode(!maintenanceMode)}
+            onClick={() => { const next = !maintenanceMode; setMaintenanceMode(next); try { localStorage.setItem("admin_maintenance_mode", String(next)); } catch {} }}
             style={{
               background: "none", border: "none", cursor: "pointer",
               color: maintenanceMode ? "var(--danger)" : "var(--text-muted)",
@@ -1835,6 +1850,7 @@ export default function SuperAdminPage() {
           <button
             onClick={() => {
               if (broadcastMessage.trim()) {
+                console.log(`[Admin Broadcast] ${new Date().toISOString()} — "${broadcastMessage}"`);
                 alert(`Broadcast sent: "${broadcastMessage}"`);
                 setBroadcastMessage("");
               }

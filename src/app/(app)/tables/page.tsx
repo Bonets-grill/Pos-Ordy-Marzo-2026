@@ -290,7 +290,7 @@ export default function TablesPage() {
       .from("orders")
       .select("id, order_number, total, created_at, table_id")
       .eq("tenant_id", tenantId)
-      .in("status", ["pending", "preparing", "ready", "delivered"])
+      .in("status", ["open", "preparing", "ready", "served"])
       .not("table_id", "is", null);
     if (data) {
       const map: Record<string, TableOrder> = {};

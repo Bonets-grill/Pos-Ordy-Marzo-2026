@@ -18,6 +18,7 @@
  * POST /api/admin { action: "create_tenant", name, slug, plan, currency, tax_rate }
  * POST /api/admin { action: "update_user_role", user_id, role }
  * POST /api/admin { action: "delete_orders", tenant_id }
+ * POST /api/admin { action: "clean_demo_data" }
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -160,6 +161,8 @@ export async function POST(req: NextRequest) {
       return ok(await postDeleteOrders(svc, body));
     case "impersonate":
       return ok(await postImpersonate(svc, body, admin));
+    case "clean_demo_data":
+      return ok(await postCleanDemoData(svc));
     default:
       return err("Unknown action");
   }
@@ -967,4 +970,18 @@ async function postImpersonate(svc: Svc, body: Row, admin: Row) {
 
   if (error) return { error: error.message };
   return { ok: true, original_tenant_id: originalTenantId, tenant_id };
+}
+
+/* ── 8. Clean demo data ── */
+
+async function postCleanDemoData(svc: Svc) {
+  // Delete in order respecting FK constraints
+  await svc.from("order_items").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await svc.from("payments").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await svc.from("cash_movements").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await svc.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await svc.from("cash_shifts").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await svc.from("notifications").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+
+  return { ok: true, message: "Demo data cleaned" };
 }

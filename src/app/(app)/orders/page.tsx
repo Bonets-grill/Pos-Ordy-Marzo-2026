@@ -48,7 +48,6 @@ interface Order {
   payment_status: string | null;
   customer_name: string | null;
   customer_notes: string | null;
-  cancel_reason: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -74,8 +73,6 @@ const STATUS_COLORS: Record<string, string> = {
   paid: "var(--accent)",
   cancelled: "var(--danger)",
   refunded: "var(--warning)",
-  pending: "var(--warning)",
-  delivered: "var(--success)",
 };
 
 const TAB_FILTERS = [
@@ -221,7 +218,7 @@ export default function OrdersPage() {
       let query = supabase
         .from("orders")
         .select(
-          "id, order_number, order_type, status, total, subtotal, tax_amount, discount_amount, tip_amount, payment_method, payment_status, customer_name, customer_notes, cancel_reason, notes, created_at, updated_at, restaurant_tables(number)",
+          "id, order_number, order_type, status, total, subtotal, tax_amount, discount_amount, tip_amount, payment_method, payment_status, customer_name, customer_notes, notes, created_at, updated_at, restaurant_tables(number)",
           { count: "exact" }
         )
         .eq("tenant_id", tenantId)
@@ -352,7 +349,7 @@ export default function OrdersPage() {
         .from("orders")
         .update({
           status: "cancelled",
-          cancel_reason: cancelReason.trim() || null,
+          notes: cancelReason.trim() || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", cancelOrderId)
@@ -361,7 +358,7 @@ export default function OrdersPage() {
       await fetchOrders();
       if (selectedOrder?.id === cancelOrderId) {
         setSelectedOrder((prev) =>
-          prev ? { ...prev, status: "cancelled", cancel_reason: cancelReason.trim() || null } : null
+          prev ? { ...prev, status: "cancelled", notes: cancelReason.trim() || null } : null
         );
       }
       setCancelModalOpen(false);
@@ -666,7 +663,6 @@ export default function OrdersPage() {
     preparing: "ready",
     ready: "served",
     served: "closed",
-    pending: "preparing",
   };
 
   /* ── Render ───────────────────────────────────────── */
@@ -2492,7 +2488,7 @@ function DetailPanel({
             {t("orders.cancelled").toUpperCase()}
           </div>
         )}
-        {order.status === "cancelled" && order.cancel_reason && (
+        {order.status === "cancelled" && order.notes && (
           <div
             style={{
               marginTop: 4,
@@ -2501,7 +2497,7 @@ function DetailPanel({
               fontStyle: "italic",
             }}
           >
-            {t("orders.cancel_reason")}: {order.cancel_reason}
+            {t("orders.cancel_reason")}: {order.notes}
           </div>
         )}
         {order.status === "refunded" && (

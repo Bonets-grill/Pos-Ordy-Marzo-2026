@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     // 1. Get tenant
     const { data: tenant, error: tErr } = await supabase
       .from("tenants")
-      .select("id, name, slug, logo_url, currency, locale, tax_rate, tax_included, settings, business_hours")
+      .select("id, name, slug, logo_url, currency, locale, tax_rate, tax_included, settings")
       .eq("slug", slug)
       .eq("active", true)
       .single();
@@ -111,7 +111,7 @@ export async function GET(req: NextRequest) {
         locale: tenant.locale,
         tax_rate: tenant.tax_rate,
         tax_included: tenant.tax_included,
-        business_hours: tenant.business_hours || null,
+        business_hours: null,
       },
       table,
       tables,

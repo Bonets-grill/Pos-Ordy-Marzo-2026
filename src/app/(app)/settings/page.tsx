@@ -63,7 +63,7 @@ interface KdsStation {
 interface StaffUser {
   id: string;
   email: string;
-  full_name: string;
+  name: string;
   role: string;
   active: boolean;
 }
@@ -275,6 +275,7 @@ const TABS: { key: TabKey; icon: React.ElementType; labelKey: string }[] = [
 
 export default function SettingsPage() {
   const { t } = useI18n();
+  const { restart } = useOnboarding();
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -309,7 +310,7 @@ export default function SettingsPage() {
   // Staff
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [showAddUser, setShowAddUser] = useState(false);
-  const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "waiter" });
+  const [newUser, setNewUser] = useState({ name: "", email: "", role: "waiter" });
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingRole, setEditingRole] = useState("");
   const [staffSaving, setStaffSaving] = useState(false);
@@ -348,9 +349,9 @@ export default function SettingsPage() {
         .order("name"),
       supabase
         .from("users")
-        .select("id, email, full_name, role, active")
+        .select("id, email, name, role, active")
         .eq("tenant_id", tenantId)
-        .order("full_name"),
+        .order("name"),
     ]);
 
     if (tenantRes.data) {
@@ -485,16 +486,16 @@ export default function SettingsPage() {
 
   // Add staff user
   async function handleAddUser() {
-    if (!tenantId || !newUser.email.trim() || !newUser.full_name.trim()) return;
+    if (!tenantId || !newUser.email.trim() || !newUser.name.trim()) return;
     setStaffSaving(true);
     await supabase.from("users").insert({
       email: newUser.email.trim(),
-      full_name: newUser.full_name.trim(),
+      name: newUser.name.trim(),
       role: newUser.role,
       tenant_id: tenantId,
       active: true,
     });
-    setNewUser({ full_name: "", email: "", role: "waiter" });
+    setNewUser({ name: "", email: "", role: "waiter" });
     setShowAddUser(false);
     setStaffSaving(false);
     fetchAll();
@@ -826,8 +827,8 @@ export default function SettingsPage() {
                 <label style={labelStyle}>{t("settings.user_name")}</label>
                 <input
                   type="text"
-                  value={newUser.full_name}
-                  onChange={(e) => setNewUser((u) => ({ ...u, full_name: e.target.value }))}
+                  value={newUser.name}
+                  onChange={(e) => setNewUser((u) => ({ ...u, name: e.target.value }))}
                   placeholder={t("settings.user_name_placeholder")}
                   style={inputStyle}
                 />
@@ -870,13 +871,13 @@ export default function SettingsPage() {
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 onClick={handleAddUser}
-                disabled={staffSaving || !newUser.email.trim() || !newUser.full_name.trim()}
+                disabled={staffSaving || !newUser.email.trim() || !newUser.name.trim()}
                 style={{
                   ...btnPrimary,
                   padding: "8px 20px",
                   fontSize: 13,
                   opacity:
-                    staffSaving || !newUser.email.trim() || !newUser.full_name.trim() ? 0.5 : 1,
+                    staffSaving || !newUser.email.trim() || !newUser.name.trim() ? 0.5 : 1,
                 }}
               >
                 {staffSaving ? t("settings.saving") : t("settings.confirm_add_user")}
@@ -884,7 +885,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => {
                   setShowAddUser(false);
-                  setNewUser({ full_name: "", email: "", role: "waiter" });
+                  setNewUser({ name: "", email: "", role: "waiter" });
                 }}
                 style={{
                   ...btnSmall,
@@ -932,7 +933,7 @@ export default function SettingsPage() {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {user.full_name || user.email}
+                    {user.name || user.email}
                   </div>
                   <div
                     style={{
@@ -1439,7 +1440,6 @@ export default function SettingsPage() {
 
   /* ─── Tab: Danger Zone ─── */
   function renderDanger() {
-    const { restart } = useOnboarding();
     return (
       <>
         {/* Onboarding replay */}
