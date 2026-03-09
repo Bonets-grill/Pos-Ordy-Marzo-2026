@@ -64,8 +64,8 @@ function urgencyClass(created_at: string): string {
 }
 
 function orderLabel(order: Order, t: (k: string) => string): string {
-  if (order.order_type === "delivery") return "Delivery";
-  if (order.order_type === "takeaway") return "Takeaway";
+  if (order.order_type === "delivery") return t("pos.delivery");
+  if (order.order_type === "takeaway") return t("pos.takeaway");
   if (order.restaurant_tables?.number) return `${t("kds.table")} ${order.restaurant_tables.number}`;
   return "";
 }

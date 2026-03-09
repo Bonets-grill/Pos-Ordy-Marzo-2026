@@ -191,7 +191,7 @@ async function getDashboard(svc: Svc) {
     svc.from("users").select("id, tenant_id, role"),
     svc.from("menu_items").select("id, tenant_id"),
     svc.from("restaurant_tables").select("id, tenant_id, status"),
-    svc.from("loyalty_members").select("id", { count: "exact", head: true }),
+    svc.from("loyalty_customers").select("id", { count: "exact", head: true }),
   ]);
 
   const allTenants = (tenants || []) as Row[];
@@ -326,7 +326,7 @@ async function getTenantDetail(svc: Svc, tenantId: string) {
       .eq("tenant_id", tenantId)
       .order("opened_at", { ascending: false })
       .limit(10),
-    svc.from("loyalty_members")
+    svc.from("loyalty_customers")
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", tenantId),
     svc.from("kds_stations")
@@ -422,7 +422,7 @@ async function getAllUsers(svc: Svc, sp: URLSearchParams) {
 
   let query = svc
     .from("users")
-    .select("id, email, role, tenant_id, created_at, full_name", { count: "exact" });
+    .select("id, email, role, tenant_id, created_at, name", { count: "exact" });
 
   if (tenantFilter) query = query.eq("tenant_id", tenantFilter);
   if (roleFilter) query = query.eq("role", roleFilter);
