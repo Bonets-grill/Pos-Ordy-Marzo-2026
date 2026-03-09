@@ -1512,7 +1512,7 @@ export default function MenuPage() {
                     }}
                   >
                     {prod.image_url ? (
-                      <img src={`/api/image-proxy?url=${encodeURIComponent(prod.image_url)}`} alt="" referrerPolicy="no-referrer" style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }} />
+                      <img src={prod.image_url} alt="" referrerPolicy="no-referrer" style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }} />
                     ) : (
                       "🍽️"
                     )}
@@ -2131,7 +2131,7 @@ export default function MenuPage() {
                     }}
                   >
                     <img
-                      src={prodForm.image_url ? `/api/image-proxy?url=${encodeURIComponent(prodForm.image_url)}` : undefined}
+                      src={prodForm.image_url || undefined}
                       alt=""
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       onError={(e) => {
@@ -2549,7 +2549,7 @@ export default function MenuPage() {
                       {/* Image */}
                       {product.image_url ? (
                         <img
-                          src={`/api/image-proxy?url=${encodeURIComponent(product.image_url)}`}
+                          src={product.image_url}
                           alt={product.name}
                           style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--bg-secondary)" }}
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
