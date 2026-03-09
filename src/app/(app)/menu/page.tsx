@@ -1511,7 +1511,7 @@ export default function MenuPage() {
                     }}
                   >
                     {prod.image_url ? (
-                      <img src={encodeURI(prod.image_url)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={prod.image_url.replace(/ /g, "%20")} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
                       "🍽️"
                     )}
@@ -2130,7 +2130,7 @@ export default function MenuPage() {
                     }}
                   >
                     <img
-                      src={encodeURI(prodForm.image_url)}
+                      src={prodForm.image_url.replace(/ /g, "%20")}
                       alt=""
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       onError={(e) => {
@@ -2548,7 +2548,7 @@ export default function MenuPage() {
                       {/* Image */}
                       {product.image_url ? (
                         <img
-                          src={encodeURI(product.image_url)}
+                          src={product.image_url.replace(/ /g, "%20")}
                           alt={product.name}
                           style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--bg-secondary)" }}
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
