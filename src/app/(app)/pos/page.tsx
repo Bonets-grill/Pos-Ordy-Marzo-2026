@@ -13,12 +13,14 @@ import ReceiptModal from "@/components/receipt/ReceiptModal";
 interface Category {
   id: string;
   name_es: string;
+  name_en?: string; name_fr?: string; name_de?: string; name_it?: string;
   sort_order: number;
 }
 
 interface MenuItem {
   id: string;
   name_es: string;
+  name_en?: string; name_fr?: string; name_de?: string; name_it?: string;
   price: number;
   category_id: string;
 }
@@ -62,6 +64,7 @@ interface ModifierGroup {
   id: string;
   name_es: string;
   name_en: string;
+  name_fr?: string; name_de?: string; name_it?: string;
   min_select: number;
   max_select: number;
   required: boolean;
@@ -73,6 +76,7 @@ interface ModifierOption {
   id: string;
   name_es: string;
   name_en: string;
+  name_fr?: string; name_de?: string; name_it?: string;
   price_delta: number;
   sort_order: number;
 }
@@ -92,7 +96,9 @@ type SplitType = "equal" | "by_item";
 /* ── Component ─────────────────────────────────────────── */
 
 export default function PosPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ln = (item: any) => item[`name_${lang}`] || item.name_es || "";
   const supabase = useMemo(() => createClient(), []);
 
   /* ── Data state ──────────────────────────────────────── */
@@ -237,13 +243,13 @@ export default function PosPage() {
         const [catRes, itemsRes, tablesRes, zonesRes] = await Promise.all([
           supabase
             .from("menu_categories")
-            .select("id, name_es, sort_order")
+            .select("id, name_es, name_en, name_fr, name_de, name_it, sort_order")
             .eq("tenant_id", tid)
             .eq("active", true)
             .order("sort_order", { ascending: true }),
           supabase
             .from("menu_items")
-            .select("id, name_es, price, category_id")
+            .select("id, name_es, name_en, name_fr, name_de, name_it, price, category_id")
             .eq("tenant_id", tid)
             .eq("active", true)
             .order("name_es", { ascending: true }),
@@ -280,7 +286,7 @@ export default function PosPage() {
     }
     if (search.trim()) {
       const q = search.toLowerCase();
-      items = items.filter((i) => i.name_es.toLowerCase().includes(q));
+      items = items.filter((i) => ln(i).toLowerCase().includes(q) || i.name_es.toLowerCase().includes(q));
     }
     return items;
   }, [menuItems, selectedCategory, search]);
@@ -308,7 +314,7 @@ export default function PosPage() {
       // Fetch groups
       const { data: groups } = await supabase
         .from("modifier_groups")
-        .select("id, name_es, name_en, min_select, max_select, required, sort_order")
+        .select("id, name_es, name_en, name_fr, name_de, name_it, min_select, max_select, required, sort_order")
         .in("id", groupIds)
         .eq("active", true)
         .order("sort_order", { ascending: true });
@@ -318,13 +324,13 @@ export default function PosPage() {
       // Fetch all options for these groups
       const { data: options } = await supabase
         .from("modifiers")
-        .select("id, group_id, name_es, name_en, price_delta, sort_order")
+        .select("id, group_id, name_es, name_en, name_fr, name_de, name_it, price_delta, sort_order")
         .in("group_id", groupIds)
         .eq("active", true)
         .order("sort_order", { ascending: true });
 
       // Merge options into groups
-      return groups.map((g: { id: string; name_es: string; name_en: string; min_select: number; max_select: number; required: boolean; sort_order: number }) => ({
+      return groups.map((g: { id: string; name_es: string; name_en: string; name_fr?: string; name_de?: string; name_it?: string; min_select: number; max_select: number; required: boolean; sort_order: number }) => ({
         ...g,
         options: (options || []).filter((o: { group_id: string }) => o.group_id === g.id),
       }));
@@ -1460,7 +1466,7 @@ export default function PosPage() {
                 whiteSpace: "nowrap",
               }}
             >
-              {cat.name_es}
+              {ln(cat)}
             </button>
           ))}
         </div>
@@ -1533,7 +1539,7 @@ export default function PosPage() {
                     wordBreak: "break-word",
                   }}
                 >
-                  {item.name_es}
+                  {ln(item)}
                 </span>
                 <span
                   style={{
@@ -2636,7 +2642,7 @@ export default function PosPage() {
             >
               <div>
                 <div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--text-primary)" }}>
-                  {modifierModalItem.name_es}
+                  {ln(modifierModalItem)}
                 </div>
                 <div style={{ fontSize: "0.82rem", color: "var(--accent)", fontWeight: 600 }}>
                   {formatCurrency(modifierModalItem.price)}
@@ -2680,7 +2686,7 @@ export default function PosPage() {
                         gap: 6,
                       }}
                     >
-                      {group.name_es}
+                      {ln(group)}
                       {group.required && (
                         <span
                           style={{
@@ -2753,7 +2759,7 @@ export default function PosPage() {
                             )}
                           </div>
                           <span style={{ flex: 1, textAlign: "left", color: "var(--text-primary)", fontSize: "0.85rem", fontWeight: 500 }}>
-                            {opt.name_es}
+                            {ln(opt)}
                           </span>
                           {opt.price_delta !== 0 && (
                             <span style={{ color: opt.price_delta > 0 ? "var(--accent)" : "var(--success)", fontSize: "0.82rem", fontWeight: 600 }}>

@@ -98,7 +98,9 @@ const PAGE_SIZE = 20;
 /* ── Component ────────────────────────────────────────── */
 
 export default function OrdersPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ln = (item: any) => item[`name_${lang}`] || item.name_es || "";
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -484,7 +486,7 @@ export default function OrdersPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("menu_items")
-        .select("id, name_es, price, category_id")
+        .select("id, name_es, name_en, name_fr, name_de, name_it, price, category_id")
         .eq("tenant_id", tenantId)
         .eq("active", true)
         .ilike("name_es", `%${query.trim()}%`)
@@ -1496,7 +1498,7 @@ export default function OrdersPage() {
                             textAlign: "left",
                           }}
                         >
-                          <span>{mi.name_es}</span>
+                          <span>{ln(mi)}</span>
                           <span style={{ color: "var(--accent)", fontWeight: 600 }}>
                             {formatCurrency(mi.price)}
                           </span>
@@ -1691,7 +1693,7 @@ export default function OrdersPage() {
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{ color: "var(--text-primary)", fontSize: 13, fontWeight: 500 }}>
-                          {added.menuItem.name_es}
+                          {ln(added.menuItem)}
                         </div>
                         <div style={{ color: "var(--text-muted)", fontSize: 12 }}>
                           {formatCurrency(added.menuItem.price)} {t("orders.each")}
