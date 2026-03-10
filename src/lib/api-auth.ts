@@ -32,8 +32,12 @@ export async function requireAuth(): Promise<
     };
   }
 
-  // Extract tenant_id from user metadata if available
-  const tenantId = (user.user_metadata?.tenant_id as string) || null;
+  // Extract tenant_id from users table (not metadata)
+  let tenantId = (user.user_metadata?.tenant_id as string) || null;
+  if (!tenantId) {
+    const { data: u } = await supabase.from("users").select("tenant_id").eq("id", user.id).single();
+    if (u?.tenant_id) tenantId = u.tenant_id;
+  }
 
   return { user: { id: user.id, email: user.email }, tenantId };
 }
