@@ -19,6 +19,7 @@ import {
   X,
   Banknote,
   Crown,
+  MessageCircle,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n-provider";
 import { createClient } from "@/lib/supabase-browser";
@@ -37,6 +38,7 @@ const NAV_ITEMS = [
   { href: "/analytics", icon: BarChart3, label: "nav.analytics" },
   { href: "/cash-register", icon: Banknote, label: "nav.cash_register" },
   { href: "/escandallo", icon: Calculator, label: "nav.escandallo" },
+  { href: "/whatsapp", icon: MessageCircle, label: "nav.whatsapp" },
   { href: "/admin", icon: Crown, label: "nav.admin", adminOnly: true },
   { href: "/settings", icon: Settings, label: "nav.settings" },
 ] as const;

@@ -73,6 +73,7 @@ type TabKey = "general" | "staff" | "hours" | "receipts" | "notifications" | "kd
 const CURRENCIES = ["EUR", "USD", "GBP", "MXN"];
 const TIMEZONES = [
   "Europe/Madrid",
+  "Atlantic/Canary",
   "Europe/London",
   "America/New_York",
   "America/Mexico_City",
