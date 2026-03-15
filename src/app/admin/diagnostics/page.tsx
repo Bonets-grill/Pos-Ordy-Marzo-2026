@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import {
@@ -48,7 +48,15 @@ interface Tenant {
   plan: string;
 }
 
-export default function DiagnosticsPage() {
+export default function DiagnosticsWrapper() {
+  return (
+    <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}><Loader2 size={32} className="animate-spin" style={{ color: "var(--accent)" }} /></div>}>
+      <DiagnosticsPage />
+    </Suspense>
+  );
+}
+
+function DiagnosticsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [tenants, setTenants] = useState<Tenant[]>([]);
