@@ -23,6 +23,8 @@ import {
   XCircle,
   Undo2,
   Trash2,
+  Lightbulb,
+  Zap,
 } from "lucide-react";
 
 /* ── Types ────────────────────────────────────────────── */
@@ -604,6 +606,108 @@ export default function AnalyticsPage() {
   }, [allOrdersIncCancelled]);
 
   const pendingTotal = useMemo(() => openBills.reduce((s, o) => s + (o.total || 0), 0), [openBills]);
+
+  // ── Predictive Insights ──
+  const insights = useMemo(() => {
+    const tips: { icon: string; text: string; type: "success" | "warning" | "info" }[] = [];
+
+    // 1. Weak day detection
+    const dayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    if (byDay.length > 0) {
+      const avgDayOrders = byDay.reduce((s, d) => s + d.orders, 0) / 7;
+      const weakDays = byDay.filter((d) => d.orders < avgDayOrders * 0.6 && d.orders > 0);
+      for (const wd of weakDays) {
+        tips.push({
+          icon: "📉",
+          text: `${dayNames[wd.day]} tiene un ${Math.round((1 - wd.orders / avgDayOrders) * 100)}% menos pedidos que la media. Lanza una promo ese día.`,
+          type: "warning",
+        });
+      }
+    }
+
+    // 2. High-margin item push
+    if (topItems.length > 2) {
+      const highRevLowQty = topItems
+        .filter((it) => it.qty > 0)
+        .sort((a, b) => (b.revenue / b.qty) - (a.revenue / a.qty));
+      if (highRevLowQty.length > 0 && highRevLowQty[0].revenue / highRevLowQty[0].qty > avgTicket * 0.4) {
+        tips.push({
+          icon: "💎",
+          text: `"${highRevLowQty[0].name}" tiene un ticket medio alto (${formatCurrency(highRevLowQty[0].revenue / highRevLowQty[0].qty)}). Empújalo como recomendación.`,
+          type: "success",
+        });
+      }
+    }
+
+    // 3. Peak hour staffing
+    if (byHour.length > 2) {
+      const peakHour = byHour.reduce((max, b) => (b.revenue > max.revenue ? b : max), byHour[0]);
+      tips.push({
+        icon: "⏰",
+        text: `Tu hora punta es las ${peakHour.hour}:00 con ${formatCurrency(peakHour.revenue)} de facturación. Asegura máximo staff.`,
+        type: "info",
+      });
+    }
+
+    // 4. Channel growth opportunity
+    const qrSource = bySource.find((s) => s.source === "qr");
+    const waSource = bySource.find((s) => s.source === "whatsapp");
+    if (!qrSource || qrSource.count < totalOrders * 0.1) {
+      tips.push({
+        icon: "📱",
+        text: "Solo el " + Math.round(((qrSource?.count || 0) / Math.max(totalOrders, 1)) * 100) + "% de pedidos llegan por QR. Coloca QRs visibles en todas las mesas.",
+        type: "warning",
+      });
+    }
+    if (!waSource || waSource.count < totalOrders * 0.05) {
+      tips.push({
+        icon: "💬",
+        text: "WhatsApp genera pocos pedidos. Promociona tu número en redes sociales y Google Maps.",
+        type: "warning",
+      });
+    }
+
+    // 5. Revenue trend
+    const revenueChange = calcChange(totalRevenue, prevTotalRevenue);
+    if (revenueChange !== null && revenueChange < -10) {
+      tips.push({
+        icon: "🔻",
+        text: `Ingresos han bajado un ${Math.abs(Math.round(revenueChange))}% vs periodo anterior. Considera lanzar una campaña de reactivación.`,
+        type: "warning",
+      });
+    } else if (revenueChange !== null && revenueChange > 15) {
+      tips.push({
+        icon: "🚀",
+        text: `Ingresos subieron un ${Math.round(revenueChange)}%. Buen momento para subir precio de los top sellers o añadir opciones premium.`,
+        type: "success",
+      });
+    }
+
+    // 6. Missing desserts/drinks detection
+    if (items.length > 0 && categoryBreakdown.length > 0) {
+      const dessertCat = categoryBreakdown.find((c) =>
+        c.name.toLowerCase().includes("postre") || c.name.toLowerCase().includes("dessert")
+      );
+      if (dessertCat && dessertCat.count < totalOrders * 0.15) {
+        tips.push({
+          icon: "🍰",
+          text: `Solo el ${Math.round((dessertCat.count / Math.max(totalOrders, 1)) * 100)}% de pedidos incluyen postre. El agente WhatsApp ya sugiere postres automáticamente.`,
+          type: "info",
+        });
+      }
+    }
+
+    // 7. Fraud alert
+    if (fraudStats.cancelledCount > totalOrders * 0.1 && totalOrders > 5) {
+      tips.push({
+        icon: "⚠️",
+        text: `Tasa de cancelación alta (${Math.round((fraudStats.cancelledCount / Math.max(totalOrders, 1)) * 100)}%). Revisa si hay un patrón.`,
+        type: "warning",
+      });
+    }
+
+    return tips.slice(0, 6);
+  }, [orders, byDay, byHour, bySource, topItems, categoryBreakdown, fraudStats, items, totalOrders, totalRevenue, prevTotalRevenue, avgTicket]);
 
   // Source color map
   const SOURCE_COLORS: Record<string, string> = {
@@ -1705,6 +1809,51 @@ export default function AnalyticsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Predictive Insights / AI Recommendations ── */}
+      {insights.length > 0 && (
+        <div style={{ ...cardStyle, marginTop: 24, background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", border: "1px solid #2d3a5f" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <div style={{ background: "rgba(249,115,22,0.15)", borderRadius: 10, padding: 8, display: "flex" }}>
+              <Lightbulb size={20} style={{ color: "#f97316" }} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Insights Predictivos</h3>
+              <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)" }}>Recomendaciones basadas en tus datos</p>
+            </div>
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+              <Zap size={14} style={{ color: "#f97316" }} />
+              <span style={{ fontSize: 11, color: "#f97316", fontWeight: 600 }}>AI</span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {insights.map((insight, idx) => {
+              const bgMap = { success: "rgba(34,197,94,0.08)", warning: "rgba(249,115,22,0.08)", info: "rgba(59,130,246,0.08)" };
+              const borderMap = { success: "rgba(34,197,94,0.2)", warning: "rgba(249,115,22,0.2)", info: "rgba(59,130,246,0.2)" };
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    background: bgMap[insight.type],
+                    border: `1px solid ${borderMap[insight.type]}`,
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 10,
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{insight.icon}</span>
+                  <span>{insight.text}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -1,8 +1,5 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
-import { useEffect } from "react";
-
 export default function GlobalError({
   error,
   reset,
@@ -10,16 +7,14 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    Sentry.captureException(error);
-  }, [error]);
+  console.error("GlobalError:", error);
 
   return (
     <html>
       <body>
         <div style={{ padding: 40, textAlign: "center", fontFamily: "system-ui" }}>
-          <h2>Algo salió mal</h2>
-          <p style={{ color: "#666" }}>El error ha sido reportado automáticamente.</p>
+          <h2>Algo salio mal</h2>
+          <p style={{ color: "#666" }}>{error.message}</p>
           <button
             onClick={reset}
             style={{

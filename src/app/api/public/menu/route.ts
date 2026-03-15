@@ -102,6 +102,22 @@ export async function GET(req: NextRequest) {
       tables = (tbls || []) as { number: string; label: string | null }[];
     }
 
+    // 7. Get active ad banners
+    const { data: adRows } = await supabase
+      .from("menu_ads")
+      .select("id, image_url, link_url, alt_text, position")
+      .eq("tenant_id", tenantId)
+      .eq("active", true)
+      .order("sort_order", { ascending: true })
+      .limit(6);
+
+    const ads = (adRows || []).map((a: { id: string; image_url: string; link_url: string | null; alt_text: string }) => ({
+      id: a.id,
+      image_url: a.image_url,
+      link_url: a.link_url || undefined,
+      alt: a.alt_text,
+    }));
+
     return NextResponse.json({
       tenant: {
         name: tenant.name,
@@ -120,6 +136,7 @@ export async function GET(req: NextRequest) {
       modifierGroups,
       modifiers,
       itemModLinks,
+      ads,
     });
   } catch (err: unknown) {
     console.error("Public menu error:", err);

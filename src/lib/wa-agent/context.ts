@@ -5,6 +5,13 @@ import { SupabaseClient } from "@supabase/supabase-js";
  * NEVER caches — ensures agent always has current menu/availability.
  */
 
+export interface WeatherContext {
+  description: string;
+  temp_c: number;
+  feels_like_c: number;
+  condition: "hot" | "warm" | "mild" | "cold" | "rainy" | "stormy";
+}
+
 export interface RestaurantContext {
   tenant: {
     id: string;
@@ -17,6 +24,7 @@ export interface RestaurantContext {
     business_hours: Record<string, unknown> | null;
   };
   isOpen: boolean;
+  weather: WeatherContext | null;
   categories: { id: string; name: string }[];
   menuItems: {
     id: string;
@@ -48,8 +56,8 @@ export async function loadRestaurantContext(
   const nameCol = `name_${lang}` as string;
   const descCol = `description_${lang}` as string;
 
-  // Parallel queries for speed
-  const [tenantRes, catsRes, itemsRes, tablesRes] = await Promise.all([
+  // Parallel queries for speed (+ weather)
+  const [tenantRes, catsRes, itemsRes, tablesRes, weather] = await Promise.all([
     supabase.from("tenants")
       .select("id, name, slug, currency, locale, tax_rate, tax_included, business_hours")
       .eq("id", tenantId).single(),
@@ -65,6 +73,7 @@ export async function loadRestaurantContext(
       .select("id, number, label, status")
       .eq("tenant_id", tenantId).eq("active", true)
       .order("number"),
+    fetchWeather(),
   ]);
 
   const tenant = tenantRes.data!;
@@ -159,6 +168,7 @@ export async function loadRestaurantContext(
       business_hours: tenant.business_hours,
     },
     isOpen,
+    weather,
     categories,
     menuItems,
     activeTables: (tablesRes.data || []).map((t: Record<string, unknown>) => ({
@@ -168,6 +178,57 @@ export async function loadRestaurantContext(
       status: t.status as string,
     })),
   };
+}
+
+/**
+ * Fetch current weather from OpenWeather API.
+ * Returns null silently on failure (weather is optional context).
+ */
+let _weatherCache: { data: WeatherContext; ts: number } | null = null;
+const WEATHER_CACHE_MS = 30 * 60 * 1000; // 30 min
+
+async function fetchWeather(): Promise<WeatherContext | null> {
+  const apiKey = process.env.OPENWEATHER_API_KEY;
+  const lat = process.env.RESTAURANT_LAT;
+  const lon = process.env.RESTAURANT_LON;
+  if (!apiKey || !lat || !lon) return null;
+
+  // Simple in-memory cache (30 min)
+  if (_weatherCache && Date.now() - _weatherCache.ts < WEATHER_CACHE_MS) {
+    return _weatherCache.data;
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`,
+      { signal: AbortSignal.timeout(3000) }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+
+    const temp = data.main?.temp ?? 20;
+    const weatherId = data.weather?.[0]?.id ?? 800;
+    const desc = data.weather?.[0]?.description ?? "";
+
+    let condition: WeatherContext["condition"] = "mild";
+    if (weatherId >= 200 && weatherId < 300) condition = "stormy";
+    else if (weatherId >= 300 && weatherId < 600) condition = "rainy";
+    else if (weatherId >= 600 && weatherId < 700) condition = "cold";
+    else if (temp >= 30) condition = "hot";
+    else if (temp >= 22) condition = "warm";
+    else if (temp < 12) condition = "cold";
+
+    const weather: WeatherContext = {
+      description: desc,
+      temp_c: Math.round(temp),
+      feels_like_c: Math.round(data.main?.feels_like ?? temp),
+      condition,
+    };
+    _weatherCache = { data: weather, ts: Date.now() };
+    return weather;
+  } catch {
+    return null;
+  }
 }
 
 function checkIsOpen(businessHours: Record<string, unknown> | null): boolean {

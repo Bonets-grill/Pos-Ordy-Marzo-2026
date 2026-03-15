@@ -145,6 +145,59 @@ function fmtPrice(amount: number, currency: string): string {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency }).format(amount);
 }
 
+/* ── Ad Banner ─────────────────────────────── */
+
+interface AdBanner {
+  id: string;
+  image_url: string;
+  link_url?: string;
+  alt: string;
+}
+
+function AdBannerSlot({ ads, position }: { ads: AdBanner[]; position: "top" | "mid" | "bottom" }) {
+  const [currentAd, setCurrentAd] = useState(0);
+  const positionAds = ads.length > 0 ? ads : [];
+
+  useEffect(() => {
+    if (positionAds.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentAd((prev) => (prev + 1) % positionAds.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [positionAds.length]);
+
+  if (positionAds.length === 0) return null;
+  const ad = positionAds[currentAd];
+
+  const content = (
+    <div style={{
+      margin: position === "top" ? "0 0 8px" : "16px 0",
+      borderRadius: 12,
+      overflow: "hidden",
+      border: "1px solid #222",
+      position: "relative" as const,
+    }}>
+      <img
+        src={ad.image_url}
+        alt={ad.alt}
+        style={{ width: "100%", height: "auto", display: "block", maxHeight: 120, objectFit: "cover" }}
+      />
+      <span style={{
+        position: "absolute" as const, top: 4, right: 6,
+        background: "rgba(0,0,0,0.6)", color: "#888",
+        fontSize: 9, padding: "1px 5px", borderRadius: 4,
+      }}>
+        ad
+      </span>
+    </div>
+  );
+
+  if (ad.link_url) {
+    return <a href={ad.link_url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>{content}</a>;
+  }
+  return content;
+}
+
 /* ── Component ─────────────────────────────── */
 
 export default function QRMenuPage() {
@@ -171,6 +224,8 @@ export default function QRMenuPage() {
   const [itemModLinks, setItemModLinks] = useState<{ item_id: string; group_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [ads, setAds] = useState<AdBanner[]>([]);
 
   const [selectedCat, setSelectedCat] = useState<string>("all");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -211,6 +266,7 @@ export default function QRMenuPage() {
       setModGroups(data.modifierGroups);
       setModifiers(data.modifiers);
       setItemModLinks(data.itemModLinks);
+      if (data.ads) setAds(data.ads);
     } catch {
       setError("Restaurant not found");
     } finally {
@@ -498,6 +554,13 @@ export default function QRMenuPage() {
         </div>
       </div>
 
+      {/* ── Ad Banner Top ── */}
+      {ads.length > 0 && (
+        <div style={{ padding: "8px 16px 0" }}>
+          <AdBannerSlot ads={ads.slice(0, 2)} position="top" />
+        </div>
+      )}
+
       {/* ── Menu Items ── */}
       <div style={{ padding: "12px 16px 120px" }}>
         {filteredItems.length === 0 && (
@@ -506,21 +569,27 @@ export default function QRMenuPage() {
 
         {/* Group by category when showing "all" */}
         {selectedCat === "all" ? (
-          categories.map((cat) => {
+          categories.map((cat, catIdx) => {
             const catItems = items.filter((i) => i.category_id === cat.id);
             if (catItems.length === 0) return null;
             return (
-              <div key={cat.id} style={{ marginBottom: 24 }}>
-                <h2 style={{
-                  fontSize: 16, fontWeight: 700, color: "#f97316",
-                  margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8,
-                }}>
-                  {cat.icon} {localName(cat, lang)}
-                </h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {catItems.map((item) => (
-                    <ItemCard key={item.id} item={item} lang={lang} currency={tenant.currency} onTap={openDetail} />
-                  ))}
+              <div key={cat.id}>
+                {/* Mid-scroll ad after 2nd category */}
+                {catIdx === 2 && ads.length > 2 && (
+                  <AdBannerSlot ads={ads.slice(2, 4)} position="mid" />
+                )}
+                <div style={{ marginBottom: 24 }}>
+                  <h2 style={{
+                    fontSize: 16, fontWeight: 700, color: "#f97316",
+                    margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8,
+                  }}>
+                    {cat.icon} {localName(cat, lang)}
+                  </h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {catItems.map((item) => (
+                      <ItemCard key={item.id} item={item} lang={lang} currency={tenant.currency} onTap={openDetail} />
+                    ))}
+                  </div>
                 </div>
               </div>
             );

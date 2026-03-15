@@ -197,6 +197,9 @@ function buildSystemPrompt(
     casual: "Eres relajado y coloquial. Usas lenguaje informal y emojis.",
   };
 
+  // Weather-based suggestion hints
+  const weatherHints = ctx.weather ? buildWeatherHints(ctx.weather) : "";
+
   return `Eres "${instance.agent_name}", el asistente virtual por WhatsApp del restaurante "${ctx.tenant.name}".
 
 PERSONALIDAD: ${personality[instance.agent_personality] || personality.friendly}
@@ -212,6 +215,14 @@ REGLAS ESTRICTAS:
 8. No confirmes un pedido sin que el cliente diga explícitamente que sí.
 9. Si el restaurante está cerrado, informa los horarios.
 
+ESTRATEGIA DE UPSELLING INTELIGENTE:
+- Cuando el cliente añade un plato principal, sugiere UNA bebida o complemento que combine bien. Hazlo de forma natural, como un camarero experto: "¿Te apetece una cerveza fría con eso?" o "Nuestro tiramisú es el favorito para terminar".
+- Si el pedido no tiene postre y el cliente parece que va a confirmar, menciona brevemente los postres.
+- Si el pedido no tiene bebida, sugiere una antes de confirmar.
+- NUNCA seas agresivo ni insistente. Una sola sugerencia por turno. Si el cliente dice no, respeta y avanza.
+- Adapta las sugerencias al contexto: hora del día, clima, tipo de plato pedido.
+${weatherHints}
+
 INFORMACIÓN DEL RESTAURANTE:
 - Nombre: ${ctx.tenant.name}
 - Moneda: ${ctx.tenant.currency}
@@ -219,6 +230,7 @@ INFORMACIÓN DEL RESTAURANTE:
 - Estado: ${ctx.isOpen ? "ABIERTO" : "CERRADO"}
 - Categorías disponibles: ${ctx.categories.map(c => c.name).join(", ")}
 - Total productos disponibles: ${ctx.menuItems.length}
+${ctx.weather ? `- Clima actual: ${ctx.weather.description}, ${ctx.weather.temp_c}°C (sensación ${ctx.weather.feels_like_c}°C)` : ""}
 
 ESTADO DE LA SESIÓN:
 - Cliente: ${session.customer_name || "Desconocido"}
@@ -226,4 +238,36 @@ ESTADO DE LA SESIÓN:
 ${session.pending_order_id ? `- Pedido activo: ${session.pending_order_id}` : ""}
 
 ${instance.agent_instructions ? `INSTRUCCIONES PERSONALIZADAS DEL RESTAURANTE:\n${instance.agent_instructions}` : ""}`;
+}
+
+/**
+ * Build weather-based upselling hints for the agent.
+ */
+function buildWeatherHints(weather: { condition: string; temp_c: number }): string {
+  const hints: string[] = [];
+  switch (weather.condition) {
+    case "hot":
+      hints.push("Hace calor: prioriza bebidas frías, ensaladas, helados, gazpacho.");
+      break;
+    case "warm":
+      hints.push("Día cálido: sugiere bebidas frescas, platos ligeros, cerveza bien fría.");
+      break;
+    case "cold":
+      hints.push("Hace frío: sugiere sopas, caldos, bebidas calientes, platos contundentes.");
+      break;
+    case "rainy":
+    case "stormy":
+      hints.push("Día lluvioso: sugiere platos reconfortantes, sopas, chocolate caliente, infusiones.");
+      break;
+    default:
+      hints.push("Clima agradable: cualquier sugerencia es apropiada.");
+  }
+
+  const hour = new Date().getHours();
+  if (hour < 12) hints.push("Es por la mañana: café, zumos, desayunos si los hay.");
+  else if (hour < 16) hints.push("Hora de comida: platos principales, menú del día si existe.");
+  else if (hour < 20) hints.push("Hora de merienda: cafés, postres, tapas si las hay.");
+  else hints.push("Es de noche: cenas, vinos, cócteles si los hay.");
+
+  return `CONTEXTO AMBIENTAL PARA SUGERENCIAS:\n- ${hints.join("\n- ")}`;
 }
