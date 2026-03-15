@@ -792,6 +792,24 @@ export default function SuperAdminPage() {
             ))}
           </div>
 
+          {/* Diagnostics button */}
+          <button
+            onClick={() => router.push(`/admin/diagnostics?tenant=${selectedTenantId}`)}
+            style={{
+              width: "100%", padding: "12px 16px", marginBottom: 20,
+              backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border)",
+              borderRadius: 10, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              color: "var(--accent)", fontSize: 14, fontWeight: 600,
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--accent)"; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-secondary)"; e.currentTarget.style.color = "var(--accent)"; }}
+          >
+            <Zap size={16} />
+            Diagnosticar Tenant
+          </button>
+
           {/* Revenue chart */}
           <Card style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 12px" }}>
