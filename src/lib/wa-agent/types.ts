@@ -1,7 +1,7 @@
 // Provider types
 export type WAProvider = "evolution" | "meta";
 export type InstanceStatus = "disconnected" | "connecting" | "connected" | "banned";
-export type SessionState = "idle" | "browsing_menu" | "ordering" | "confirming_order" | "checking_status" | "reserving";
+export type SessionState = "idle" | "browsing_menu" | "ordering" | "confirming_order" | "checking_status" | "reserving" | "awaiting_pickup_confirmation";
 
 export interface WAInstance {
   id: string;

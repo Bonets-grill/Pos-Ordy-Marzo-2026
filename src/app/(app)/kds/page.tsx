@@ -35,6 +35,9 @@ interface Order {
   created_at: string;
   customer_name: string | null;
   customer_notes: string | null;
+  customer_phone: string | null;
+  total: number | null;
+  metadata: Record<string, unknown> | null;
 }
 
 interface KdsStation {
@@ -64,10 +67,16 @@ function urgencyClass(created_at: string): string {
 }
 
 function orderLabel(order: Order, t: (k: string) => string): string {
+  if (order.order_type === "whatsapp") return "📱 WhatsApp";
+  if (order.order_type === "qr") return "📲 QR";
   if (order.order_type === "delivery") return t("pos.delivery");
   if (order.order_type === "takeaway") return t("pos.takeaway");
   if (order.restaurant_tables?.number) return `${t("kds.table")} ${order.restaurant_tables.number}`;
   return "";
+}
+
+function formatCurrencyKds(amount: number): string {
+  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(amount);
 }
 
 /* ─── Sound helper ─── */
@@ -114,6 +123,11 @@ export default function KdsPage() {
 
   // Fullscreen
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // WhatsApp accept modal
+  const [waAcceptOrder, setWaAcceptOrder] = useState<OrderWithItems | null>(null);
+  const [waPickupMinutes, setWaPickupMinutes] = useState(30);
+  const [waActionLoading, setWaActionLoading] = useState(false);
 
   // Realtime connection indicator
   const [realtimeConnected, setRealtimeConnected] = useState(false);
@@ -163,7 +177,7 @@ export default function KdsPage() {
     if (!tenantId) return;
     const { data: ordersData } = await supabase
       .from("orders")
-      .select("id, order_number, table_id, order_type, status, created_at, customer_name, customer_notes, restaurant_tables(number)")
+      .select("id, order_number, table_id, order_type, status, created_at, customer_name, customer_notes, customer_phone, total, metadata, restaurant_tables(number)")
       .eq("tenant_id", tenantId)
       .in("status", ["confirmed", "preparing", "ready"])
       .order("created_at", { ascending: true });
@@ -277,6 +291,49 @@ export default function KdsPage() {
     fetchOrders();
   }
 
+  // WhatsApp: Accept order with pickup time
+  async function waAcceptConfirm() {
+    if (!waAcceptOrder || !tenantId) return;
+    setWaActionLoading(true);
+    try {
+      await fetch("/api/whatsapp/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: waAcceptOrder.id,
+          type: "kitchen_accepted",
+          pickup_minutes: waPickupMinutes,
+          tenant_id: tenantId,
+        }),
+      });
+      setWaAcceptOrder(null);
+      fetchOrders();
+    } catch (err) {
+      console.error("WA accept error:", err);
+    } finally {
+      setWaActionLoading(false);
+    }
+  }
+
+  // WhatsApp: Reject order
+  async function waRejectOrder(order: OrderWithItems) {
+    if (!tenantId) return;
+    try {
+      await fetch("/api/whatsapp/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          type: "kitchen_rejected",
+          tenant_id: tenantId,
+        }),
+      });
+      fetchOrders();
+    } catch (err) {
+      console.error("WA reject error:", err);
+    }
+  }
+
   async function markReady(order: OrderWithItems) {
     const itemIds = order.items.map((i) => i.id);
     await supabase
@@ -296,6 +353,19 @@ export default function KdsPage() {
         .from("orders")
         .update({ status: "ready" })
         .eq("id", order.id);
+
+      // Auto-notify WhatsApp customer when order is ready
+      if (order.order_type === "whatsapp" && order.customer_phone && tenantId) {
+        fetch("/api/whatsapp/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: order.id,
+            type: "order_ready",
+            tenant_id: tenantId,
+          }),
+        }).catch((err) => console.error("WA ready notify error:", err));
+      }
     }
     fetchOrders();
   }
@@ -795,6 +865,30 @@ export default function KdsPage() {
                   </span>
                 </div>
 
+                {/* WhatsApp order info bar */}
+                {order.order_type === "whatsapp" && (
+                  <div
+                    style={{
+                      padding: "8px 16px",
+                      background: "rgba(37, 211, 102, 0.1)",
+                      borderTop: "1px solid rgba(37, 211, 102, 0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 8,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#25D366" }}>
+                      📱 WhatsApp — {order.customer_name || order.customer_phone}
+                    </span>
+                    {order.total != null && (
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>
+                        {formatCurrencyKds(order.total)}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Action Buttons */}
                 <div
                   style={{
@@ -803,62 +897,209 @@ export default function KdsPage() {
                     borderTop: "1px solid var(--border)",
                   }}
                 >
-                  {allPending && (
-                    <button
-                      onClick={() => markPreparing(order)}
-                      style={{
-                        flex: 1,
-                        padding: "14px 8px",
-                        border: "none",
-                        background: "var(--info)",
-                        color: "#fff",
-                        fontWeight: 700,
-                        fontSize: 15,
-                        cursor: "pointer",
-                        borderRadius: "0 0 0 10px",
-                      }}
-                    >
-                      {t("kds.mark_preparing")}
-                    </button>
+                  {/* WhatsApp orders in confirmed status: Accept / Reject */}
+                  {order.order_type === "whatsapp" && allPending && order.status === "confirmed" ? (
+                    <>
+                      <button
+                        onClick={() => { setWaAcceptOrder(order); setWaPickupMinutes(30); }}
+                        style={{
+                          flex: 1,
+                          padding: "14px 8px",
+                          border: "none",
+                          background: "#25D366",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: 15,
+                          cursor: "pointer",
+                          borderRadius: "0 0 0 10px",
+                        }}
+                      >
+                        ✅ {t("kds.wa_accept")}
+                      </button>
+                      <button
+                        onClick={() => waRejectOrder(order)}
+                        style={{
+                          flex: 1,
+                          padding: "14px 8px",
+                          border: "none",
+                          background: "var(--danger)",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: 15,
+                          cursor: "pointer",
+                          borderRadius: "0 0 10px 0",
+                        }}
+                      >
+                        ❌ {t("kds.wa_reject")}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {allPending && (
+                        <button
+                          onClick={() => markPreparing(order)}
+                          style={{
+                            flex: 1,
+                            padding: "14px 8px",
+                            border: "none",
+                            background: "var(--info)",
+                            color: "#fff",
+                            fontWeight: 700,
+                            fontSize: 15,
+                            cursor: "pointer",
+                            borderRadius: "0 0 0 10px",
+                          }}
+                        >
+                          {t("kds.mark_preparing")}
+                        </button>
+                      )}
+                      {allPreparing && (
+                        <button
+                          onClick={() => markReady(order)}
+                          style={{
+                            flex: 1,
+                            padding: "14px 8px",
+                            border: "none",
+                            background: "var(--success)",
+                            color: "#fff",
+                            fontWeight: 700,
+                            fontSize: 15,
+                            cursor: "pointer",
+                            borderRadius: allPending ? "0" : "0 0 0 10px",
+                          }}
+                        >
+                          {t("kds.mark_ready")}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => bumpOrder(order)}
+                        style={{
+                          flex: 1,
+                          padding: "14px 8px",
+                          border: "none",
+                          background: "var(--accent)",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: 15,
+                          cursor: "pointer",
+                          borderRadius: "0 0 10px 0",
+                        }}
+                      >
+                        {t("kds.bump")}
+                      </button>
+                    </>
                   )}
-                  {allPreparing && (
-                    <button
-                      onClick={() => markReady(order)}
-                      style={{
-                        flex: 1,
-                        padding: "14px 8px",
-                        border: "none",
-                        background: "var(--success)",
-                        color: "#fff",
-                        fontWeight: 700,
-                        fontSize: 15,
-                        cursor: "pointer",
-                        borderRadius: allPending ? "0" : "0 0 0 10px",
-                      }}
-                    >
-                      {t("kds.mark_ready")}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => bumpOrder(order)}
-                    style={{
-                      flex: 1,
-                      padding: "14px 8px",
-                      border: "none",
-                      background: "var(--accent)",
-                      color: "#fff",
-                      fontWeight: 700,
-                      fontSize: 15,
-                      cursor: "pointer",
-                      borderRadius: "0 0 10px 0",
-                    }}
-                  >
-                    {t("kds.bump")}
-                  </button>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+      {/* WhatsApp Accept Modal — Pickup Time Picker */}
+      {waAcceptOrder && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+          onClick={() => setWaAcceptOrder(null)}
+        >
+          <div
+            style={{
+              background: "var(--bg-card)",
+              borderRadius: 16,
+              padding: 24,
+              width: 400,
+              maxWidth: "90vw",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
+              📱 {t("kds.wa_accept_title")}
+            </div>
+            <div style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 16 }}>
+              #{waAcceptOrder.order_number} — {waAcceptOrder.customer_name || waAcceptOrder.customer_phone}
+              {waAcceptOrder.total != null && ` — ${formatCurrencyKds(waAcceptOrder.total)}`}
+            </div>
+
+            {/* Items summary */}
+            <div style={{ marginBottom: 16, padding: 12, background: "var(--bg-secondary)", borderRadius: 8, maxHeight: 150, overflowY: "auto" }}>
+              {waAcceptOrder.items.map((item) => (
+                <div key={item.id} style={{ display: "flex", gap: 8, marginBottom: 4, fontSize: 14, color: "var(--text-primary)" }}>
+                  <span style={{ fontWeight: 700, color: "var(--accent)" }}>{item.quantity}x</span>
+                  <span>{item.name}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 10 }}>
+              ⏱️ {t("kds.wa_pickup_time")}
+            </div>
+
+            <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+              {[10, 15, 20, 30, 45, 60].map((mins) => (
+                <button
+                  key={mins}
+                  onClick={() => setWaPickupMinutes(mins)}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: 8,
+                    border: waPickupMinutes === mins ? "2px solid #25D366" : "1px solid var(--border)",
+                    background: waPickupMinutes === mins ? "rgba(37, 211, 102, 0.15)" : "var(--bg-secondary)",
+                    color: waPickupMinutes === mins ? "#25D366" : "var(--text-primary)",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    cursor: "pointer",
+                  }}
+                >
+                  {mins} min
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setWaAcceptOrder(null)}
+                style={{
+                  flex: 1,
+                  padding: 14,
+                  borderRadius: 10,
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-secondary)",
+                  fontWeight: 700,
+                  fontSize: 15,
+                  cursor: "pointer",
+                }}
+              >
+                {t("kds.wa_cancel")}
+              </button>
+              <button
+                onClick={waAcceptConfirm}
+                disabled={waActionLoading}
+                style={{
+                  flex: 2,
+                  padding: 14,
+                  borderRadius: 10,
+                  border: "none",
+                  background: "#25D366",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 15,
+                  cursor: waActionLoading ? "wait" : "pointer",
+                  opacity: waActionLoading ? 0.7 : 1,
+                }}
+              >
+                {waActionLoading ? "..." : `✅ ${t("kds.wa_confirm_send")} (${waPickupMinutes} min)`}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

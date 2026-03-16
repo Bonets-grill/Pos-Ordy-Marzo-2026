@@ -70,9 +70,16 @@ const STATUS_COLORS: Record<string, string> = {
   ready: "var(--success)",
   served: "var(--text-secondary)",
   closed: "var(--text-muted)",
-  paid: "var(--accent)",
   cancelled: "var(--danger)",
   refunded: "var(--warning)",
+};
+
+const ORDER_TYPE_LABELS: Record<string, string> = {
+  dine_in: "Dine in",
+  takeaway: "Takeaway",
+  delivery: "Delivery",
+  qr: "QR",
+  whatsapp: "📱 WhatsApp",
 };
 
 const TAB_FILTERS = [
@@ -1021,10 +1028,9 @@ export default function OrdersPage() {
                             style={{
                               padding: "12px 14px",
                               color: "var(--text-secondary)",
-                              textTransform: "capitalize",
                             }}
                           >
-                            {order.order_type || "---"}
+                            {ORDER_TYPE_LABELS[order.order_type] || order.order_type || "---"}
                           </td>
                           <td style={{ padding: "12px 14px" }}>
                             <StatusBadge status={order.status} />
@@ -1187,7 +1193,7 @@ export default function OrdersPage() {
                               textTransform: "capitalize",
                             }}
                           >
-                            {order.order_type || "---"}
+                            {ORDER_TYPE_LABELS[order.order_type] || order.order_type || "---"}
                           </span>
                         </div>
                         <div style={{ color: "var(--text-muted)" }}>
@@ -2530,7 +2536,7 @@ function DetailPanel({
         <InfoRow label={t("orders.table")} value={order.restaurant_tables?.number || "---"} />
         <InfoRow
           label={t("orders.type")}
-          value={order.order_type || "---"}
+          value={ORDER_TYPE_LABELS[order.order_type] || order.order_type || "---"}
           capitalize
         />
         {order.customer_name && (

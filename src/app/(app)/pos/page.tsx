@@ -415,8 +415,9 @@ export default function PosPage() {
       for (const optId of selectedIds) {
         const opt = g.options.find((o) => o.id === optId);
         if (opt) {
-          mods.push({ name: opt.name_es, price_delta: opt.price_delta });
-          modsTotal += opt.price_delta;
+          const delta = Number(opt.price_delta) || 0;
+          mods.push({ name: opt.name_es, price_delta: delta });
+          modsTotal += delta;
         }
       }
     }
@@ -511,7 +512,7 @@ export default function PosPage() {
         unit_price: c.price,
         subtotal: c.price * c.qty,
         notes: c.notes || null,
-        modifiers: c.modifiers.length > 0 ? JSON.stringify(c.modifiers) : "[]",
+        modifiers: c.modifiers.length > 0 ? c.modifiers : [],
         modifiers_total: c.modifiersTotal,
       })),
     [tenantId]
@@ -726,8 +727,8 @@ export default function PosPage() {
       let orderNumber: number | null = null;
 
       if (existingOrderId) {
-        // Update existing order → paid
-        await supabase
+        // Update existing order → closed + paid
+        const { error: updateErr } = await supabase
           .from("orders")
           .update({
             subtotal,
@@ -735,12 +736,18 @@ export default function PosPage() {
             discount_amount: discount + loyaltyDiscount,
             tip_amount: tip,
             total,
-            status: "paid",
+            status: "closed",
             payment_status: "paid",
             customer_name: loyaltyCustomer?.name || customerName || null,
             customer_phone: customerPhone || null,
           })
           .eq("id", existingOrderId);
+
+        if (updateErr) {
+          console.error("Order update error:", updateErr);
+          setSending(false);
+          return;
+        }
 
         // Insert new items if any were added
         const newItems = cart.filter((c) => !originalItemIds.has(c.id));
@@ -765,7 +772,7 @@ export default function PosPage() {
             discount_amount: discount + loyaltyDiscount,
             tip_amount: tip,
             total,
-            status: "paid",
+            status: "closed",
             payment_status: "paid",
             source: orderType === "delivery" ? "delivery" : orderType === "takeaway" ? "takeaway" : "pos",
             metadata: deliveryAddress ? { delivery_address: deliveryAddress } : null,
@@ -865,7 +872,7 @@ export default function PosPage() {
           id: orderId,
           order_number: orderNumber || 0,
           order_type: orderType,
-          status: "paid",
+          status: "closed",
           customer_name: loyaltyCustomer?.name || customerName || undefined,
           subtotal,
           tax_amount: taxAmount,
@@ -988,7 +995,8 @@ export default function PosPage() {
             discount_amount: 0,
             tip_amount: 0,
             total: bill.total,
-            status: "paid",
+            status: "closed",
+            payment_status: "paid",
             source: orderType === "delivery" ? "delivery" : orderType === "takeaway" ? "takeaway" : "pos",
             metadata: deliveryAddress ? { delivery_address: deliveryAddress } : null,
             created_by: userId,
@@ -1012,7 +1020,7 @@ export default function PosPage() {
             unit_price: c.price,
             subtotal: c.price * c.qty,
             notes: c.notes || null,
-            modifiers: c.modifiers.length > 0 ? JSON.stringify(c.modifiers) : "[]",
+            modifiers: c.modifiers.length > 0 ? c.modifiers : [],
             modifiers_total: c.modifiersTotal,
           }));
           await supabase.from("order_items").insert(orderItems);

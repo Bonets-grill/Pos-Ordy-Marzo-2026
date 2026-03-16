@@ -93,6 +93,17 @@ Return ONLY valid JSON (no markdown, no code blocks):
     return NextResponse.json(parsed);
   } catch (err: unknown) {
     console.error("AI describe error:", err);
-    return NextResponse.json({ error: "AI service error" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Unknown error";
+    // Check common failures
+    if (message.includes("401") || message.includes("authentication")) {
+      return NextResponse.json({ error: "API key invalid or expired" }, { status: 500 });
+    }
+    if (message.includes("429") || message.includes("rate")) {
+      return NextResponse.json({ error: "Rate limit — try again in a moment" }, { status: 429 });
+    }
+    if (message.includes("model") || message.includes("not found")) {
+      return NextResponse.json({ error: `Model error: ${message}` }, { status: 500 });
+    }
+    return NextResponse.json({ error: `AI error: ${message}` }, { status: 500 });
   }
 }

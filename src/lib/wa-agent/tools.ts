@@ -229,6 +229,85 @@ export async function removeFromCart(
 }
 
 /**
+ * SET_CUSTOMER_NAME: Save customer name to session. Must be called before confirming order.
+ */
+export async function setCustomerName(
+  session: WASession,
+  name: string
+): Promise<ToolResult> {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { result: "Necesito un nombre válido para el pedido." };
+  }
+  return {
+    result: `✅ Nombre guardado: ${trimmed}`,
+    sessionUpdates: { customer_name: trimmed },
+  };
+}
+
+/**
+ * RESPOND_PICKUP: Customer responds to kitchen's pickup time offer.
+ */
+export async function respondPickup(
+  supabase: SupabaseClient,
+  session: WASession,
+  tenantId: string,
+  accepted: boolean
+): Promise<ToolResult> {
+  if (!session.pending_order_id) {
+    return { result: "No tienes un pedido activo pendiente de confirmación." };
+  }
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, order_number, metadata")
+    .eq("id", session.pending_order_id)
+    .single();
+
+  if (!order) {
+    return { result: "No encontré tu pedido." };
+  }
+
+  if (accepted) {
+    // Customer accepts pickup time → move to preparing
+    const metadata = { ...(order.metadata as Record<string, unknown> || {}), pickup_status: "confirmed" };
+    await supabase
+      .from("orders")
+      .update({ status: "preparing", preparing_at: new Date().toISOString(), metadata })
+      .eq("id", order.id);
+
+    // Update all items to preparing
+    await supabase
+      .from("order_items")
+      .update({ kds_status: "preparing" })
+      .eq("order_id", order.id);
+
+    const pickupMins = (order.metadata as Record<string, unknown>)?.pickup_minutes;
+    return {
+      result: `✅ *¡Perfecto!* Tu pedido #${order.order_number} está ahora en preparación. Te avisaremos cuando esté listo. ${pickupMins ? `Tiempo estimado: ~${pickupMins} minutos.` : ""}`,
+      sessionUpdates: { state: "idle" },
+    };
+  } else {
+    // Customer rejects → cancel order
+    const metadata = { ...(order.metadata as Record<string, unknown> || {}), pickup_status: "rejected_by_customer" };
+    await supabase
+      .from("orders")
+      .update({ status: "cancelled", metadata })
+      .eq("id", order.id);
+
+    await supabase
+      .from("order_items")
+      .update({ kds_status: "served" })
+      .eq("order_id", order.id);
+
+    return {
+      result: `❌ Pedido #${order.order_number} cancelado. No te preocupes, puedes hacer otro pedido cuando quieras. ¡Estamos aquí para ti!`,
+      sessionUpdates: { state: "idle", pending_order_id: null, cart: [] },
+    };
+  }
+}
+
+/**
  * CONFIRM_ORDER: Create order in DB from cart. Uses same validated flow as QR API.
  */
 export async function confirmOrder(
@@ -240,6 +319,11 @@ export async function confirmOrder(
 ): Promise<ToolResult> {
   if (!session.cart || session.cart.length === 0) {
     return { result: "No tienes nada en el carrito. ¿Quieres ver el menú?" };
+  }
+
+  // REQUIRE customer name
+  if (!session.customer_name) {
+    return { result: "⚠️ Necesito tu nombre antes de confirmar el pedido. Pregúntale al cliente cómo se llama y usa set_customer_name." };
   }
 
   const ctx = await loadRestaurantContext(supabase, tenantId, lang);
@@ -517,6 +601,24 @@ export const TOOL_DEFINITIONS = [
       type: "object" as const,
       properties: { item_name: { type: "string", description: "Name of the item to check" } },
       required: ["item_name"],
+    },
+  },
+  {
+    name: "set_customer_name",
+    description: "Save the customer's name for the order. MUST be called before confirm_order. Ask the customer their name and use this tool to save it.",
+    input_schema: {
+      type: "object" as const,
+      properties: { name: { type: "string", description: "The customer's name" } },
+      required: ["name"],
+    },
+  },
+  {
+    name: "respond_pickup",
+    description: "Handle customer's response to the kitchen's pickup time offer. Use when customer says yes/no to the proposed pickup time.",
+    input_schema: {
+      type: "object" as const,
+      properties: { accepted: { type: "boolean", description: "true if customer accepts the pickup time, false if they reject" } },
+      required: ["accepted"],
     },
   },
 ];

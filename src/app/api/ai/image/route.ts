@@ -92,6 +92,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: imageUrl });
   } catch (err: unknown) {
     console.error("AI image error:", err);
-    return NextResponse.json({ error: "AI service error" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Unknown error";
+    if (message.includes("401") || message.includes("authentication") || message.includes("Incorrect API key")) {
+      return NextResponse.json({ error: "OpenAI API key invalid or expired" }, { status: 500 });
+    }
+    if (message.includes("429") || message.includes("rate") || message.includes("quota")) {
+      return NextResponse.json({ error: "OpenAI rate limit or quota exceeded" }, { status: 429 });
+    }
+    if (message.includes("billing") || message.includes("exceeded")) {
+      return NextResponse.json({ error: "OpenAI billing issue — check your account" }, { status: 500 });
+    }
+    return NextResponse.json({ error: `AI image error: ${message}` }, { status: 500 });
   }
 }

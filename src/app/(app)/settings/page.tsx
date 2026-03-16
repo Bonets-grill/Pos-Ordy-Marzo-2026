@@ -303,6 +303,7 @@ export default function SettingsPage() {
 
   // Order modes
   const [orderModes, setOrderModes] = useState({ dine_in: true, takeaway: true, delivery: true });
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("");
 
   // KDS stations
   const [stations, setStations] = useState<KdsStation[]>([]);
@@ -378,6 +379,7 @@ export default function SettingsPage() {
           delivery: s.order_modes.delivery !== false,
         });
       }
+      if (s?.google_maps_url) setGoogleMapsUrl(s.google_maps_url);
     }
     if (stationsRes.data) {
       setStations(stationsRes.data as KdsStation[]);
@@ -415,7 +417,7 @@ export default function SettingsPage() {
         tax_included: settings.tax_included,
         timezone: settings.timezone,
         locale: settings.locale,
-        settings: { ...currentSettings, order_modes: orderModes },
+        settings: { ...currentSettings, order_modes: orderModes, google_maps_url: googleMapsUrl || null },
       })
       .eq("id", tenantId);
     setSaving(false);
@@ -701,6 +703,30 @@ export default function SettingsPage() {
           <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "4px 0 0" }}>
             {t("settings.order_modes_hint") || "Activa los modos de pedido disponibles en el POS y el menu QR"}
           </p>
+          <SaveButton onClick={handleSave} />
+        </div>
+
+        {/* Google Maps URL for WhatsApp notifications */}
+        <div style={cardStyle}>
+          <h2 style={sectionTitleStyle}>📍 Google Maps</h2>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
+            {t("settings.google_maps_hint") || "URL de Google Maps del local. Se envía al cliente cuando su pedido WhatsApp está listo."}
+          </p>
+          <input
+            type="url"
+            value={googleMapsUrl}
+            onChange={(e) => setGoogleMapsUrl(e.target.value)}
+            placeholder="https://maps.google.com/..."
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              color: "var(--text-primary)",
+              fontSize: 14,
+            }}
+          />
           <SaveButton onClick={handleSave} />
         </div>
 

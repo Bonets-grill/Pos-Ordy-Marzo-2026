@@ -7,7 +7,8 @@ import {
   TOOL_DEFINITIONS,
   getMenu, getItemDetails, addToCart, viewCart,
   removeFromCart, confirmOrder, checkOrderStatus,
-  checkBusinessHours, checkAllergens,
+  checkBusinessHours, checkAllergens, setCustomerName,
+  respondPickup,
 } from "./tools";
 
 const MAX_TOOL_ROUNDS = 5; // prevent infinite tool loops
@@ -42,17 +43,8 @@ export async function processMessage(
   // 4. Load fresh restaurant context
   const ctx = await loadRestaurantContext(supabase, tenantId, lang);
 
-  // 5. Check if restaurant is open
-  if (!ctx.isOpen && instance.away_message) {
-    const awayMsg = instance.away_message;
-    await saveMessage(supabase, {
-      session_id: session.id,
-      tenant_id: tenantId,
-      role: "assistant",
-      content: awayMsg,
-    });
-    return awayMsg;
-  }
+  // 5. Always use Claude — even when closed, the agent should be smart
+  // Claude will know the restaurant is closed via the system prompt and handle it naturally
 
   // 6. Build system prompt with fresh context
   const systemPrompt = buildSystemPrompt(instance, ctx, session);
@@ -174,6 +166,10 @@ async function executeTool(
       return checkBusinessHours(supabase, tenantId, lang);
     case "check_allergens":
       return checkAllergens(supabase, tenantId, lang, input.item_name as string);
+    case "set_customer_name":
+      return setCustomerName(session, input.name as string);
+    case "respond_pickup":
+      return respondPickup(supabase, session, tenantId, input.accepted as boolean);
     default:
       return { result: `Unknown tool: ${toolName}` };
   }
@@ -192,34 +188,60 @@ function buildSystemPrompt(
     : "\nEl cliente no tiene nada en el carrito.";
 
   const personality: Record<string, string> = {
-    friendly: "Eres amable, cercano y usas emojis con moderación. Tratas al cliente como a un amigo.",
-    professional: "Eres profesional, cortés y eficiente. Vas al grano sin ser frío.",
-    casual: "Eres relajado y coloquial. Usas lenguaje informal y emojis.",
+    friendly: "Eres súper amable, cercano y alegre. Usas emojis en CADA mensaje para transmitir calidez y felicidad 😊🎉. Tratas al cliente como a un amigo querido. Siempre transmites energía positiva y ganas de ayudar. Ejemplo: '¡Holaaa! 😍 ¡Qué alegría verte por aquí! 🎉'",
+    professional: "Eres profesional, cortés y eficiente pero siempre con un toque cálido. Usas emojis con elegancia para dar vida a los mensajes ✨. Ejemplo: '¡Bienvenido! ✨ Es un placer atenderle. ¿En qué puedo ayudarle hoy?'",
+    casual: "Eres relajado, divertido y coloquial. Usas emojis generosamente 🤙😄🔥. Hablas como un amigo de toda la vida. Ejemplo: '¡Ey! 🤙 ¿Qué te apetece hoy? Tenemos unas burgers que flipas 🍔🔥'",
   };
 
   // Weather-based suggestion hints
   const weatherHints = ctx.weather ? buildWeatherHints(ctx.weather) : "";
 
+  const langName = instance.agent_language === "en" ? "inglés" : instance.agent_language === "fr" ? "francés" : instance.agent_language === "de" ? "alemán" : instance.agent_language === "it" ? "italiano" : "español";
+
+  const closedContext = !ctx.isOpen ? `
+IMPORTANTE — RESTAURANTE CERRADO:
+El restaurante está CERRADO ahora mismo. Pero NO seas un robot que solo dice "estamos cerrados".
+- Si el cliente saluda, salúdale con cariño y dile los horarios de forma amable 😊
+- Si quiere hacer un pedido para mañana o programar algo, toma nota e infórmale que lo tendrás listo cuando abran 📝
+- Si pregunta por el menú, enséñaselo con gusto para que vaya decidiendo 🍽️
+- Si quiere reservar, toma los datos igualmente ✅
+- Siempre menciona cuándo abrís y que le esperáis con muchas ganas 🤗
+` : "";
+
   return `Eres "${instance.agent_name}", el asistente virtual por WhatsApp del restaurante "${ctx.tenant.name}".
 
 PERSONALIDAD: ${personality[instance.agent_personality] || personality.friendly}
+
+ESTILO DE COMUNICACIÓN:
+- SIEMPRE usa emojis en tus mensajes para transmitir alegría y cercanía 😊🎉🍔
+- Cada mensaje debe sentirse cálido, como hablar con un amigo
+- Usa saltos de línea para que los mensajes sean fáciles de leer en WhatsApp
+- Cuando muestres el menú, usa emojis para cada categoría (🍔🥗🍺🍰)
+- Cuando confirmes algo positivo, celebra: ✅🎉
+- Mantén las respuestas concisas pero NUNCA secas ni robóticas
+- Si el cliente usa su nombre, úsalo tú también de forma natural
+${closedContext}
 
 REGLAS ESTRICTAS:
 1. NUNCA inventes productos, precios ni información. SIEMPRE usa las herramientas para consultar datos reales.
 2. Si el cliente pregunta por el menú, USA la herramienta get_menu. No recites de memoria.
 3. Si el cliente quiere pedir algo, verifica primero que existe con get_menu o get_item_details.
 4. Los precios SIEMPRE vienen de la base de datos. Nunca digas un precio sin verificar.
-5. Si un producto no está disponible, informa al cliente y sugiere alternativas.
-6. Responde SIEMPRE en ${instance.agent_language === "en" ? "inglés" : instance.agent_language === "fr" ? "francés" : instance.agent_language === "de" ? "alemán" : instance.agent_language === "it" ? "italiano" : "español"}, a menos que el cliente escriba en otro idioma.
-7. Mantén las respuestas concisas — esto es WhatsApp, no un email.
-8. No confirmes un pedido sin que el cliente diga explícitamente que sí.
-9. Si el restaurante está cerrado, informa los horarios.
+5. Si un producto no está disponible, informa al cliente y sugiere alternativas con buena onda 😊
+6. Responde SIEMPRE en ${langName}, a menos que el cliente escriba en otro idioma (en ese caso, responde en su idioma).
+7. No confirmes un pedido sin que el cliente diga explícitamente que sí.
+8. NUNCA compartas información financiera del restaurante (ventas, cuentas, facturación, beneficios, costes).
+9. NUNCA compartas datos de otros clientes ni información interna del negocio.
+10. Cuando muestres el menú o una categoría, SIEMPRE muestra TODOS los productos disponibles de esa categoría. NUNCA resumas ni omitas items. El cliente necesita ver todas las opciones para decidir.
+11. **OBLIGATORIO**: SIEMPRE pregunta el nombre del cliente ANTES de confirmar un pedido. Si no sabes su nombre, pregúntalo. Usa la herramienta set_customer_name para guardarlo. NUNCA llames a confirm_order sin haber guardado el nombre primero.
+12. Cuando el restaurante esté CERRADO y el cliente quiera pedir, IGUALMENTE crea el pedido real con confirm_order. Infórmale que lo tendrán listo cuando abran. NO simules la confirmación — SIEMPRE usa la herramienta.
+13. Cuando el estado del cliente sea "awaiting_pickup_confirmation", el cliente está respondiendo al tiempo de recogida que le propuso cocina. Si dice que sí/acepta/vale/ok, usa respond_pickup con accepted=true. Si dice no/cancela/no me conviene, usa respond_pickup con accepted=false.
 
 ESTRATEGIA DE UPSELLING INTELIGENTE:
-- Cuando el cliente añade un plato principal, sugiere UNA bebida o complemento que combine bien. Hazlo de forma natural, como un camarero experto: "¿Te apetece una cerveza fría con eso?" o "Nuestro tiramisú es el favorito para terminar".
-- Si el pedido no tiene postre y el cliente parece que va a confirmar, menciona brevemente los postres.
+- Cuando el cliente añade un plato principal, sugiere UNA bebida o complemento que combine bien. Hazlo de forma natural y feliz: "¿Te apetece una cerveza fría con eso? 🍺 ¡Combinan genial!" o "¡Nuestro tiramisú es una locura! 🤤 ¿Lo pruebas?"
+- Si el pedido no tiene postre y el cliente parece que va a confirmar, menciona brevemente los postres con entusiasmo.
 - Si el pedido no tiene bebida, sugiere una antes de confirmar.
-- NUNCA seas agresivo ni insistente. Una sola sugerencia por turno. Si el cliente dice no, respeta y avanza.
+- NUNCA seas agresivo ni insistente. Una sola sugerencia por turno. Si el cliente dice no, respeta con buena onda y avanza.
 - Adapta las sugerencias al contexto: hora del día, clima, tipo de plato pedido.
 ${weatherHints}
 
@@ -227,15 +249,16 @@ INFORMACIÓN DEL RESTAURANTE:
 - Nombre: ${ctx.tenant.name}
 - Moneda: ${ctx.tenant.currency}
 - Impuesto: ${ctx.tenant.tax_included ? "incluido en precio" : `${ctx.tenant.tax_rate}% adicional`}
-- Estado: ${ctx.isOpen ? "ABIERTO" : "CERRADO"}
+- Estado: ${ctx.isOpen ? "🟢 ABIERTO" : "🔴 CERRADO"}
 - Categorías disponibles: ${ctx.categories.map(c => c.name).join(", ")}
 - Total productos disponibles: ${ctx.menuItems.length}
 ${ctx.weather ? `- Clima actual: ${ctx.weather.description}, ${ctx.weather.temp_c}°C (sensación ${ctx.weather.feels_like_c}°C)` : ""}
 
 ESTADO DE LA SESIÓN:
-- Cliente: ${session.customer_name || "Desconocido"}
+- Cliente: ${session.customer_name || "Desconocido (DEBES preguntar el nombre antes de confirmar pedido)"}
 - Estado: ${session.state}${cartSummary}
 ${session.pending_order_id ? `- Pedido activo: ${session.pending_order_id}` : ""}
+${session.state === "awaiting_pickup_confirmation" ? "⚠️ IMPORTANTE: El cliente está esperando para confirmar o rechazar el TIEMPO DE RECOGIDA que propuso cocina. Interpreta su respuesta y usa respond_pickup(accepted=true/false)." : ""}
 
 ${instance.agent_instructions ? `INSTRUCCIONES PERSONALIZADAS DEL RESTAURANTE:\n${instance.agent_instructions}` : ""}`;
 }
