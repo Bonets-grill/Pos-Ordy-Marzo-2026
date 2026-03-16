@@ -59,7 +59,7 @@ export async function loadRestaurantContext(
   // Parallel queries for speed (+ weather)
   const [tenantRes, catsRes, itemsRes, tablesRes, weather] = await Promise.all([
     supabase.from("tenants")
-      .select("id, name, slug, currency, locale, tax_rate, tax_included, business_hours")
+      .select("id, name, slug, currency, locale, tax_rate, tax_included, business_hours, timezone")
       .eq("id", tenantId).single(),
     supabase.from("menu_categories")
       .select("*")
@@ -153,8 +153,8 @@ export async function loadRestaurantContext(
     modifierGroups: modGroupsByItem[i.id as string] || [],
   }));
 
-  // Check if restaurant is currently open
-  const isOpen = checkIsOpen(tenant.business_hours);
+  // Check if restaurant is currently open (using tenant timezone)
+  const isOpen = checkIsOpen(tenant.business_hours, tenant.timezone);
 
   return {
     tenant: {
@@ -231,18 +231,43 @@ async function fetchWeather(): Promise<WeatherContext | null> {
   }
 }
 
-function checkIsOpen(businessHours: Record<string, unknown> | null): boolean {
+function checkIsOpen(businessHours: Record<string, unknown> | null, timezone?: string): boolean {
   if (!businessHours) return true;
+
+  // Use tenant timezone to get the correct local time (Vercel runs in UTC)
+  const tz = timezone || "Atlantic/Canary";
   const now = new Date();
+  const localStr = now.toLocaleString("en-US", { timeZone: tz });
+  const local = new Date(localStr);
+
   const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-  const dayKey = days[now.getDay()];
+  const dayKey = days[local.getDay()];
   const dayData = businessHours[dayKey] as { closed?: boolean; open?: string; close?: string; shifts?: { open: string; close: string }[] } | undefined;
   if (!dayData || dayData.closed) return false;
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  const nowMin = local.getHours() * 60 + local.getMinutes();
+
+  // Parse time strings — support both "HH:MM" (24h) and "HH:MM AM/PM" (12h) formats
+  function parseTimeToMinutes(timeStr: string): number {
+    const cleaned = timeStr.trim().toUpperCase();
+    const isPM = cleaned.includes("PM");
+    const isAM = cleaned.includes("AM");
+    const parts = cleaned.replace(/\s*(AM|PM)\s*/i, "").split(":");
+    let hours = parseInt(parts[0]) || 0;
+    const minutes = parseInt(parts[1]) || 0;
+
+    if (isAM || isPM) {
+      // 12h format
+      if (isPM && hours !== 12) hours += 12;
+      if (isAM && hours === 12) hours = 0;
+    }
+    return hours * 60 + minutes;
+  }
+
   const shifts = dayData.shifts || [{ open: dayData.open!, close: dayData.close! }];
   return shifts.some((s) => {
-    const openMin = parseInt(s.open.split(":")[0]) * 60 + parseInt(s.open.split(":")[1]);
-    let closeMin = parseInt(s.close.split(":")[0]) * 60 + parseInt(s.close.split(":")[1]);
+    const openMin = parseTimeToMinutes(s.open);
+    let closeMin = parseTimeToMinutes(s.close);
     if (closeMin <= openMin) closeMin += 24 * 60;
     return nowMin >= openMin && nowMin <= closeMin;
   });
