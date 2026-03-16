@@ -1,7 +1,7 @@
-249665065f2fca5cec45b3858b7854b4737a68bfa437a84fa115ba08be5ef539  src/app/(app)/pos/page.tsx
+0aed222b15c2b540f4696135d1e8ee519e02a63cdc75c0ebd16e3e97090fcc87  src/app/(app)/pos/page.tsx
 af0bd7613fd9697f3765f6a490174e5f108de1f98eba1925d7f495eeee7062a1  src/app/(app)/layout.tsx
 fd33c1dbae25a2495b6bfc1482575f5fd0c333f7013d6d655413db00ad031d84  src/app/(app)/kds/page.tsx
-855e913a7f35d8d77301a309f3ccf5488b9dee9d556ca921c5d98198d90b41fc  src/app/(app)/orders/page.tsx
+ea43909d7f16494754d97cd5fd1273f73244b943648679bd041599d32089d9fe  src/app/(app)/orders/page.tsx
 f6ca1c9225b2683207ec45b56168755a71887de20664a7b5d255209fc1bab808  src/app/(app)/payments/page.tsx
 c0fc3b4aa867ce93dc5d25a99734fbce2079c667591296e40fae547447ef854c  src/app/(app)/dashboard/page.tsx
 1d5d6a00e486fd4c95d77eba7fb3b714491106ec8a28cb33fd5ca6f70c862d44  src/app/(app)/menu/page.tsx

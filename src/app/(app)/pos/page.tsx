@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useI18n } from "@/lib/i18n-provider";
 import { formatCurrency } from "@/lib/utils";
-import { Search, Plus, Minus, Trash2, X, CheckCircle, Split, Clock, ChevronDown, Users, ListChecks, UtensilsCrossed, ShoppingBag, Truck, ArrowLeft } from "lucide-react";
+import { Search, Plus, Minus, Trash2, X, CheckCircle, Split, Clock, ChevronDown, Users, ListChecks, UtensilsCrossed, ShoppingBag, Truck, ArrowLeft, AlertTriangle, DollarSign } from "lucide-react";
 import PosLoyaltyPanel from "@/components/loyalty/PosLoyaltyPanel";
 import ReceiptModal from "@/components/receipt/ReceiptModal";
 
@@ -165,6 +165,11 @@ export default function PosPage() {
   /* ── Receipt modal state ──────────────────────────────── */
   const [receiptData, setReceiptData] = useState<{ order: any; items: any[]; tenantName: string; receiptConfig?: any } | null>(null);
 
+  /* ── Cash shift & business hours guard ─────────────────── */
+  const [shiftOpen, setShiftOpen] = useState<boolean | null>(null); // null = loading
+  const [isWithinHours, setIsWithinHours] = useState<boolean | null>(null);
+  const [guardChecked, setGuardChecked] = useState(false);
+
   /* ── Recent orders state ───────────────────────────────── */
   const [showRecentOrders, setShowRecentOrders] = useState(false);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
@@ -210,10 +215,10 @@ export default function PosPage() {
         const tid = profile.tenant_id;
         setTenantId(tid);
 
-        // Fetch tenant tax_rate + settings + name + receipt_config
+        // Fetch tenant tax_rate + settings + name + receipt_config + business_hours
         const { data: tenant } = await supabase
           .from("tenants")
-          .select("name, tax_rate, settings, receipt_config, currency")
+          .select("name, tax_rate, settings, receipt_config, currency, business_hours")
           .eq("id", tid)
           .single();
 
@@ -238,6 +243,45 @@ export default function PosPage() {
           .eq("tenant_id", tid)
           .maybeSingle();
         if (loyaltySettings?.enabled) setLoyaltyEnabled(true);
+
+        // ── Guard: Check if cash shift is open ──
+        const { data: openShift } = await supabase
+          .from("cash_shifts")
+          .select("id")
+          .eq("tenant_id", tid)
+          .eq("status", "open")
+          .limit(1)
+          .maybeSingle();
+        setShiftOpen(!!openShift);
+
+        // ── Guard: Check business hours ──
+        const bh = tenant?.business_hours as Record<string, { open: string; close: string; closed?: boolean }> | null;
+        if (bh) {
+          const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+          const now = new Date();
+          const dayKey = days[now.getDay()];
+          const todayHours = bh[dayKey];
+          if (todayHours && !todayHours.closed && todayHours.open && todayHours.close) {
+            const nowMinutes = now.getHours() * 60 + now.getMinutes();
+            const [openH, openM] = todayHours.open.split(":").map(Number);
+            const [closeH, closeM] = todayHours.close.split(":").map(Number);
+            const openMin = openH * 60 + openM;
+            const closeMin = closeH * 60 + closeM;
+            // Handle overnight hours (e.g., 18:00 - 02:00)
+            if (closeMin < openMin) {
+              setIsWithinHours(nowMinutes >= openMin || nowMinutes <= closeMin);
+            } else {
+              setIsWithinHours(nowMinutes >= openMin && nowMinutes <= closeMin);
+            }
+          } else if (todayHours?.closed) {
+            setIsWithinHours(false);
+          } else {
+            setIsWithinHours(true); // No hours set for this day = always open
+          }
+        } else {
+          setIsWithinHours(true); // No business hours configured = always open
+        }
+        setGuardChecked(true);
 
         // Parallel fetches
         const [catRes, itemsRes, tablesRes, zonesRes] = await Promise.all([
@@ -1146,6 +1190,69 @@ export default function PosPage() {
       if (modes[0] !== "dine_in") setOrderModeSelected(true);
     }
   }, [orderModes, orderModeSelected]);
+
+  /* ── Guard: Cash shift closed or outside business hours ── */
+  if (guardChecked && (shiftOpen === false || isWithinHours === false)) {
+    const noShift = shiftOpen === false;
+    const outsideHours = isWithinHours === false;
+    return (
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        flex: 1, minHeight: "80vh", background: "var(--bg-primary)", gap: 20, padding: 24, textAlign: "center",
+      }}>
+        <AlertTriangle size={56} style={{ color: "#f59e0b" }} />
+        <h1 style={{ color: "var(--text-primary)", fontSize: 24, fontWeight: 800, margin: 0 }}>
+          POS Bloqueado
+        </h1>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 400 }}>
+          {noShift && (
+            <div style={{
+              background: "#ef444420", border: "1px solid #ef4444", borderRadius: 12,
+              padding: "16px 20px", display: "flex", alignItems: "center", gap: 12,
+            }}>
+              <DollarSign size={24} style={{ color: "#ef4444", flexShrink: 0 }} />
+              <div style={{ textAlign: "left" }}>
+                <div style={{ color: "#ef4444", fontWeight: 700, fontSize: 14 }}>Caja cerrada</div>
+                <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+                  Abre un turno en la Caja antes de crear pedidos.
+                </div>
+              </div>
+            </div>
+          )}
+          {outsideHours && (
+            <div style={{
+              background: "#f59e0b20", border: "1px solid #f59e0b", borderRadius: 12,
+              padding: "16px 20px", display: "flex", alignItems: "center", gap: 12,
+            }}>
+              <Clock size={24} style={{ color: "#f59e0b", flexShrink: 0 }} />
+              <div style={{ textAlign: "left" }}>
+                <div style={{ color: "#f59e0b", fontWeight: 700, fontSize: 14 }}>Fuera de horario</div>
+                <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+                  El restaurante esta fuera del horario de apertura configurado.
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+          {noShift && (
+            <a href="/cash-register" style={{
+              padding: "10px 24px", background: "var(--accent)", color: "#fff",
+              borderRadius: 8, fontWeight: 600, fontSize: 14, textDecoration: "none",
+            }}>
+              Abrir Caja
+            </a>
+          )}
+          <button onClick={() => { setShiftOpen(null); setIsWithinHours(null); setGuardChecked(false); window.location.reload(); }} style={{
+            padding: "10px 24px", background: "var(--bg-card)", color: "var(--text-primary)",
+            borderRadius: 8, fontWeight: 600, fontSize: 14, border: "1px solid var(--border)", cursor: "pointer",
+          }}>
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   /* ── Loading state ───────────────────────────────────── */
   if (loading) {

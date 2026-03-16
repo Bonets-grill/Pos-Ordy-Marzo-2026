@@ -190,8 +190,8 @@ async function getDashboard(svc: Svc) {
     { data: loyaltyMembers },
   ] = await Promise.all([
     svc.from("tenants").select("id, name, slug, plan, active, currency, created_at, business_hours, tax_rate").order("created_at", { ascending: true }),
-    svc.from("orders").select("id, tenant_id, total, status, order_type, created_at, tip").gte("created_at", todayISO),
-    svc.from("orders").select("id, tenant_id, total, status, order_type, created_at, tip").gte("created_at", yesterdayStart).lt("created_at", todayISO),
+    svc.from("orders").select("id, tenant_id, total, status, order_type, created_at, tip_amount, source").gte("created_at", todayISO),
+    svc.from("orders").select("id, tenant_id, total, status, order_type, created_at, tip_amount, source").gte("created_at", yesterdayStart).lt("created_at", todayISO),
     svc.from("orders").select("id", { count: "exact", head: true }),
     svc.from("users").select("id, tenant_id, role"),
     svc.from("menu_items").select("id, tenant_id"),
@@ -220,7 +220,7 @@ async function getDashboard(svc: Svc) {
     const validYest = tOrdersYest.filter((o) => o.status !== "cancelled");
     const revenue = sumField(validOrders, "total");
     const revenueYest = sumField(validYest, "total");
-    const tips = sumField(tOrders, "tip");
+    const tips = sumField(tOrders, "tip_amount");
     const paidOrders = validOrders.filter((o) => o.status !== "pending");
 
     return {

@@ -36,6 +36,7 @@ export interface RestaurantContext {
     available: boolean;
     allergens: string[];
     prep_time_minutes: number | null;
+    kds_station: string | null;
     modifierGroups: {
       id: string;
       name: string;
@@ -150,6 +151,7 @@ export async function loadRestaurantContext(
     available: i.available as boolean,
     allergens: (i.allergens || []) as string[],
     prep_time_minutes: i.prep_time_minutes as number | null,
+    kds_station: (i.kds_station as string) || null,
     modifierGroups: modGroupsByItem[i.id as string] || [],
   }));
 

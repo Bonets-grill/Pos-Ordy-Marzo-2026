@@ -206,6 +206,7 @@ function ConfirmDelete({
 export default function TablesPage() {
   const { t } = useI18n();
   const [tenantId, setTenantId] = useState<string | null>(null);
+  const [tenantSlug, setTenantSlug] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
@@ -253,7 +254,15 @@ export default function TablesPage() {
         .select("tenant_id")
         .eq("id", user.id)
         .single();
-      if (profile?.tenant_id) setTenantId(profile.tenant_id);
+      if (profile?.tenant_id) {
+        setTenantId(profile.tenant_id);
+        const { data: tenant } = await supabase
+          .from("tenants")
+          .select("slug")
+          .eq("id", profile.tenant_id)
+          .single();
+        if (tenant?.slug) setTenantSlug(tenant.slug as string);
+      }
     }
     init();
   }, []);
@@ -308,6 +317,56 @@ export default function TablesPage() {
       setLoading(false)
     );
   }, [tenantId, loadZones, loadTables, loadTableOrders]);
+
+  /* ── Print QR codes ──────────────────────────────── */
+
+  const printQRs = () => {
+    if (!tenantSlug || tables.length === 0) return;
+    const baseUrl = "https://ordy-pos.netlify.app";
+    const activeTables = tables.filter((t) => t.status !== "cleaning");
+    const qrApiBase = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=";
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>QR Codes - ${tenantSlug}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 24px; font-size: 22px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; text-align: center; page-break-inside: avoid; }
+  .card img { width: 180px; height: 180px; margin: 8px auto; display: block; }
+  .table-num { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .table-label { font-size: 14px; color: #666; margin-bottom: 8px; }
+  .url { font-size: 9px; color: #999; word-break: break-all; margin-top: 8px; }
+  @media print {
+    .no-print { display: none; }
+    .grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style></head><body>
+<button class="no-print" onclick="window.print()" style="position:fixed;top:12px;right:12px;padding:10px 24px;font-size:16px;cursor:pointer;background:#f97316;color:white;border:none;border-radius:8px;font-weight:600;">Imprimir</button>
+<h1>QR Codes &mdash; ${tenantSlug}</h1>
+<div class="grid">
+${activeTables
+  .map((t) => {
+    const url = `${baseUrl}/qr/${tenantSlug}/${t.number}`;
+    const qrUrl = `${qrApiBase}${encodeURIComponent(url)}`;
+    return `<div class="card">
+  <div class="table-num">Mesa ${t.number}</div>
+  ${t.label ? `<div class="table-label">${t.label}</div>` : ""}
+  <img src="${qrUrl}" alt="QR Mesa ${t.number}" />
+  <div class="url">${url}</div>
+</div>`;
+  })
+  .join("\n")}
+</div>
+</body></html>`;
+
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+    }
+  };
 
   /* ── Table CRUD ────────────────────────────────────── */
 
@@ -782,6 +841,11 @@ export default function TablesPage() {
           {t("tables.title")}
         </h1>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {tenantSlug && tables.length > 0 && (
+            <button style={btnSecondary} onClick={printQRs} title="Imprimir QR codes de todas las mesas">
+              🖨 Imprimir QRs
+            </button>
+          )}
           <button style={btnSecondary} onClick={openZoneCreate}>
             + {t("tables.add_zone")}
           </button>

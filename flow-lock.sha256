@@ -11,7 +11,7 @@ c3e056c3654005ba4abb7ebfa78a3e469d945884c549e8e49201aa29d88e70ef  src/app/api/pu
 dd4d376cec7a714fc4c631d8ca38e35ea6773d39daa779c563eeb71a88cd7e3c  src/app/api/public/order/route.ts
 # ── Staff-facing (KDS + Orders + Payments) ───────────────────
 fd33c1dbae25a2495b6bfc1482575f5fd0c333f7013d6d655413db00ad031d84  src/app/(app)/kds/page.tsx
-855e913a7f35d8d77301a309f3ccf5488b9dee9d556ca921c5d98198d90b41fc  src/app/(app)/orders/page.tsx
+ea43909d7f16494754d97cd5fd1273f73244b943648679bd041599d32089d9fe  src/app/(app)/orders/page.tsx
 f6ca1c9225b2683207ec45b56168755a71887de20664a7b5d255209fc1bab808  src/app/(app)/payments/page.tsx
 # ── Translation system ───────────────────────────────────────
 41d9c07de4013ccb145ade43750c8eede27342e13d4374f2e5363e261c1b0251  src/lib/translate-memory.ts

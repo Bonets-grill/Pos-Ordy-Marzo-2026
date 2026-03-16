@@ -22,6 +22,8 @@ import {
   CreditCard,
   Receipt,
   TrendingUp,
+  CalendarDays,
+  ShoppingCart,
 } from "lucide-react";
 
 /* ── Types ────────────────────────────────────────────── */
@@ -68,6 +70,27 @@ interface ShiftSummary {
   cash_in: number;
   cash_out: number;
   refunds: number;
+}
+
+interface DailySummary {
+  totalRevenue: number;
+  totalOrders: number;
+  cashTotal: number;
+  cardTotal: number;
+  tipsTotal: number;
+  shiftsOpened: number;
+  shiftsClosed: number;
+  shifts: {
+    id: string;
+    opened_at: string;
+    closed_at: string | null;
+    opening_amount: number;
+    closing_amount: number | null;
+    difference: number | null;
+    total_orders: number;
+    total_sales: number;
+    status: string;
+  }[];
 }
 
 /* ── Modal Backdrop ── */
@@ -184,10 +207,23 @@ export default function CashRegisterPage() {
   const [movementLoading, setMovementLoading] = useState(false);
 
   // History
-  const [activeTab, setActiveTab] = useState<"current" | "history">("current");
+  const [activeTab, setActiveTab] = useState<"daily_summary" | "current" | "history">("daily_summary");
   const [historyShifts, setHistoryShifts] = useState<CashShift[]>([]);
   const [expandedShiftId, setExpandedShiftId] = useState<string | null>(null);
   const [expandedMovements, setExpandedMovements] = useState<CashMovement[]>([]);
+
+  // Daily summary
+  const [dailySummary, setDailySummary] = useState<DailySummary>({
+    totalRevenue: 0,
+    totalOrders: 0,
+    cashTotal: 0,
+    cardTotal: 0,
+    tipsTotal: 0,
+    shiftsOpened: 0,
+    shiftsClosed: 0,
+    shifts: [],
+  });
+  const [dailyLoading, setDailyLoading] = useState(false);
 
   // Resolve tenant + user
   useEffect(() => {
@@ -350,6 +386,85 @@ export default function CashRegisterPage() {
   useEffect(() => {
     if (activeTab === "history") fetchHistory();
   }, [activeTab, fetchHistory]);
+
+  /* ── Fetch daily summary ── */
+
+  const fetchDailySummary = useCallback(async () => {
+    if (!tenantId) return;
+    setDailyLoading(true);
+
+    try {
+      // Today boundaries (local timezone)
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+
+      // Fetch all shifts that started today
+      const { data: todayShifts } = await supabase
+        .from("cash_shifts")
+        .select("id, opened_at, closed_at, opening_amount, closing_amount, difference, total_orders, total_sales, status, cash_sales, card_sales")
+        .eq("tenant_id", tenantId)
+        .gte("opened_at", todayStart)
+        .lt("opened_at", todayEnd)
+        .order("opened_at", { ascending: true });
+
+      const shifts = (todayShifts || []) as any[];
+
+      // Fetch payments for today
+      const { data: todayPayments } = await supabase
+        .from("payments")
+        .select("method, amount, tip_amount, status")
+        .eq("tenant_id", tenantId)
+        .gte("created_at", todayStart)
+        .lt("created_at", todayEnd)
+        .neq("status", "refunded");
+
+      const payments = (todayPayments || []).filter((p: any) => p.method !== "refund");
+
+      const cashTotal = payments
+        .filter((p: any) => p.method === "cash")
+        .reduce((s: number, p: any) => s + (p.amount || 0), 0);
+      const cardTotal = payments
+        .filter((p: any) => p.method === "card")
+        .reduce((s: number, p: any) => s + (p.amount || 0), 0);
+      const otherTotal = payments
+        .filter((p: any) => p.method !== "cash" && p.method !== "card")
+        .reduce((s: number, p: any) => s + (p.amount || 0), 0);
+      const tipsTotal = payments.reduce(
+        (s: number, p: any) => s + (p.tip_amount || 0),
+        0
+      );
+
+      setDailySummary({
+        totalRevenue: cashTotal + cardTotal + otherTotal,
+        totalOrders: payments.length,
+        cashTotal,
+        cardTotal,
+        tipsTotal,
+        shiftsOpened: shifts.length,
+        shiftsClosed: shifts.filter((s) => s.status === "closed").length,
+        shifts: shifts.map((s) => ({
+          id: s.id,
+          opened_at: s.opened_at,
+          closed_at: s.closed_at,
+          opening_amount: s.opening_amount ?? 0,
+          closing_amount: s.closing_amount,
+          difference: s.difference,
+          total_orders: s.total_orders ?? 0,
+          total_sales: s.total_sales ?? 0,
+          status: s.status,
+        })),
+      });
+    } catch {
+      // keep defaults
+    } finally {
+      setDailyLoading(false);
+    }
+  }, [tenantId, supabase]);
+
+  useEffect(() => {
+    if (activeTab === "daily_summary") fetchDailySummary();
+  }, [activeTab, fetchDailySummary]);
 
   /* ── Open Shift ── */
 
@@ -574,37 +689,504 @@ export default function CashRegisterPage() {
         </h1>
 
         <div style={{ display: "flex", gap: 4 }}>
-          {(["current", "history"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                padding: "8px 18px",
-                borderRadius: 999,
-                fontSize: 13,
-                fontWeight: 600,
-                border: "1px solid var(--border)",
-                cursor: "pointer",
-                background:
-                  activeTab === tab ? "var(--accent)" : "var(--bg-card)",
-                color:
-                  activeTab === tab ? "#000" : "var(--text-secondary)",
-                transition: "all 0.15s",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              {tab === "current" ? (
-                <DollarSign size={14} />
-              ) : (
-                <History size={14} />
-              )}
-              {tab === "current" ? t("cash.title") : t("cash.history")}
-            </button>
-          ))}
+          {(["daily_summary", "current", "history"] as const).map((tab) => {
+            const tabIcon =
+              tab === "daily_summary" ? CalendarDays :
+              tab === "current" ? DollarSign : History;
+            const TabIcon = tabIcon;
+            const tabLabel =
+              tab === "daily_summary" ? t("cash.daily_summary") :
+              tab === "current" ? t("cash.title") : t("cash.history");
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: 999,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: "1px solid var(--border)",
+                  cursor: "pointer",
+                  background:
+                    activeTab === tab ? "var(--accent)" : "var(--bg-card)",
+                  color:
+                    activeTab === tab ? "#000" : "var(--text-secondary)",
+                  transition: "all 0.15s",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <TabIcon size={14} />
+                {tabLabel}
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {/* ══════════ DAILY SUMMARY TAB ══════════ */}
+      {activeTab === "daily_summary" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          {/* Header with date */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "16px 20px",
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+            }}
+          >
+            <CalendarDays size={22} style={{ color: "var(--accent)" }} />
+            <div>
+              <h2
+                style={{
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                  margin: 0,
+                }}
+              >
+                {t("cash.daily_summary")}
+              </h2>
+              <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                {new Date().toLocaleDateString(undefined, {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </span>
+            </div>
+          </div>
+
+          {dailyLoading ? (
+            <div
+              style={{
+                padding: 60,
+                textAlign: "center",
+                color: "var(--text-muted)",
+                fontSize: 14,
+              }}
+            >
+              {t("common.loading")}
+            </div>
+          ) : (
+            <>
+              {/* Summary Cards Grid */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                  gap: 16,
+                }}
+              >
+                {[
+                  {
+                    label: "cash.daily_revenue",
+                    value: formatCurrency(dailySummary.totalRevenue),
+                    icon: TrendingUp,
+                    color: "var(--accent)",
+                  },
+                  {
+                    label: "cash.daily_orders",
+                    value: dailySummary.totalOrders.toString(),
+                    icon: ShoppingCart,
+                    color: "var(--text-primary)",
+                  },
+                  {
+                    label: "cash.cash_sales",
+                    value: formatCurrency(dailySummary.cashTotal),
+                    icon: Banknote,
+                    color: "var(--success)",
+                  },
+                  {
+                    label: "cash.card_sales",
+                    value: formatCurrency(dailySummary.cardTotal),
+                    icon: CreditCard,
+                    color: "var(--info)",
+                  },
+                  {
+                    label: "cash.tips",
+                    value: formatCurrency(dailySummary.tipsTotal),
+                    icon: DollarSign,
+                    color: "#a855f7",
+                  },
+                  {
+                    label: "cash.daily_shifts",
+                    value: `${dailySummary.shiftsClosed} / ${dailySummary.shiftsOpened}`,
+                    icon: Lock,
+                    color: "var(--warning)",
+                  },
+                ].map((card) => {
+                  const Icon = card.icon;
+                  return (
+                    <div
+                      key={card.label}
+                      style={{
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 12,
+                        padding: 20,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <Icon size={16} style={{ color: card.color }} />
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {t(card.label)}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 24,
+                          fontWeight: 700,
+                          color: card.color,
+                          letterSpacing: "-0.02em",
+                        }}
+                      >
+                        {card.value}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Shifts Table */}
+              <div
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "16px 20px",
+                    borderBottom: "1px solid var(--border)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Clock size={18} style={{ color: "var(--text-muted)" }} />
+                  <h3
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: "var(--text-primary)",
+                      margin: 0,
+                    }}
+                  >
+                    {t("cash.daily_shifts_table")}
+                  </h3>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "var(--text-muted)",
+                      background: "var(--bg-secondary)",
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {dailySummary.shifts.length}
+                  </span>
+                </div>
+
+                {dailySummary.shifts.length === 0 ? (
+                  <div
+                    style={{
+                      padding: 40,
+                      textAlign: "center",
+                      color: "var(--text-muted)",
+                      fontSize: 14,
+                    }}
+                  >
+                    {t("cash.no_shifts_today")}
+                  </div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: 14,
+                      }}
+                    >
+                      <thead>
+                        <tr
+                          style={{
+                            borderBottom: "1px solid var(--border)",
+                          }}
+                        >
+                          {[
+                            "cash.daily_opened",
+                            "cash.daily_closed",
+                            "cash.opening_amount",
+                            "cash.closing_amount",
+                            "cash.difference",
+                            "cash.total_orders",
+                            "cash.total_sales",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              style={{
+                                padding: "10px 16px",
+                                textAlign: "left",
+                                color: "var(--text-muted)",
+                                fontWeight: 500,
+                                fontSize: 12,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {t(h)}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dailySummary.shifts.map((shift) => {
+                          const diff = shift.difference ?? 0;
+                          const diffColor =
+                            shift.status !== "closed"
+                              ? "var(--text-muted)"
+                              : Math.abs(diff) < 0.01
+                              ? "var(--success)"
+                              : "var(--danger)";
+                          return (
+                            <tr
+                              key={shift.id}
+                              style={{
+                                borderBottom: "1px solid var(--border)",
+                              }}
+                            >
+                              <td
+                                style={{
+                                  padding: "10px 16px",
+                                  color: "var(--text-primary)",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {formatDate(shift.opened_at, {
+                                  timeStyle: "short",
+                                })}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "10px 16px",
+                                  color: "var(--text-primary)",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {shift.closed_at
+                                  ? formatDate(shift.closed_at, {
+                                      timeStyle: "short",
+                                    })
+                                  : (
+                                    <span
+                                      style={{
+                                        padding: "2px 8px",
+                                        borderRadius: 999,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        background: "rgba(34,197,94,0.15)",
+                                        color: "var(--success)",
+                                      }}
+                                    >
+                                      {t("cash.daily_open_now")}
+                                    </span>
+                                  )}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "10px 16px",
+                                  fontWeight: 600,
+                                  color: "var(--text-primary)",
+                                }}
+                              >
+                                {formatCurrency(shift.opening_amount)}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "10px 16px",
+                                  fontWeight: 600,
+                                  color: "var(--text-primary)",
+                                }}
+                              >
+                                {shift.closing_amount != null
+                                  ? formatCurrency(shift.closing_amount)
+                                  : "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "10px 16px",
+                                  fontWeight: 600,
+                                  color: diffColor,
+                                }}
+                              >
+                                {shift.status === "closed"
+                                  ? `${diff >= 0 ? "+" : ""}${formatCurrency(diff)}`
+                                  : "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "10px 16px",
+                                  fontWeight: 600,
+                                  color: "var(--text-primary)",
+                                  textAlign: "center",
+                                }}
+                              >
+                                {shift.total_orders}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "10px 16px",
+                                  fontWeight: 600,
+                                  color: "var(--accent)",
+                                }}
+                              >
+                                {formatCurrency(shift.total_sales)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+
+                        {/* Total Acumulado row */}
+                        <tr
+                          style={{
+                            borderTop: "2px solid var(--border)",
+                            background: "var(--bg-secondary)",
+                          }}
+                        >
+                          <td
+                            colSpan={2}
+                            style={{
+                              padding: "12px 16px",
+                              fontWeight: 700,
+                              fontSize: 14,
+                              color: "var(--text-primary)",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                            }}
+                          >
+                            {t("cash.daily_total")}
+                          </td>
+                          <td
+                            style={{
+                              padding: "12px 16px",
+                              fontWeight: 700,
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            {formatCurrency(
+                              dailySummary.shifts.reduce(
+                                (s, sh) => s + sh.opening_amount,
+                                0
+                              )
+                            )}
+                          </td>
+                          <td
+                            style={{
+                              padding: "12px 16px",
+                              fontWeight: 700,
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            {formatCurrency(
+                              dailySummary.shifts
+                                .filter((sh) => sh.closing_amount != null)
+                                .reduce(
+                                  (s, sh) => s + (sh.closing_amount ?? 0),
+                                  0
+                                )
+                            )}
+                          </td>
+                          <td
+                            style={{
+                              padding: "12px 16px",
+                              fontWeight: 700,
+                              color: (() => {
+                                const totalDiff = dailySummary.shifts
+                                  .filter((sh) => sh.status === "closed")
+                                  .reduce(
+                                    (s, sh) => s + (sh.difference ?? 0),
+                                    0
+                                  );
+                                return Math.abs(totalDiff) < 0.01
+                                  ? "var(--success)"
+                                  : "var(--danger)";
+                              })(),
+                            }}
+                          >
+                            {(() => {
+                              const totalDiff = dailySummary.shifts
+                                .filter((sh) => sh.status === "closed")
+                                .reduce(
+                                  (s, sh) => s + (sh.difference ?? 0),
+                                  0
+                                );
+                              return `${totalDiff >= 0 ? "+" : ""}${formatCurrency(totalDiff)}`;
+                            })()}
+                          </td>
+                          <td
+                            style={{
+                              padding: "12px 16px",
+                              fontWeight: 700,
+                              color: "var(--text-primary)",
+                              textAlign: "center",
+                            }}
+                          >
+                            {dailySummary.shifts.reduce(
+                              (s, sh) => s + sh.total_orders,
+                              0
+                            )}
+                          </td>
+                          <td
+                            style={{
+                              padding: "12px 16px",
+                              fontWeight: 700,
+                              color: "var(--accent)",
+                            }}
+                          >
+                            {formatCurrency(
+                              dailySummary.shifts.reduce(
+                                (s, sh) => s + sh.total_sales,
+                                0
+                              )
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ══════════ CURRENT TAB ══════════ */}
       {activeTab === "current" && (

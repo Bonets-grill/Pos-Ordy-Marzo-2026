@@ -19,6 +19,7 @@ import {
   Bot,
   Settings2,
   QrCode,
+  X,
 } from "lucide-react";
 
 interface WAInstanceData {
@@ -65,6 +66,9 @@ export default function WhatsAppPage() {
   const [saved, setSaved] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<SessionRow | null>(null);
+  const [messages, setMessages] = useState<{id: string; role: string; content: string; created_at: string}[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   // Form state
   const [agentName, setAgentName] = useState("");
@@ -216,6 +220,19 @@ export default function WhatsAppPage() {
   const handleReconnect = async () => {
     await loadInstance();
   };
+
+  async function loadConversationMessages(sessionId: string) {
+    setLoadingMessages(true);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("wa_messages")
+      .select("id, role, content, created_at")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true })
+      .limit(100);
+    setMessages((data || []) as {id: string; role: string; content: string; created_at: string}[]);
+    setLoadingMessages(false);
+  }
 
   if (loading) {
     return (
@@ -665,6 +682,7 @@ export default function WhatsAppPage() {
                   return (
                     <div
                       key={s.id}
+                      onClick={() => { setSelectedSession(s); loadConversationMessages(s.id); }}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -672,6 +690,7 @@ export default function WhatsAppPage() {
                         padding: "10px 8px",
                         borderRadius: 8,
                         borderBottom: "1px solid var(--border)",
+                        cursor: "pointer",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -751,6 +770,78 @@ export default function WhatsAppPage() {
           </div>
         </div>
       </div>
+
+      {/* Conversation Detail Modal */}
+      {selectedSession && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", justifyContent: "flex-end" }}>
+          <div onClick={() => setSelectedSession(null)} style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.5)" }} />
+          <div style={{
+            position: "relative", width: "min(450px, 90vw)", height: "100vh",
+            backgroundColor: "var(--bg-primary)", borderLeft: "1px solid var(--border)",
+            display: "flex", flexDirection: "column", zIndex: 201,
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: "16px 20px", borderBottom: "1px solid var(--border)",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
+                  {selectedSession.customer_name || `+${selectedSession.phone}`}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                  {selectedSession.state} {selectedSession.cart?.length > 0 ? `· ${selectedSession.cart.length} items en carrito` : ""}
+                </div>
+              </div>
+              <button onClick={() => setSelectedSession(null)} style={{
+                background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", padding: 4,
+              }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 8 }}>
+              {loadingMessages ? (
+                <div style={{ textAlign: "center", padding: 32 }}>
+                  <Loader2 size={24} className="animate-spin" style={{ color: "var(--accent)" }} />
+                </div>
+              ) : messages.length === 0 ? (
+                <p style={{ textAlign: "center", color: "var(--text-secondary)", padding: 32 }}>Sin mensajes</p>
+              ) : (
+                messages.filter(m => m.role === "user" || m.role === "assistant").map((m) => (
+                  <div key={m.id} style={{
+                    alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                    maxWidth: "80%",
+                  }}>
+                    <div style={{
+                      padding: "10px 14px",
+                      borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                      backgroundColor: m.role === "user" ? "#25D36630" : "var(--bg-secondary)",
+                      color: "var(--text-primary)",
+                      fontSize: 14,
+                      lineHeight: 1.4,
+                      wordBreak: "break-word",
+                      whiteSpace: "pre-wrap",
+                    }}>
+                      {m.content}
+                    </div>
+                    <div style={{
+                      fontSize: 11,
+                      color: "var(--text-secondary)",
+                      marginTop: 2,
+                      textAlign: m.role === "user" ? "right" : "left",
+                      paddingLeft: 4, paddingRight: 4,
+                    }}>
+                      {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

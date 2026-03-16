@@ -14,6 +14,8 @@ import {
   ChevronDown,
   Play,
   ShieldCheck,
+  Zap,
+  Trash2,
 } from "lucide-react";
 
 interface PhaseResult {
@@ -67,6 +69,8 @@ function DiagnosticsPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
   const [autoRun, setAutoRun] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const [simResult, setSimResult] = useState<any>(null);
 
   useEffect(() => {
     loadTenants();
@@ -133,6 +137,30 @@ function DiagnosticsPage() {
     }
   }
 
+  async function simulateShift(clean = false) {
+    if (!selectedTenant) return;
+    setSimulating(true);
+    setSimResult(null);
+    try {
+      const res = await fetch("/api/admin/simulate-shift", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantId: selectedTenant, clean }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`Error: ${err.error || res.statusText}`);
+        return;
+      }
+      const data = await res.json();
+      setSimResult(data.stats);
+    } catch (e: any) {
+      alert(`Network error: ${e.message}`);
+    } finally {
+      setSimulating(false);
+    }
+  }
+
   const togglePhase = (phase: string) => {
     setExpandedPhases(prev => {
       const next = new Set(prev);
@@ -150,14 +178,20 @@ function DiagnosticsPage() {
   };
 
   const phaseLabels: Record<string, string> = {
-    tenant: "Tenant",
-    menu: "Menu",
-    tables: "Mesas",
+    tenant: "Configuracion Tenant",
+    menu: "Menu & Productos",
+    tables: "Mesas & Zonas",
+    kds: "Cocina (KDS)",
     orders: "Pedidos",
-    payments: "Pagos",
-    users: "Usuarios",
-    whatsapp: "WhatsApp",
-    integrity: "Integridad",
+    order_items: "Lineas de Pedido",
+    payments: "Pagos & Cobros",
+    cash_register: "Caja Registradora",
+    users: "Staff & Usuarios",
+    whatsapp: "Agente WhatsApp",
+    loyalty: "Programa Fidelizacion",
+    escandallo: "Escandallo & Costes",
+    qr: "Pedidos QR",
+    integrity: "Integridad de Datos",
     system: "Sistema",
   };
 
@@ -230,6 +264,86 @@ function DiagnosticsPage() {
           {running ? "Ejecutando..." : "Diagnosticar"}
         </button>
       </div>
+
+      {/* Simulation panel */}
+      {selectedTenant && (
+        <div style={{
+          display: "flex", gap: 12, marginBottom: 24, alignItems: "center",
+          backgroundColor: "var(--bg-card)", border: "1px solid var(--border)",
+          borderRadius: 12, padding: 16,
+        }}>
+          <Zap size={20} style={{ color: "#f59e0b", flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>Simular Turno Completo</div>
+            <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+              Crea 15 pedidos en mesa + 5 WhatsApp + 3 QR, cobros, caja, cierre. Datos reales.
+            </div>
+          </div>
+          <button
+            onClick={() => simulateShift(false)}
+            disabled={simulating}
+            style={{
+              padding: "8px 16px", backgroundColor: "#f59e0b", color: "#000",
+              border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
+              cursor: simulating ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+            }}
+          >
+            {simulating ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+            {simulating ? "Simulando..." : "Simular Turno"}
+          </button>
+          <button
+            onClick={() => simulateShift(true)}
+            disabled={simulating}
+            title="Limpia datos simulados anteriores y ejecuta de nuevo"
+            style={{
+              padding: "8px 12px", backgroundColor: "transparent", color: "#ef4444",
+              border: "1px solid #ef4444", borderRadius: 8, fontSize: 13, fontWeight: 600,
+              cursor: simulating ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+            }}
+          >
+            <Trash2 size={14} />
+            Limpiar + Simular
+          </button>
+        </div>
+      )}
+
+      {/* Simulation results */}
+      {simResult && (
+        <div style={{
+          marginBottom: 24, backgroundColor: "#f59e0b15", border: "1px solid #f59e0b",
+          borderRadius: 12, padding: 20,
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b", marginBottom: 12 }}>
+            Turno Simulado Completado
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+            {[
+              { label: "Pedidos totales", value: simResult.orders_created },
+              { label: "En mesa", value: simResult.dine_in_orders },
+              { label: "WhatsApp", value: simResult.wa_orders },
+              { label: "QR / Takeaway", value: simResult.takeaway_orders },
+              { label: "Items vendidos", value: simResult.total_items },
+              { label: "Revenue total", value: `${simResult.total_revenue?.toFixed(2)}€` },
+              { label: "Propinas", value: `${simResult.total_tips?.toFixed(2)}€` },
+              { label: "Pagos efectivo", value: `${simResult.cash_payments} (${simResult.cash_amount?.toFixed(2)}€)` },
+              { label: "Pagos tarjeta", value: `${simResult.card_payments} (${simResult.card_amount?.toFixed(2)}€)` },
+              { label: "Apertura caja", value: `${simResult.opening_amount}€` },
+              { label: "Cierre caja", value: `${simResult.closing_amount?.toFixed(2)}€` },
+              { label: "Diferencia caja", value: `${simResult.cash_difference?.toFixed(2)}€` },
+            ].map((item, i) => (
+              <div key={i} style={{ backgroundColor: "var(--bg-card)", borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 11, color: "var(--text-secondary)", textTransform: "uppercase" }}>{item.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{item.value}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-secondary)" }}>
+            Ve al Dashboard, Pedidos, Pagos y Caja para ver los datos. Los datos simulados llevan la marca [SIM].
+          </div>
+        </div>
+      )}
 
       {/* Running animation */}
       {running && (

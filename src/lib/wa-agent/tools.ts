@@ -381,20 +381,25 @@ export async function confirmOrder(
     return { result: "❌ Error al crear el pedido. Intenta de nuevo en un momento." };
   }
 
-  // Create order items
-  const orderItems = session.cart.map((c) => ({
-    order_id: order.id,
-    tenant_id: tenantId,
-    menu_item_id: c.menu_item_id,
-    name: c.name,
-    quantity: c.qty,
-    unit_price: c.unit_price,
-    modifiers: c.modifiers.map((m) => ({ name: m.name, price_delta: m.price_delta })),
-    modifiers_total: c.modifiers.reduce((s, m) => s + m.price_delta, 0),
-    subtotal: Math.round((c.unit_price + c.modifiers.reduce((s, m) => s + m.price_delta, 0)) * c.qty * 100) / 100,
-    notes: c.notes || null,
-    kds_status: "pending",
-  }));
+  // Create order items — include kds_station from menu item data
+  const orderItems = session.cart.map((c) => {
+    const dbItem = ctx.menuItems.find((m) => m.id === c.menu_item_id);
+    // Get kds_station from the full menu_items query
+    return {
+      order_id: order.id,
+      tenant_id: tenantId,
+      menu_item_id: c.menu_item_id,
+      name: c.name,
+      quantity: c.qty,
+      unit_price: c.unit_price,
+      modifiers: c.modifiers.map((m) => ({ name: m.name, price_delta: m.price_delta })),
+      modifiers_total: c.modifiers.reduce((s, m) => s + m.price_delta, 0),
+      subtotal: Math.round((c.unit_price + c.modifiers.reduce((s, m) => s + m.price_delta, 0)) * c.qty * 100) / 100,
+      notes: c.notes || null,
+      kds_status: "pending",
+      kds_station: dbItem?.kds_station || "cocina",
+    };
+  });
 
   await supabase.from("order_items").insert(orderItems);
 

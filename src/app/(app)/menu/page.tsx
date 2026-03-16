@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { useI18n } from "@/lib/i18n-provider";
 import { Search, Plus, Minus, GripVertical, Image as ImageIcon, CheckSquare, Square, ToggleLeft, ToggleRight, Sparkles, Loader2, Wand2, Globe, Check, X as XIcon, Download } from "lucide-react";
 import { translateText, memorySeed } from "@/lib/translate-memory";
+import SortableList from "@/components/SortableList";
 
 /* ── Types ────────────────────────────────────────────── */
 
@@ -493,6 +494,45 @@ export default function MenuPage() {
     const supabase = createClient();
     await supabase.from("menu_categories").update({ active: !cat.active }).eq("id", cat.id);
     await loadCategories();
+  };
+
+  /* ── Drag-and-drop reorder helpers ─────────────────── */
+
+  const reorderCategories = async (reordered: Category[]) => {
+    setCategories(reordered);
+    const supabase = createClient();
+    const updates = reordered.map((c, i) =>
+      supabase.from("menu_categories").update({ sort_order: i }).eq("id", c.id)
+    );
+    await Promise.all(updates);
+  };
+
+  const reorderProducts = async (reordered: Product[]) => {
+    setProducts(reordered);
+    const supabase = createClient();
+    const updates = reordered.map((p, i) =>
+      supabase.from("menu_items").update({ sort_order: i }).eq("id", p.id)
+    );
+    await Promise.all(updates);
+  };
+
+  const reorderModGroups = async (reordered: ModifierGroup[]) => {
+    setModifierGroups(reordered);
+    const supabase = createClient();
+    const updates = reordered.map((g, i) =>
+      supabase.from("modifier_groups").update({ sort_order: i }).eq("id", g.id)
+    );
+    await Promise.all(updates);
+  };
+
+  const reorderModOptions = async (groupId: string, reordered: ModifierOption[]) => {
+    const other = modOptions.filter(o => o.group_id !== groupId);
+    setModOptions([...other, ...reordered]);
+    const supabase = createClient();
+    const updates = reordered.map((o, i) =>
+      supabase.from("modifiers").update({ sort_order: i }).eq("id", o.id)
+    );
+    await Promise.all(updates);
   };
 
   /* ── Product CRUD ─────────────────────────────────── */
@@ -1262,77 +1302,62 @@ export default function MenuPage() {
               {t("menu.no_categories")}
             </p>
           )}
-          {categories
-            .filter((cat) => {
+          <SortableList
+            items={categories.filter((cat) => {
               if (!searchQuery.trim()) return true;
               const q = searchQuery.toLowerCase();
               return cat.name_es.toLowerCase().includes(q) || cat.name_en.toLowerCase().includes(q);
-            })
-            .map((cat) => (
-            <div
-              key={cat.id}
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border)",
-                borderRadius: 12,
-                padding: "14px 18px",
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                flexWrap: "wrap",
-              }}
-            >
-              {/* Icon */}
-              <span style={{ fontSize: 28 }}>{cat.icon || "🍽️"}</span>
-
-              {/* Color swatch */}
-              <span
+            })}
+            onReorder={reorderCategories}
+            renderItem={(cat) => (
+              <div
                 style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: 4,
-                  background: cat.color || "#888",
-                  flexShrink: 0,
+                  background: "var(--bg-card)",
                   border: "1px solid var(--border)",
-                }}
-              />
-
-              {/* Name + sort */}
-              <div style={{ flex: 1, minWidth: 120 }}>
-                <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.95rem" }}>
-                  {ln(cat)}
-                </div>
-                <div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
-                  {t("menu.sort_order")}: {cat.sort_order}
-                </div>
-              </div>
-
-              {/* Active toggle */}
-              <button
-                onClick={() => toggleCatActive(cat)}
-                style={{
-                  padding: "4px 14px",
-                  borderRadius: 999,
-                  border: "none",
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  background: cat.active ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)",
-                  color: cat.active ? "#22c55e" : "#f87171",
+                  borderRadius: 12,
+                  padding: "14px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  flexWrap: "wrap",
                 }}
               >
-                {cat.active ? t("menu.active") : t("common.inactive")}
-              </button>
-
-              {/* Actions */}
-              <button style={{ ...btnSecondary, padding: "4px 12px", fontSize: "0.8rem" }} onClick={() => openCatEdit(cat)}>
-                {t("menu.edit")}
-              </button>
-              <button style={{ ...btnDanger, padding: "4px 12px", fontSize: "0.8rem" }} onClick={() => setCatDeleting(cat.id)}>
-                {t("menu.delete")}
-              </button>
-            </div>
-          ))}
+                <span style={{ fontSize: 28 }}>{cat.icon || "🍽️"}</span>
+                <span
+                  style={{
+                    width: 18, height: 18, borderRadius: 4,
+                    background: cat.color || "#888", flexShrink: 0,
+                    border: "1px solid var(--border)",
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 120 }}>
+                  <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.95rem" }}>
+                    {ln(cat)}
+                  </div>
+                  <div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                    #{cat.sort_order}
+                  </div>
+                </div>
+                <button
+                  onClick={() => toggleCatActive(cat)}
+                  style={{
+                    padding: "4px 14px", borderRadius: 999, border: "none",
+                    fontSize: "0.78rem", fontWeight: 600, cursor: "pointer",
+                    background: cat.active ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)",
+                    color: cat.active ? "#22c55e" : "#f87171",
+                  }}
+                >
+                  {cat.active ? t("menu.active") : t("common.inactive")}
+                </button>
+                <button style={{ ...btnSecondary, padding: "4px 12px", fontSize: "0.8rem" }} onClick={() => openCatEdit(cat)}>
+                  {t("menu.edit")}
+                </button>
+                <button style={{ ...btnDanger, padding: "4px 12px", fontSize: "0.8rem" }} onClick={() => setCatDeleting(cat.id)}>
+                  {t("menu.delete")}
+                </button>
+              </div>
+            )}
+          />
         </div>
       )}
 
@@ -1587,16 +1612,17 @@ export default function MenuPage() {
               {t("menu.no_modifier_groups")}
             </p>
           )}
-          {modifierGroups
-            .filter((g) => {
+          <SortableList
+            items={modifierGroups.filter((g) => {
               if (!searchQuery.trim()) return true;
               return (g.name_es || g.name_en || "").toLowerCase().includes(searchQuery.toLowerCase());
-            })
-            .map((group) => {
-              const groupOpts = modOptions.filter((o) => o.group_id === group.id);
+            })}
+            onReorder={reorderModGroups}
+            renderItem={(group) => {
+              const groupOpts = modOptions.filter((o) => o.group_id === group.id).sort((a, b) => a.sort_order - b.sort_order);
               const isExpanded = expandedGroup === group.id;
               return (
-                <div key={group.id} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   {/* Group row */}
                   <div
                     style={{
@@ -1612,7 +1638,6 @@ export default function MenuPage() {
                     }}
                     onClick={() => setExpandedGroup(isExpanded ? null : group.id)}
                   >
-                    <GripVertical size={16} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
 
                     <div style={{ flex: 1, minWidth: 140 }}>
                       <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.95rem" }}>
@@ -1683,44 +1708,43 @@ export default function MenuPage() {
                           {t("menu.no_options")}
                         </p>
                       )}
-                      {groupOpts.map((opt) => (
-                        <div
-                          key={opt.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            padding: "8px 0",
-                            borderBottom: "1px solid var(--border)",
-                          }}
-                        >
-                          <span style={{ color: "var(--text-primary)", fontSize: "0.9rem", flex: 1 }}>
-                            {ln(opt)}
-                          </span>
-                          <span style={{
-                            color: opt.price_delta > 0 ? "var(--accent)" : opt.price_delta < 0 ? "#22c55e" : "var(--text-muted)",
-                            fontWeight: 600,
-                            fontSize: "0.85rem",
-                          }}>
-                            {opt.price_delta > 0 ? `+$${opt.price_delta.toFixed(2)}` : opt.price_delta < 0 ? `-$${Math.abs(opt.price_delta).toFixed(2)}` : "$0.00"}
-                          </span>
-                          <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>
-                            #{opt.sort_order}
-                          </span>
-                          <button
-                            style={{ ...btnSecondary, padding: "2px 10px", fontSize: "0.75rem" }}
-                            onClick={() => openModOptEdit(opt)}
+                      <SortableList
+                        items={groupOpts}
+                        onReorder={(reordered) => reorderModOptions(group.id, reordered)}
+                        renderItem={(opt) => (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
+                              padding: "8px 0",
+                              borderBottom: "1px solid var(--border)",
+                            }}
                           >
-                            {t("menu.edit")}
-                          </button>
-                          <button
-                            style={{ ...btnDanger, padding: "2px 10px", fontSize: "0.75rem" }}
-                            onClick={() => setModOptDeleting(opt.id)}
-                          >
-                            {t("menu.delete")}
-                          </button>
-                        </div>
-                      ))}
+                            <span style={{ color: "var(--text-primary)", fontSize: "0.9rem", flex: 1 }}>
+                              {ln(opt)}
+                            </span>
+                            <span style={{
+                              color: opt.price_delta > 0 ? "var(--accent)" : opt.price_delta < 0 ? "#22c55e" : "var(--text-muted)",
+                              fontWeight: 600, fontSize: "0.85rem",
+                            }}>
+                              {opt.price_delta > 0 ? `+$${opt.price_delta.toFixed(2)}` : opt.price_delta < 0 ? `-$${Math.abs(opt.price_delta).toFixed(2)}` : "$0.00"}
+                            </span>
+                            <button
+                              style={{ ...btnSecondary, padding: "2px 10px", fontSize: "0.75rem" }}
+                              onClick={() => openModOptEdit(opt)}
+                            >
+                              {t("menu.edit")}
+                            </button>
+                            <button
+                              style={{ ...btnDanger, padding: "2px 10px", fontSize: "0.75rem" }}
+                              onClick={() => setModOptDeleting(opt.id)}
+                            >
+                              {t("menu.delete")}
+                            </button>
+                          </div>
+                        )}
+                      />
 
                       {/* Add option button */}
                       <button
@@ -1741,7 +1765,8 @@ export default function MenuPage() {
                   )}
                 </div>
               );
-            })}
+            }}
+          />
         </div>
       )}
 
