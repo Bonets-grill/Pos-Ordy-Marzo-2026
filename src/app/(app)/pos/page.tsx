@@ -621,6 +621,7 @@ export default function PosPage() {
   /* ── Load existing order for occupied table ──────────── */
   const loadTableOrder = useCallback(async (tableId: string) => {
     if (!tenantId) return;
+    setSelectedTable(tableId); // always confirm table selection
     // Find active order for this table
     const { data: order } = await supabase
       .from("orders")
