@@ -125,6 +125,7 @@ export default function PaymentsPage() {
   const { t } = useI18n();
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
+  const manualPayingRef = useRef(false);
 
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -298,8 +299,9 @@ export default function PaymentsPage() {
       setRefundTarget(null);
       setRefundReason("");
       fetchData();
-    } catch {
-      // handle silently
+    } catch (err) {
+      window.alert(`Error inesperado al procesar el reembolso. Inténtalo de nuevo.`);
+      console.error("Refund error:", err);
     } finally {
       setRefundLoading(false);
     }
@@ -348,10 +350,13 @@ export default function PaymentsPage() {
 
   async function handleManualPayment() {
     if (!tenantId || !manualOrderId || !manualAmount) return;
+    if (manualPayingRef.current) return;
+    manualPayingRef.current = true;
 
     const parsedAmount = parseFloat(manualAmount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       window.alert("Payment amount must be a positive number");
+      manualPayingRef.current = false;
       return;
     }
 
@@ -360,6 +365,7 @@ export default function PaymentsPage() {
       window.alert(
         `Payment amount must be at least the order total (${formatCurrency(selectedOrder.total)})`
       );
+      manualPayingRef.current = false;
       return;
     }
 
@@ -384,9 +390,11 @@ export default function PaymentsPage() {
 
       setShowManualModal(false);
       fetchData();
-    } catch {
-      // handle silently
+    } catch (err) {
+      window.alert("Error inesperado al registrar el pago. Inténtalo de nuevo.");
+      console.error("Manual payment error:", err);
     } finally {
+      manualPayingRef.current = false;
       setManualLoading(false);
     }
   }

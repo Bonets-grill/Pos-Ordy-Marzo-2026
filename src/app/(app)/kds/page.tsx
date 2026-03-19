@@ -264,7 +264,7 @@ export default function KdsPage() {
       .channel("kds-items")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "order_items" },
+        { event: "*", schema: "public", table: "order_items", filter: `tenant_id=eq.${tenantId}` },
         () => fetchOrders()
       )
       .subscribe();
@@ -422,15 +422,18 @@ export default function KdsPage() {
   async function recallOrder() {
     if (!lastBumped) return;
     const order = lastBumped;
-    const itemIds = order.items.map((i) => i.id);
 
-    // Restore items to their previous statuses
+    // Batch updates by status — avoids N sequential queries
+    const byStatus: Record<string, string[]> = {};
     for (const item of order.items) {
-      await supabase
-        .from("order_items")
-        .update({ kds_status: item.kds_status })
-        .eq("id", item.id);
+      if (!byStatus[item.kds_status]) byStatus[item.kds_status] = [];
+      byStatus[item.kds_status].push(item.id);
     }
+    await Promise.all(
+      Object.entries(byStatus).map(([status, ids]) =>
+        supabase.from("order_items").update({ kds_status: status }).in("id", ids)
+      )
+    );
     await supabase
       .from("orders")
       .update({ status: order.status })
