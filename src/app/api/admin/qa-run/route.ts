@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
 
     const { data: items } = await supabase
       .from("menu_items")
-      .select("id, name_es, price, cost, available, active, category_id, allergens, image_url, kds_station, prep_time_minutes")
+      .select("id, name_es, description_es, description_en, price, cost, available, active, category_id, allergens, image_url, kds_station, prep_time_minutes")
       .eq("tenant_id", tenantId);
 
     const activeItems = ((items || []) as any[]).filter(i => i.active);

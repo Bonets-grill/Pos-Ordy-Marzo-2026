@@ -37,8 +37,17 @@ interface TenantSettings {
   notification_config: NotificationConfig;
 }
 
+interface DaySchedule {
+  open: string;
+  close: string;
+  open2?: string;    // second shift open
+  close2?: string;   // second shift close
+  closed: boolean;
+  split?: boolean;   // true = double shift enabled
+}
+
 interface BusinessHours {
-  [key: string]: { open: string; close: string; closed: boolean };
+  [key: string]: DaySchedule;
 }
 
 interface ReceiptConfig {
@@ -91,16 +100,20 @@ const LOCALES = [
 
 const ROLES = ["admin", "manager", "waiter", "kitchen"];
 
-const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const DAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+const DAY_LABELS: Record<string, string> = {
+  monday: "Lunes", tuesday: "Martes", wednesday: "Miércoles",
+  thursday: "Jueves", friday: "Viernes", saturday: "Sábado", sunday: "Domingo",
+};
 
 const DEFAULT_BUSINESS_HOURS: BusinessHours = {
-  mon: { open: "09:00", close: "23:00", closed: false },
-  tue: { open: "09:00", close: "23:00", closed: false },
-  wed: { open: "09:00", close: "23:00", closed: false },
-  thu: { open: "09:00", close: "23:00", closed: false },
-  fri: { open: "09:00", close: "23:00", closed: false },
-  sat: { open: "10:00", close: "00:00", closed: false },
-  sun: { open: "10:00", close: "00:00", closed: true },
+  monday: { open: "09:00", close: "23:00", closed: false },
+  tuesday: { open: "09:00", close: "23:00", closed: false },
+  wednesday: { open: "09:00", close: "23:00", closed: false },
+  thursday: { open: "09:00", close: "23:00", closed: false },
+  friday: { open: "09:00", close: "23:00", closed: false },
+  saturday: { open: "10:00", close: "00:00", closed: false },
+  sunday: { open: "10:00", close: "22:00", closed: false },
 };
 
 const DEFAULT_RECEIPT_CONFIG: ReceiptConfig = {
@@ -535,7 +548,7 @@ export default function SettingsPage() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   }
 
-  function updateHours(day: string, field: "open" | "close" | "closed", value: string | boolean) {
+  function updateHours(day: string, field: string, value: string | boolean) {
     setSettings((prev) => ({
       ...prev,
       business_hours: {
@@ -1082,81 +1095,109 @@ export default function SettingsPage() {
 
   /* ─── Tab: Hours ─── */
   function renderHours() {
+    // Copy a day's schedule to all other days
+    function copyToAll(sourceDay: string) {
+      const source = settings.business_hours[sourceDay];
+      if (!source) return;
+      setSettings((prev) => {
+        const updated = { ...prev.business_hours };
+        for (const day of DAY_KEYS) {
+          if (day !== sourceDay) {
+            updated[day] = { ...source };
+          }
+        }
+        return { ...prev, business_hours: updated };
+      });
+    }
+
+    // Copy a day's schedule to weekdays only (mon-fri)
+    function copyToWeekdays(sourceDay: string) {
+      const source = settings.business_hours[sourceDay];
+      if (!source) return;
+      setSettings((prev) => {
+        const updated = { ...prev.business_hours };
+        for (const day of ["monday", "tuesday", "wednesday", "thursday", "friday"]) {
+          if (day !== sourceDay) {
+            updated[day] = { ...source };
+          }
+        }
+        return { ...prev, business_hours: updated };
+      });
+    }
+
     return (
       <div style={cardStyle}>
         <h2 style={sectionTitleStyle}>{t("settings.business_hours")}</h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {DAY_KEYS.map((day) => {
-            const dayData = settings.business_hours[day] || {
-              open: "09:00",
-              close: "23:00",
-              closed: false,
+            const dayData: DaySchedule = settings.business_hours[day] || {
+              open: "09:00", close: "23:00", closed: false,
             };
+            const hasSplit = dayData.split === true;
+
             return (
               <div
                 key={day}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "100px 1fr 1fr auto",
-                  gap: 12,
-                  alignItems: "center",
-                  padding: "10px 14px",
+                  padding: "12px 14px",
                   borderRadius: 8,
                   background: "var(--bg-primary)",
                   border: "1px solid var(--border)",
                   opacity: dayData.closed ? 0.5 : 1,
                 }}
               >
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {t(`settings.day_${day}`)}
-                </span>
-
-                <input
-                  type="time"
-                  value={dayData.open}
-                  onChange={(e) => updateHours(day, "open", e.target.value)}
-                  disabled={dayData.closed}
-                  style={{
-                    ...inputStyle,
-                    padding: "6px 10px",
-                    cursor: dayData.closed ? "not-allowed" : "text",
-                  }}
-                />
-
-                <input
-                  type="time"
-                  value={dayData.close}
-                  onChange={(e) => updateHours(day, "close", e.target.value)}
-                  disabled={dayData.closed}
-                  style={{
-                    ...inputStyle,
-                    padding: "6px 10px",
-                    cursor: dayData.closed ? "not-allowed" : "text",
-                  }}
-                />
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                    {t("settings.closed")}
+                {/* Row 1: Day name + Shift 1 + Closed toggle + Copy buttons */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", minWidth: 90 }}>
+                    {DAY_LABELS[day] || day}
                   </span>
-                  <Toggle
-                    value={dayData.closed}
-                    onChange={(v) => updateHours(day, "closed", v)}
-                  />
+
+                  <input type="time" value={dayData.open} onChange={(e) => updateHours(day, "open", e.target.value)} disabled={dayData.closed}
+                    style={{ ...inputStyle, padding: "6px 10px", width: 120, cursor: dayData.closed ? "not-allowed" : "text" }} />
+                  <span style={{ color: "var(--text-muted)", fontSize: 12 }}>—</span>
+                  <input type="time" value={dayData.close} onChange={(e) => updateHours(day, "close", e.target.value)} disabled={dayData.closed}
+                    style={{ ...inputStyle, padding: "6px 10px", width: 120, cursor: dayData.closed ? "not-allowed" : "text" }} />
+
+                  {/* Split shift toggle */}
+                  {!dayData.closed && (
+                    <button onClick={() => updateHours(day, "split" as any, !hasSplit)} style={{
+                      padding: "4px 8px", borderRadius: 6, border: "1px solid var(--border)",
+                      background: hasSplit ? "var(--accent)" : "transparent",
+                      color: hasSplit ? "#000" : "var(--text-muted)",
+                      fontSize: 11, fontWeight: 600, cursor: "pointer",
+                    }}>
+                      {hasSplit ? "2 turnos ✓" : "+ Turno"}
+                    </button>
+                  )}
+
+                  <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+                    {/* Copy buttons */}
+                    <button onClick={() => copyToAll(day)} title="Copiar a todos los días" style={{
+                      padding: "3px 6px", borderRadius: 4, border: "1px solid var(--border)",
+                      background: "transparent", color: "var(--text-muted)", fontSize: 10, cursor: "pointer",
+                    }}>📋 Todos</button>
+                    <button onClick={() => copyToWeekdays(day)} title="Copiar a L-V" style={{
+                      padding: "3px 6px", borderRadius: 4, border: "1px solid var(--border)",
+                      background: "transparent", color: "var(--text-muted)", fontSize: 10, cursor: "pointer",
+                    }}>📋 L-V</button>
+
+                    <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 4 }}>Cerrado</span>
+                    <Toggle value={dayData.closed} onChange={(v) => updateHours(day, "closed", v)} />
+                  </div>
                 </div>
+
+                {/* Row 2: Second shift (if split enabled) */}
+                {hasSplit && !dayData.closed && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, paddingLeft: 90 }}>
+                    <span style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>2º turno:</span>
+                    <input type="time" value={dayData.open2 || "16:00"} onChange={(e) => updateHours(day, "open2" as any, e.target.value)}
+                      style={{ ...inputStyle, padding: "6px 10px", width: 120 }} />
+                    <span style={{ color: "var(--text-muted)", fontSize: 12 }}>—</span>
+                    <input type="time" value={dayData.close2 || "23:00"} onChange={(e) => updateHours(day, "close2" as any, e.target.value)}
+                      style={{ ...inputStyle, padding: "6px 10px", width: 120 }} />
+                  </div>
+                )}
               </div>
             );
           })}

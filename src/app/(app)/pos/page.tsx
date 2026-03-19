@@ -176,6 +176,13 @@ export default function PosPage() {
   const [loadingRecent, setLoadingRecent] = useState(false);
   const [viewingOrder, setViewingOrder] = useState<RecentOrder | null>(null);
   const recentRef = useRef<HTMLDivElement>(null);
+
+  /* ── WhatsApp pending orders state ──────────────────────── */
+  const [showWaOrders, setShowWaOrders] = useState(false);
+  const [waOrders, setWaOrders] = useState<RecentOrder[]>([]);
+  const [loadingWa, setLoadingWa] = useState(false);
+  const [waCount, setWaCount] = useState(0);
+  const waRef = useRef<HTMLDivElement>(null);
   const tenantNameRef = useRef("Restaurant");
   const receiptConfigRef = useRef<any>(null);
   const currencyRef = useRef("EUR");
@@ -192,6 +199,19 @@ export default function PosPage() {
       return () => document.removeEventListener("mousedown", handleClick);
     }
   }, [showRecentOrders]);
+
+  /* ── Close WA dropdown on outside click ────────────────── */
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (waRef.current && !waRef.current.contains(e.target as Node)) {
+        setShowWaOrders(false);
+      }
+    }
+    if (showWaOrders) {
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
+    }
+  }, [showWaOrders]);
 
   /* ── Load initial data ───────────────────────────────── */
   useEffect(() => {
@@ -255,7 +275,7 @@ export default function PosPage() {
         setShiftOpen(!!openShift);
 
         // ── Guard: Check business hours ──
-        const bh = tenant?.business_hours as Record<string, { open: string; close: string; closed?: boolean }> | null;
+        const bh = tenant?.business_hours as Record<string, { open: string; close: string; open2?: string; close2?: string; split?: boolean; closed?: boolean }> | null;
         if (bh) {
           const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
           const now = new Date();
@@ -263,16 +283,34 @@ export default function PosPage() {
           const todayHours = bh[dayKey];
           if (todayHours && !todayHours.closed && todayHours.open && todayHours.close) {
             const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+            // Check shift 1
             const [openH, openM] = todayHours.open.split(":").map(Number);
             const [closeH, closeM] = todayHours.close.split(":").map(Number);
             const openMin = openH * 60 + openM;
             const closeMin = closeH * 60 + closeM;
-            // Handle overnight hours (e.g., 18:00 - 02:00)
+            let inShift1 = false;
             if (closeMin < openMin) {
-              setIsWithinHours(nowMinutes >= openMin || nowMinutes <= closeMin);
+              inShift1 = nowMinutes >= openMin || nowMinutes <= closeMin;
             } else {
-              setIsWithinHours(nowMinutes >= openMin && nowMinutes <= closeMin);
+              inShift1 = nowMinutes >= openMin && nowMinutes <= closeMin;
             }
+
+            // Check shift 2 (if double shift enabled)
+            let inShift2 = false;
+            if (todayHours.split && todayHours.open2 && todayHours.close2) {
+              const [o2H, o2M] = todayHours.open2.split(":").map(Number);
+              const [c2H, c2M] = todayHours.close2.split(":").map(Number);
+              const o2Min = o2H * 60 + o2M;
+              const c2Min = c2H * 60 + c2M;
+              if (c2Min < o2Min) {
+                inShift2 = nowMinutes >= o2Min || nowMinutes <= c2Min;
+              } else {
+                inShift2 = nowMinutes >= o2Min && nowMinutes <= c2Min;
+              }
+            }
+
+            setIsWithinHours(inShift1 || inShift2);
           } else if (todayHours?.closed) {
             setIsWithinHours(false);
           } else {
@@ -843,6 +881,16 @@ export default function PosPage() {
         if (payMethod === "mixed") {
           const cashAmt = parseFloat(mixedCashAmount) || 0;
           const cardAmt = parseFloat(mixedCardAmount) || 0;
+
+          // SAFETY: Validate mixed payment sum equals total
+          const mixedSum = Math.round((cashAmt + cardAmt) * 100) / 100;
+          const expectedTotal = Math.round(total * 100) / 100;
+          if (Math.abs(mixedSum - expectedTotal) > 0.01) {
+            console.error(`[POS] Mixed payment mismatch: ${cashAmt}+${cardAmt}=${mixedSum}, expected ${expectedTotal}`);
+            setSending(false);
+            return;
+          }
+
           await supabase.from("payments").insert([
             {
               tenant_id: tenantId,
@@ -1026,6 +1074,16 @@ export default function PosPage() {
         const bill = splitBills.find((b) => b.billNumber === billNumber);
         if (!bill) return;
 
+        // SAFETY FIX: Distribute tax proportionally across splits
+        const splitTaxAmount = splitBills.length > 0
+          ? (billNumber === splitBills.length
+            ? Math.round((taxAmount - Math.floor((taxAmount * 100) / splitBills.length) / 100 * (splitBills.length - 1)) * 100) / 100
+            : Math.floor((taxAmount * 100) / splitBills.length) / 100)
+          : 0;
+        const splitDiscount = splitBills.length > 0
+          ? Math.round((discount / splitBills.length) * 100) / 100
+          : 0;
+
         const { data: order, error: orderErr } = await supabase
           .from("orders")
           .insert({
@@ -1035,14 +1093,14 @@ export default function PosPage() {
             customer_name: loyaltyCustomer?.name || customerName || null,
             customer_phone: customerPhone || null,
             subtotal: bill.total,
-            tax_amount: 0,
-            discount_amount: 0,
+            tax_amount: splitTaxAmount,
+            discount_amount: splitDiscount,
             tip_amount: 0,
-            total: bill.total,
+            total: Math.round((bill.total + splitTaxAmount - splitDiscount) * 100) / 100,
             status: "closed",
             payment_status: "paid",
             source: orderType === "delivery" ? "delivery" : orderType === "takeaway" ? "takeaway" : "pos",
-            metadata: deliveryAddress ? { delivery_address: deliveryAddress } : null,
+            metadata: deliveryAddress ? { delivery_address: deliveryAddress, split_bill: billNumber } : { split_bill: billNumber },
             created_by: userId,
           })
           .select("id")
@@ -1054,8 +1112,9 @@ export default function PosPage() {
         }
 
         if (splitType === "equal") {
-          // Insert all items proportioned
-          const orderItems = cart.map((c) => ({
+          // SAFETY FIX: Only insert items that belong to this split (round-robin distribution)
+          const splitItems = cart.filter((_c, idx) => idx % splitBills.length === (billNumber - 1));
+          const orderItems = splitItems.map((c) => ({
             order_id: order.id,
             tenant_id: tenantId,
             menu_item_id: c.menuItemId,
@@ -1067,7 +1126,9 @@ export default function PosPage() {
             modifiers: c.modifiers.length > 0 ? c.modifiers : [],
             modifiers_total: c.modifiersTotal,
           }));
-          await supabase.from("order_items").insert(orderItems);
+          if (orderItems.length > 0) {
+            await supabase.from("order_items").insert(orderItems);
+          }
         } else {
           // Insert only items assigned to this bill
           const billItems = buildOrderItems(order.id, bill.items);
@@ -1169,7 +1230,106 @@ export default function PosPage() {
       fetchRecentOrders();
     }
     setShowRecentOrders((v) => !v);
+    setShowWaOrders(false);
   }, [showRecentOrders, fetchRecentOrders]);
+
+  /* ── WhatsApp pending orders ─────────────────────────────── */
+  const fetchWaOrders = useCallback(async () => {
+    if (!tenantId) return;
+    setLoadingWa(true);
+    try {
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, order_number, total, created_at, status, customer_name, customer_phone")
+        .eq("tenant_id", tenantId)
+        .eq("source", "whatsapp")
+        .in("status", ["confirmed", "preparing", "ready", "served"])
+        .neq("payment_status", "paid")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (!orders || orders.length === 0) {
+        setWaOrders([]);
+        setWaCount(0);
+        return;
+      }
+
+      const orderIds = orders.map((o: { id: string }) => o.id);
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("order_id, name, quantity, unit_price, modifiers")
+        .in("order_id", orderIds);
+
+      const result: RecentOrder[] = orders.map((o: any) => ({
+        ...o,
+        items: (items || [])
+          .filter((i: { order_id: string }) => i.order_id === o.id)
+          .map((i: { name: string; quantity: number; unit_price: number; modifiers: string | SelectedModifier[] | null }) => ({
+            name: i.name,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+            modifiers: typeof i.modifiers === "string" ? JSON.parse(i.modifiers) : i.modifiers,
+          })),
+      }));
+      setWaOrders(result);
+      setWaCount(result.length);
+    } catch (err) {
+      console.error("Fetch WA orders error:", err);
+    } finally {
+      setLoadingWa(false);
+    }
+  }, [tenantId, supabase]);
+
+  const toggleWaOrders = useCallback(() => {
+    if (!showWaOrders) {
+      fetchWaOrders();
+    }
+    setShowWaOrders((v) => !v);
+    setShowRecentOrders(false);
+  }, [showWaOrders, fetchWaOrders]);
+
+  // Load a WhatsApp order into the POS cart for payment
+  const loadWaOrderForPayment = useCallback((order: RecentOrder) => {
+    const cartItems: CartItem[] = order.items.map((item, idx) => {
+      const mods = item.modifiers || [];
+      return {
+        id: `wa-${order.id}-${idx}`,
+        menuItemId: "",
+        name: item.name,
+        price: item.unit_price - mods.reduce((s: number, m: SelectedModifier) => s + (m.price_delta || 0), 0),
+        qty: item.quantity,
+        modifiers: mods,
+        modifiersTotal: mods.reduce((s: number, m: SelectedModifier) => s + (m.price_delta || 0), 0),
+        notes: "",
+      };
+    });
+    setCart(cartItems);
+    setExistingOrderId(order.id);
+    setOriginalItemIds(new Set(cartItems.map((c) => c.id)));
+    setOriginalCartSnapshot(JSON.stringify(cartItems));
+    setCustomerName((order as any).customer_name || "");
+    setCustomerPhone((order as any).customer_phone || "");
+    setOrderType("takeaway");
+    setOrderModeSelected(true);
+    setShowWaOrders(false);
+    setDiscount(0);
+    setTip(0);
+  }, []);
+
+  // Fetch WA count on mount for badge
+  useEffect(() => {
+    if (!tenantId) return;
+    (async () => {
+      const { count } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .eq("source", "whatsapp")
+        .in("status", ["confirmed", "preparing", "ready", "served"])
+        .neq("payment_status", "paid");
+      setWaCount(count || 0);
+    })();
+  }, [tenantId, supabase]);
 
   const timeAgo = useCallback((dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -1187,9 +1347,12 @@ export default function PosPage() {
     const modes = (["dine_in", "takeaway", "delivery"] as OrderType[]).filter((m) => orderModes[m]);
     if (modes.length === 1) {
       setOrderType(modes[0]);
-      if (modes[0] !== "dine_in") setOrderModeSelected(true);
+      if (modes[0] !== "dine_in") {
+        setOrderModeSelected(true);
+        if (modes[0] === "takeaway") fetchWaOrders();
+      }
     }
-  }, [orderModes, orderModeSelected]);
+  }, [orderModes, orderModeSelected, fetchWaOrders]);
 
   /* ── Guard: Cash shift closed or outside business hours ── */
   if (guardChecked && (shiftOpen === false || isWithinHours === false)) {
@@ -1308,6 +1471,7 @@ export default function PosPage() {
                   // For dine-in, stay on overlay to pick table
                 } else {
                   setOrderModeSelected(true);
+                  if (mode === "takeaway") fetchWaOrders();
                 }
               }}
               style={{
@@ -1802,6 +1966,90 @@ export default function PosPage() {
             {t("pos.items")})
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {/* WhatsApp pending orders button */}
+            <div ref={waRef} style={{ position: "relative" }}>
+              <button
+                onClick={toggleWaOrders}
+                className="pos-btn"
+                style={{
+                  background: waCount > 0 ? "rgba(37, 211, 102, 0.15)" : "none",
+                  border: waCount > 0 ? "1px solid #25D366" : "1px solid var(--border)",
+                  color: waCount > 0 ? "#25D366" : "var(--text-secondary)",
+                  cursor: "pointer",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  position: "relative",
+                }}
+              >
+                📱 WA
+                {waCount > 0 && (
+                  <span style={{
+                    background: "#25D366", color: "#fff", borderRadius: 999, padding: "1px 6px",
+                    fontSize: "0.65rem", fontWeight: 700, minWidth: 16, textAlign: "center",
+                  }}>{waCount}</span>
+                )}
+              </button>
+
+              {showWaOrders && (
+                <div style={{
+                  position: "absolute", top: "100%", right: 0, marginTop: 4, width: 320,
+                  background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10,
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)", zIndex: 60, maxHeight: 400, overflowY: "auto",
+                }}>
+                  <div style={{
+                    padding: "10px 12px", borderBottom: "1px solid var(--border)", fontWeight: 700,
+                    fontSize: "0.82rem", color: "#25D366", display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    📱 Pedidos WhatsApp pendientes
+                  </div>
+                  {loadingWa ? (
+                    <div style={{ padding: 16, textAlign: "center", color: "var(--text-secondary)", fontSize: "0.8rem" }}>...</div>
+                  ) : waOrders.length === 0 ? (
+                    <div style={{ padding: 16, textAlign: "center", color: "var(--text-secondary)", fontSize: "0.8rem" }}>
+                      No hay pedidos WhatsApp pendientes
+                    </div>
+                  ) : (
+                    waOrders.map((o) => (
+                      <button
+                        key={o.id}
+                        onClick={() => loadWaOrderForPayment(o)}
+                        className="pos-btn"
+                        style={{
+                          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                          padding: "10px 12px", background: "none", border: "none",
+                          borderBottom: "1px solid var(--border)", cursor: "pointer", textAlign: "left",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(37, 211, 102, 0.08)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: "0.82rem", color: "var(--text-primary)" }}>
+                            #{o.order_number} — {(o as any).customer_name || (o as any).customer_phone || "WhatsApp"}
+                          </div>
+                          <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
+                            {o.items.length} items · {o.status}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontWeight: 700, fontSize: "0.82rem", color: "#25D366" }}>
+                            {formatCurrency(o.total)}
+                          </div>
+                          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                            {timeAgo(o.created_at)}
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Recent orders button */}
             <div ref={recentRef} style={{ position: "relative" }}>
               <button
@@ -1943,15 +2191,59 @@ export default function PosPage() {
           }}
         >
           {cart.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                color: "var(--text-secondary)",
-                padding: "2.5rem 0",
-                fontSize: "0.9rem",
-              }}
-            >
-              {t("pos.empty_cart")}
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {/* WhatsApp pending orders inline when cart is empty */}
+              {orderType === "takeaway" && waCount > 0 && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 6, padding: "8px 0",
+                    fontWeight: 700, fontSize: "0.82rem", color: "#25D366",
+                  }}>
+                    📱 Pedidos WhatsApp ({waCount})
+                  </div>
+                  {waOrders.map((o) => (
+                    <button
+                      key={o.id}
+                      onClick={() => loadWaOrderForPayment(o)}
+                      className="pos-btn"
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "10px 8px", background: "rgba(37, 211, 102, 0.06)", border: "1px solid rgba(37, 211, 102, 0.2)",
+                        borderRadius: 8, cursor: "pointer", textAlign: "left", marginBottom: 6,
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(37, 211, 102, 0.12)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(37, 211, 102, 0.06)"; }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: "0.82rem", color: "var(--text-primary)" }}>
+                          #{o.order_number} — {(o as any).customer_name || "WhatsApp"}
+                        </div>
+                        <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 2 }}>
+                          {o.items.map(i => `${i.quantity}x ${i.name}`).join(", ")}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#25D366" }}>
+                          {formatCurrency(o.total)}
+                        </div>
+                        <div style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
+                          {timeAgo(o.created_at)}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "var(--text-secondary)",
+                  padding: waCount > 0 && orderType === "takeaway" ? "1rem 0" : "2.5rem 0",
+                  fontSize: "0.9rem",
+                }}
+              >
+                {t("pos.empty_cart")}
+              </div>
             </div>
           ) : (
             cart.map((item) => (

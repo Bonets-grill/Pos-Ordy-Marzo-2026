@@ -31,6 +31,7 @@ interface Order {
   table_id: string | null;
   restaurant_tables: { number: string } | null;
   order_type: string | null;
+  source: string | null;
   status: string;
   created_at: string;
   customer_name: string | null;
@@ -67,8 +68,9 @@ function urgencyClass(created_at: string): string {
 }
 
 function orderLabel(order: Order, t: (k: string) => string): string {
-  if (order.order_type === "whatsapp") return "📱 WhatsApp";
-  if (order.order_type === "qr") return "📲 QR";
+  const mesa = order.restaurant_tables?.number ? ` · Mesa ${order.restaurant_tables.number}` : "";
+  if (order.source === "whatsapp") return "📱 WhatsApp";
+  if (order.order_type === "qr") return `📲 QR${mesa}`;
   if (order.order_type === "delivery") return t("pos.delivery");
   if (order.order_type === "takeaway") return t("pos.takeaway");
   if (order.restaurant_tables?.number) return `${t("kds.table")} ${order.restaurant_tables.number}`;
@@ -132,6 +134,9 @@ export default function KdsPage() {
   // Realtime connection indicator
   const [realtimeConnected, setRealtimeConnected] = useState(false);
 
+  // WhatsApp customer cancellation popup
+  const [waCancelledOrder, setWaCancelledOrder] = useState<{ order_number: string; customer_name: string } | null>(null);
+
   // Tick every second to update elapsed times
   useEffect(() => {
     const iv = setInterval(() => setTick((n) => n + 1), 1000);
@@ -177,7 +182,7 @@ export default function KdsPage() {
     if (!tenantId) return;
     const { data: ordersData } = await supabase
       .from("orders")
-      .select("id, order_number, table_id, order_type, status, created_at, customer_name, customer_notes, customer_phone, total, metadata, restaurant_tables(number)")
+      .select("id, order_number, table_id, order_type, source, status, created_at, customer_name, customer_notes, customer_phone, total, metadata, restaurant_tables(number)")
       .eq("tenant_id", tenantId)
       .in("status", ["confirmed", "preparing", "ready"])
       .order("created_at", { ascending: true });
@@ -235,7 +240,21 @@ export default function KdsPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders", filter: `tenant_id=eq.${tenantId}` },
-        () => fetchOrders()
+        (payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }) => {
+          // Detect WhatsApp order cancelled by customer
+          if (payload.eventType === "UPDATE" && payload.new?.status === "cancelled" && payload.new?.source === "whatsapp") {
+            const meta = payload.new.metadata as Record<string, unknown> | null;
+            if (meta?.pickup_status === "customer_cancelled") {
+              setWaCancelledOrder({
+                order_number: String(payload.new.order_number),
+                customer_name: (payload.new.customer_name as string) || "",
+              });
+              // Auto-dismiss after 8 seconds
+              setTimeout(() => setWaCancelledOrder(null), 8000);
+            }
+          }
+          fetchOrders();
+        }
       )
       .subscribe((status: string) => {
         setRealtimeConnected(status === "SUBSCRIBED");
@@ -288,6 +307,20 @@ export default function KdsPage() {
       .from("orders")
       .update({ status: "preparing" })
       .eq("id", order.id);
+
+    // Auto-notify WhatsApp customer when order starts preparing
+    if (order.source === "whatsapp" && order.customer_phone && tenantId) {
+      fetch("/api/whatsapp/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          type: "order_preparing",
+          tenant_id: tenantId,
+        }),
+      }).catch((err) => console.error("WA preparing notify error:", err));
+    }
+
     fetchOrders();
   }
 
@@ -355,7 +388,7 @@ export default function KdsPage() {
         .eq("id", order.id);
 
       // Auto-notify WhatsApp customer when order is ready
-      if (order.order_type === "whatsapp" && order.customer_phone && tenantId) {
+      if (order.source === "whatsapp" && order.customer_phone && tenantId) {
         fetch("/api/whatsapp/notify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -866,7 +899,7 @@ export default function KdsPage() {
                 </div>
 
                 {/* WhatsApp order info bar */}
-                {order.order_type === "whatsapp" && (
+                {order.source === "whatsapp" && (
                   <div
                     style={{
                       padding: "8px 16px",
@@ -897,43 +930,53 @@ export default function KdsPage() {
                     borderTop: "1px solid var(--border)",
                   }}
                 >
-                  {/* WhatsApp orders in confirmed status: Accept / Reject */}
-                  {order.order_type === "whatsapp" && allPending && order.status === "confirmed" ? (
-                    <>
-                      <button
-                        onClick={() => { setWaAcceptOrder(order); setWaPickupMinutes(30); }}
-                        style={{
-                          flex: 1,
-                          padding: "14px 8px",
-                          border: "none",
-                          background: "#25D366",
-                          color: "#fff",
-                          fontWeight: 700,
-                          fontSize: 15,
-                          cursor: "pointer",
-                          borderRadius: "0 0 0 10px",
-                        }}
-                      >
-                        ✅ {t("kds.wa_accept")}
-                      </button>
-                      <button
-                        onClick={() => waRejectOrder(order)}
-                        style={{
-                          flex: 1,
-                          padding: "14px 8px",
-                          border: "none",
-                          background: "var(--danger)",
-                          color: "#fff",
-                          fontWeight: 700,
-                          fontSize: 15,
-                          cursor: "pointer",
-                          borderRadius: "0 0 10px 0",
-                        }}
-                      >
-                        ❌ {t("kds.wa_reject")}
-                      </button>
-                    </>
-                  ) : (
+                  {/* WhatsApp orders: state-based buttons */}
+                  {order.source === "whatsapp" && order.status === "confirmed" && (() => {
+                    const pickupStatus = (order.metadata as Record<string, unknown>)?.pickup_status as string | undefined;
+
+                    // State 1: Initial — Accept / Reject
+                    if (!pickupStatus && allPending) return (
+                      <>
+                        <button
+                          onClick={() => { setWaAcceptOrder(order); setWaPickupMinutes(30); }}
+                          style={{ flex: 1, padding: "14px 8px", border: "none", background: "#25D366", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", borderRadius: "0 0 0 10px" }}
+                        >
+                          ✅ {t("kds.wa_accept")}
+                        </button>
+                        <button
+                          onClick={() => waRejectOrder(order)}
+                          style={{ flex: 1, padding: "14px 8px", border: "none", background: "var(--danger)", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", borderRadius: "0 0 10px 0" }}
+                        >
+                          ❌ {t("kds.wa_reject")}
+                        </button>
+                      </>
+                    );
+
+                    // State 2: Waiting for customer confirmation
+                    if (pickupStatus === "awaiting_confirmation") return (
+                      <div style={{ flex: 1, padding: "14px 8px", background: "rgba(255, 170, 0, 0.15)", color: "var(--warning)", fontWeight: 700, fontSize: 14, textAlign: "center", borderRadius: "0 0 10px 10px" }}>
+                        ⏳ Esperando confirmación del cliente...
+                      </div>
+                    );
+
+                    // State 3: Customer confirmed — Aceptado + Preparar
+                    if (pickupStatus === "customer_confirmed") return (
+                      <>
+                        <div style={{ flex: 1, padding: "14px 8px", background: "rgba(37, 211, 102, 0.15)", color: "#25D366", fontWeight: 700, fontSize: 15, textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: "0 0 0 10px" }}>
+                          ✅ Aceptado
+                        </div>
+                        <button
+                          onClick={() => markPreparing(order)}
+                          style={{ flex: 1, padding: "14px 8px", border: "none", background: "var(--info)", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", borderRadius: "0 0 10px 0" }}
+                        >
+                          🔥 Preparar
+                        </button>
+                      </>
+                    );
+
+                    // Fallback: show default buttons
+                    return null;
+                  })() || (order.source === "whatsapp" && order.status === "confirmed" ? null : (
                     <>
                       {allPending && (
                         <button
@@ -988,7 +1031,7 @@ export default function KdsPage() {
                         {t("kds.bump")}
                       </button>
                     </>
-                  )}
+                  ))}
                 </div>
               </div>
             );
@@ -1043,7 +1086,7 @@ export default function KdsPage() {
             </div>
 
             <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-              {[10, 15, 20, 30, 45, 60].map((mins) => (
+              {[10, 15, 20, 25, 35, 45, 60].map((mins) => (
                 <button
                   key={mins}
                   onClick={() => setWaPickupMinutes(mins)}
@@ -1099,6 +1142,58 @@ export default function KdsPage() {
                 {waActionLoading ? "..." : `✅ ${t("kds.wa_confirm_send")} (${waPickupMinutes} min)`}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* WhatsApp Customer Cancellation Popup */}
+      {waCancelledOrder && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+          onClick={() => setWaCancelledOrder(null)}
+        >
+          <div
+            style={{
+              background: "var(--bg-card)",
+              borderRadius: 16,
+              padding: 32,
+              width: 420,
+              maxWidth: "90vw",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+              border: "3px solid var(--danger)",
+              textAlign: "center",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: 48, marginBottom: 12 }}>❌</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "var(--danger)", marginBottom: 8 }}>
+              Pedido #{waCancelledOrder.order_number} cancelado
+            </div>
+            <div style={{ fontSize: 16, color: "var(--text-secondary)", marginBottom: 20 }}>
+              El cliente <strong>{waCancelledOrder.customer_name}</strong> ha cancelado su pedido por WhatsApp.
+            </div>
+            <button
+              onClick={() => setWaCancelledOrder(null)}
+              style={{
+                padding: "12px 32px",
+                borderRadius: 10,
+                border: "none",
+                background: "var(--danger)",
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: 15,
+                cursor: "pointer",
+              }}
+            >
+              Entendido
+            </button>
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useI18n } from "@/lib/i18n-provider";
 import { formatCurrency, timeAgo } from "@/lib/utils";
+import QRCode from "qrcode";
 
 /* ── Types ────────────────────────────────────────────── */
 
@@ -320,11 +321,19 @@ export default function TablesPage() {
 
   /* ── Print QR codes ──────────────────────────────── */
 
-  const printQRs = () => {
+  const printQRs = async () => {
     if (!tenantSlug || tables.length === 0) return;
-    const baseUrl = "https://ordy-pos.netlify.app";
+    const baseUrl = window.location.origin;
     const activeTables = tables.filter((t) => t.status !== "cleaning");
-    const qrApiBase = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=";
+
+    // Generate all QR codes as data URLs BEFORE opening popup
+    const qrCards = await Promise.all(
+      activeTables.map(async (t) => {
+        const url = `${baseUrl}/qr/${tenantSlug}/${encodeURIComponent(t.number)}`;
+        const dataUrl = await QRCode.toDataURL(url, { width: 250, margin: 1 });
+        return { number: t.number, label: t.label || "", url, dataUrl };
+      })
+    );
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>QR Codes - ${tenantSlug}</title>
@@ -334,7 +343,7 @@ export default function TablesPage() {
   h1 { text-align: center; margin-bottom: 24px; font-size: 22px; }
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
   .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; text-align: center; page-break-inside: avoid; }
-  .card img { width: 180px; height: 180px; margin: 8px auto; display: block; }
+  .card img { width: 200px; height: 200px; margin: 8px auto; display: block; }
   .table-num { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
   .table-label { font-size: 14px; color: #666; margin-bottom: 8px; }
   .url { font-size: 9px; color: #999; word-break: break-all; margin-top: 8px; }
@@ -346,17 +355,15 @@ export default function TablesPage() {
 <button class="no-print" onclick="window.print()" style="position:fixed;top:12px;right:12px;padding:10px 24px;font-size:16px;cursor:pointer;background:#f97316;color:white;border:none;border-radius:8px;font-weight:600;">Imprimir</button>
 <h1>QR Codes &mdash; ${tenantSlug}</h1>
 <div class="grid">
-${activeTables
-  .map((t) => {
-    const url = `${baseUrl}/qr/${tenantSlug}/${t.number}`;
-    const qrUrl = `${qrApiBase}${encodeURIComponent(url)}`;
-    return `<div class="card">
-  <div class="table-num">Mesa ${t.number}</div>
-  ${t.label ? `<div class="table-label">${t.label}</div>` : ""}
-  <img src="${qrUrl}" alt="QR Mesa ${t.number}" />
-  <div class="url">${url}</div>
-</div>`;
-  })
+${qrCards
+  .map(
+    (c) => `<div class="card">
+  <div class="table-num">Mesa ${c.number}</div>
+  ${c.label ? `<div class="table-label">${c.label}</div>` : ""}
+  <img src="${c.dataUrl}" alt="QR Mesa ${c.number}" />
+  <div class="url">${c.url}</div>
+</div>`
+  )
   .join("\n")}
 </div>
 </body></html>`;
@@ -1026,6 +1033,8 @@ ${activeTables
                           marginBottom: 10,
                           cursor: editMap && zid ? "grab" : "default",
                           userSelect: "none",
+                          // Safari requires this for HTML5 drag
+                          ...(editMap && zid ? { WebkitUserDrag: "element" } as React.CSSProperties : {}),
                         }}
                       >
                         {editMap && zid && (

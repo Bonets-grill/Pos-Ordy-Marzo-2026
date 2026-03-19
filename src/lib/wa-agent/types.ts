@@ -68,6 +68,9 @@ export interface IncomingMessage {
   wa_message_id: string;
   timestamp: number;
   media_url?: string;     // if image/audio
+  trace_id?: string;      // distributed tracing correlation ID
+  span_id?: string;       // current span ID (from webhook root span)
+  parent_span_id?: string | null; // parent span (null for root)
 }
 
 export interface SendMessageParams {

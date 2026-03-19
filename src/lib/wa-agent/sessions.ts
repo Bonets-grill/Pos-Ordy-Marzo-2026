@@ -12,39 +12,50 @@ export async function getOrCreateSession(
   instanceId: string,
   phone: string
 ): Promise<WASession> {
-  // Try to get existing session
-  const { data: existing } = await supabase
+  // Upsert: insert if not exists, update last_message_at if exists.
+  // Uses UNIQUE constraint (tenant_id, phone) to prevent race conditions
+  // where concurrent messages could create duplicate sessions.
+  const { data: session, error } = await supabase
     .from("wa_sessions")
+    .upsert(
+      {
+        tenant_id: tenantId,
+        instance_id: instanceId,
+        phone,
+        state: "idle",
+        cart: [],
+        context: {},
+        last_message_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "tenant_id,phone",
+        ignoreDuplicates: false,
+      }
+    )
     .select("*")
-    .eq("tenant_id", tenantId)
-    .eq("phone", phone)
     .single();
 
-  if (existing) {
-    // Update last_message_at
-    await supabase
+  if (error) {
+    // Fallback: if upsert fails (e.g., constraint not yet applied), try select
+    const { data: existing } = await supabase
       .from("wa_sessions")
-      .update({ last_message_at: new Date().toISOString() })
-      .eq("id", existing.id);
-    return existing as WASession;
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .eq("phone", phone)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from("wa_sessions")
+        .update({ last_message_at: new Date().toISOString() })
+        .eq("id", existing.id);
+      return existing as WASession;
+    }
+
+    throw new Error(`Failed to get/create session: ${error.message}`);
   }
 
-  // Create new session
-  const { data: newSession, error } = await supabase
-    .from("wa_sessions")
-    .insert({
-      tenant_id: tenantId,
-      instance_id: instanceId,
-      phone,
-      state: "idle",
-      cart: [],
-      context: {},
-    })
-    .select("*")
-    .single();
-
-  if (error) throw new Error(`Failed to create session: ${error.message}`);
-  return newSession as WASession;
+  return session as WASession;
 }
 
 /**

@@ -9,9 +9,10 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://abqyqnmndjczkblwnvga.supabase.co";
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFicXlxbm1uZGpjemtibHdudmdhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjgyMTk4NywiZXhwIjoyMDg4Mzk3OTg3fQ.fY8FN8YBxrIowzaQa5f5URtmG5BSpCBx5ENtWVnaQCs";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+if (!SUPABASE_URL || !SERVICE_KEY) { console.error("Missing env vars"); process.exit(1); }
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
 // ── 5 Restaurant Definitions ─────────────────────────────

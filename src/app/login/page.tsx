@@ -9,8 +9,8 @@ import { LANGS, LANG_LABELS } from "@/lib/translations";
 export default function LoginPage() {
   const router = useRouter();
   const { t, lang, setLang } = useI18n();
-  const [email, setEmail] = useState("demo@ordypos.com");
-  const [password, setPassword] = useState("Demo2026x");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
