@@ -139,3 +139,39 @@ export function getLang(sessionContext: Record<string, unknown> | null): Lang {
   if (stored && stored in NOTIFY_I18N) return stored as Lang;
   return "es";
 }
+
+// ─── Agent error messages (Dify failures) ───
+
+interface AgentErrors {
+  buildInputsFailed: () => string;
+  connectionError: () => string;
+  emptyResponse: () => string;
+}
+
+export const AGENT_ERRORS: Record<Lang, AgentErrors> = {
+  es: {
+    buildInputsFailed: () => "¡Disculpa! Estoy teniendo un problemita. ¿Puedes intentar en un momento?",
+    connectionError: () => "¡Disculpa! Error de conexión. Intenta en un momento.",
+    emptyResponse: () => "No pude procesar tu mensaje. ¿Puedes intentar de nuevo?",
+  },
+  en: {
+    buildInputsFailed: () => "Sorry! I'm having a little issue. Can you try again in a moment?",
+    connectionError: () => "Sorry! Connection error. Please try again in a moment.",
+    emptyResponse: () => "I couldn't process your message. Can you try again?",
+  },
+  fr: {
+    buildInputsFailed: () => "Désolé ! J'ai un petit problème. Peux-tu réessayer dans un moment ?",
+    connectionError: () => "Désolé ! Erreur de connexion. Réessaie dans un moment.",
+    emptyResponse: () => "Je n'ai pas pu traiter ton message. Peux-tu réessayer ?",
+  },
+  de: {
+    buildInputsFailed: () => "Entschuldigung! Ich habe gerade ein kleines Problem. Kannst du es in einem Moment nochmal versuchen?",
+    connectionError: () => "Entschuldigung! Verbindungsfehler. Bitte versuche es gleich nochmal.",
+    emptyResponse: () => "Ich konnte deine Nachricht nicht verarbeiten. Kannst du es nochmal versuchen?",
+  },
+  it: {
+    buildInputsFailed: () => "Scusa! Sto avendo un piccolo problema. Puoi riprovare tra un momento?",
+    connectionError: () => "Scusa! Errore di connessione. Riprova tra un momento.",
+    emptyResponse: () => "Non sono riuscito a elaborare il tuo messaggio. Puoi riprovare?",
+  },
+};

@@ -8,6 +8,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import type { WAInstance, IncomingMessage } from "./types";
 import { getOrCreateSession, saveMessage } from "./sessions";
 import { buildDifyInputs } from "./dify-context";
+import { getLang, NOTIFY_I18N, AGENT_ERRORS } from "./language";
 
 const DIFY_API_URL = process.env.DIFY_API_URL || "https://api.dify.ai/v1";
 const DIFY_API_KEY = process.env.DIFY_API_KEY || "";
@@ -62,7 +63,8 @@ export async function processMessageWithDify(
     inputs = await buildDifyInputs(supabase, tenantId);
   } catch (err) {
     console.error("[DIFY] Failed to build inputs:", (err as Error).message);
-    return "¡Disculpa! Estoy teniendo un problemita. ¿Puedes intentar en un momento?";
+    const errLang = getLang((session.context || {}) as Record<string, unknown>);
+    return AGENT_ERRORS[errLang].buildInputsFailed();
   }
 
   inputs.customer_phone = message.from;
@@ -162,7 +164,8 @@ export async function processMessageWithDify(
 
   } catch (err) {
     console.error("[DIFY] Request failed:", (err as Error).message);
-    return "¡Disculpa! Error de conexión. Intenta en un momento.";
+    const errLang = getLang(ctx);
+    return AGENT_ERRORS[errLang].connectionError();
   }
 }
 
@@ -197,7 +200,7 @@ async function parseDifyResponse(
 
   if (!fullAnswer) {
     console.error("[DIFY] Empty answer. Raw:", text.substring(0, 500));
-    return "No pude procesar tu mensaje. ¿Puedes intentar de nuevo?";
+    return AGENT_ERRORS[getLang(ctx)].emptyResponse();
   }
 
   // Persist conversation ID to DB so it survives serverless cold starts

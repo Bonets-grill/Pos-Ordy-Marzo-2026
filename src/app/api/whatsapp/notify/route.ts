@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/api-auth";
 import { getProvider } from "@/lib/wa-agent/provider";
 import type { WAInstance } from "@/lib/wa-agent/types";
 import { saveMessage } from "@/lib/wa-agent/sessions";
+import { NOTIFY_I18N, getLang } from "@/lib/wa-agent/language";
 
 export async function POST(req: NextRequest) {
   const auth = await requireAuth();
@@ -64,10 +65,16 @@ export async function POST(req: NextRequest) {
 
     const { data: session } = await supabase
       .from("wa_sessions")
-      .select("id")
+      .select("id, context")
       .eq("tenant_id", tenant_id)
       .eq("phone", order.customer_phone)
       .single();
+
+    // Use client's detected language for notifications
+    const lang = getLang((session?.context || {}) as Record<string, unknown>);
+    const t = NOTIFY_I18N[lang];
+    const name = order.customer_name || "";
+    const num = String(order.order_number);
 
     let message = "";
 
@@ -80,7 +87,7 @@ export async function POST(req: NextRequest) {
             .update({ state: "awaiting_pickup_confirmation", pending_order_id: orderId })
             .eq("id", session.id);
         }
-        message = `🍳 *¡Buenas noticias, ${order.customer_name || ""}!*\n\nCocina ha aceptado tu pedido #${order.order_number} y estará listo en aproximadamente *${pickup_minutes} minutos*. ⏱️\n\n¿Te parece bien ese tiempo? Responde:\n✅ *SÍ* — para confirmar\n❌ *NO* — para cancelar el pedido\n`;
+        message = t.kitchen_accepted(name, num, pickup_minutes ?? "?");
         break;
       }
       case "kitchen_rejected": {
@@ -90,15 +97,13 @@ export async function POST(req: NextRequest) {
         if (session) {
           await supabase.from("wa_sessions").update({ state: "idle", pending_order_id: null, cart: [] }).eq("id", session.id);
         }
-        message = `😔 Lo sentimos mucho, ${order.customer_name || ""}.\n\nLamentablemente, cocina no puede preparar tu pedido #${order.order_number} en este momento.\n\nTe invitamos a intentarlo más tarde. ¡Disculpa las molestias! 🙏`;
+        message = t.kitchen_rejected(name, num);
         break;
       }
       case "order_ready": {
         const metadata = { ...(order.metadata as Record<string, unknown> || {}), pickup_status: "ready" };
         await supabase.from("orders").update({ metadata, ready_at: new Date().toISOString() }).eq("id", orderId);
-        message = `🎉 *¡${order.customer_name || "Hola"}! ¡Tu pedido #${order.order_number} está LISTO!* 🎉\n\nYa puedes venir a recogerlo. ¡Te esperamos! 😊\n`;
-        if (googleMapsUrl) message += `\n📍 *Cómo llegar:* ${googleMapsUrl}\n`;
-        message += `\n¡Muchas gracias por elegir ${tenantName}! ❤️`;
+        message = t.order_ready(name, num, tenantName, googleMapsUrl || undefined);
         if (session) {
           await supabase.from("wa_sessions").update({ state: "idle", pending_order_id: null }).eq("id", session.id);
         }
