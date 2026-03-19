@@ -161,7 +161,54 @@ export default function ReceiptModal({
   });
 
   /* ── Print ─────────────────────────────── */
-  const handlePrint = useCallback(() => {
+  const handlePrint = useCallback(async () => {
+    // 1. Intentar impresión directa via servidor local (sin diálogo)
+    const fmt = (n: number) =>
+      new Intl.NumberFormat("es-ES", { style: "currency", currency }).format(n);
+
+    const date = new Date(order.created_at);
+    const dateStr = date.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const timeStr = date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+
+    const payload = {
+      tenantName,
+      headerText: receiptConfig?.header_text || "",
+      footerText: receiptConfig?.footer_text || "",
+      orderNumber: order.order_number,
+      tableNumber: order.restaurant_tables?.number || "",
+      date: `${dateStr} ${timeStr}`,
+      orderType: order.order_type,
+      customerName: order.customer_name || "",
+      items: items.map((item) => ({
+        quantity: item.quantity,
+        name: item.name,
+        subtotal: fmt(item.subtotal),
+        modifiers: item.modifiers?.map((m) =>
+          m.price_delta > 0 ? `${m.name} (+${fmt(m.price_delta)})` : m.name
+        ) || [],
+        notes: item.notes || "",
+      })),
+      subtotal: fmt(order.subtotal),
+      tax: order.tax_amount > 0 ? fmt(order.tax_amount) : "",
+      discount: order.discount_amount > 0 ? fmt(order.discount_amount) : "",
+      tip: order.tip_amount > 0 ? fmt(order.tip_amount) : "",
+      total: fmt(order.total),
+      paymentMethod: order.payment_method || "",
+    };
+
+    try {
+      const res = await fetch("http://localhost:3001/print", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(4000),
+      });
+      if (res.ok) return; // impreso directamente, sin diálogo
+    } catch {
+      // servidor local no disponible — fallback al diálogo del navegador
+    }
+
+    // 2. Fallback: diálogo del navegador
     const content = receiptRef.current;
     if (!content) return;
     const printWindow = window.open("", "_blank", "width=360,height=600");
@@ -191,7 +238,7 @@ export default function ReceiptModal({
     printWindow.focus();
     printWindow.print();
     printWindow.close();
-  }, [order.order_number, t]);
+  }, [order, items, tenantName, receiptConfig, currency, t]);
 
   /* ── Share / Copy ──────────────────────── */
   const handleShare = useCallback(async () => {
