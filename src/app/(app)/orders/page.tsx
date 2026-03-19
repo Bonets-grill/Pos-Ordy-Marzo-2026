@@ -501,7 +501,8 @@ export default function OrdersPage() {
         .order("created_at", { ascending: true });
 
       setEditItems((data as unknown as OrderItem[]) || []);
-    } catch {
+    } catch (err) {
+      console.error("loadEditItems error:", err);
       setEditItems([]);
     }
   };
@@ -523,7 +524,8 @@ export default function OrdersPage() {
         .limit(10);
 
       setMenuResults((data as unknown as MenuItem[]) || []);
-    } catch {
+    } catch (err) {
+      console.error("searchMenuItems error:", err);
       setMenuResults([]);
     } finally {
       setMenuSearching(false);

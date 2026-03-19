@@ -243,8 +243,8 @@ export default function PaymentsPage() {
         );
       }
       setTotalCount(count ?? 0);
-    } catch {
-      // keep defaults
+    } catch (err) {
+      console.error("fetchData error:", err);
     } finally {
       setLoading(false);
     }
