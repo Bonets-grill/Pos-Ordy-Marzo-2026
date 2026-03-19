@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import { OnboardingProvider } from "@/lib/onboarding";
 
@@ -52,17 +52,20 @@ function ImpersonationBanner() {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const hideSidebar = pathname === "/kds" || pathname === "/pos" || pathname.startsWith("/pos/") || pathname.startsWith("/kds/");
+
   return (
     <OnboardingProvider>
       <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
         <ImpersonationBanner />
-        <Sidebar />
+        {!hideSidebar && <Sidebar />}
         <main
           style={{
             minHeight: "100vh",
             flexDirection: "column",
           }}
-          className="flex ml-0 md:!ml-64 max-md:!pt-14 max-md:!pb-20"
+          className={`flex max-md:!pt-14 max-md:!pb-20 ${hideSidebar ? "ml-0" : "ml-0 md:!ml-64"}`}
         >
           {children}
         </main>
