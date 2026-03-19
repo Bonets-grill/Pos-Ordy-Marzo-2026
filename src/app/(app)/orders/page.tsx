@@ -334,8 +334,9 @@ export default function OrdersPage() {
           prev ? { ...prev, status: newStatus } : null
         );
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      window.alert("Error al actualizar el estado del pedido. Inténtalo de nuevo.");
+      console.error("changeStatus error:", err);
     } finally {
       setActionLoading(false);
     }
@@ -653,8 +654,9 @@ export default function OrdersPage() {
       }
 
       setEditModalOpen(false);
-    } catch {
-      // ignore
+    } catch (err) {
+      window.alert("Error al guardar los cambios. Inténtalo de nuevo.");
+      console.error("submitEdit error:", err);
     } finally {
       setEditSaving(false);
     }
@@ -667,7 +669,7 @@ export default function OrdersPage() {
   /* ── Status next step map ─────────────────────────── */
 
   const NEXT_STATUS: Record<string, string | null> = {
-    open: "preparing",
+    // open removed: state machine requires open→confirmed first
     confirmed: "preparing",
     preparing: "ready",
     ready: "served",

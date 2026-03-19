@@ -408,14 +408,25 @@ export default function KdsPage() {
     setLastBumped(order);
 
     const itemIds = order.items.map((i) => i.id);
-    await supabase
+    const { error: itemsErr } = await supabase
       .from("order_items")
       .update({ kds_status: "served" })
       .in("id", itemIds);
-    await supabase
+
+    if (itemsErr) {
+      console.error("bumpOrder items error:", itemsErr);
+      return;
+    }
+
+    const { error: orderErr } = await supabase
       .from("orders")
       .update({ status: "served" })
       .eq("id", order.id);
+
+    if (orderErr) {
+      console.error("bumpOrder order error:", orderErr);
+    }
+
     fetchOrders();
   }
 
