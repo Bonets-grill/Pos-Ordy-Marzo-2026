@@ -194,7 +194,7 @@ export default function KdsPage() {
       .from("orders")
       .select("id, order_number, table_id, order_type, source, status, created_at, customer_name, customer_notes, customer_phone, total, metadata, restaurant_tables(number)")
       .eq("tenant_id", tenantId)
-      .in("status", ["confirmed", "preparing", "ready"])
+      .in("status", ["confirmed", "preparing", "ready", "closed"])
       .order("created_at", { ascending: true });
 
     if (!ordersData || ordersData.length === 0) {
