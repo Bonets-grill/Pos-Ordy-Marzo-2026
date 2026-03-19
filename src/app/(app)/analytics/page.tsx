@@ -448,8 +448,8 @@ export default function AnalyticsPage() {
         if (!cancelled) {
           setAllOrdersIncCancelled((allOrdData as RawOrder[]) || []);
         }
-      } catch {
-        // silently keep empty state
+      } catch (err) {
+        console.error("fetchAnalytics error:", err);
       } finally {
         if (!cancelled) setLoading(false);
       }

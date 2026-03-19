@@ -273,8 +273,8 @@ export default function OrdersPage() {
       }
 
       setTotalCount(count ?? 0);
-    } catch {
-      // Keep existing state on error
+    } catch (err) {
+      console.error("fetchOrders error:", err);
     } finally {
       setLoading(false);
     }
@@ -308,7 +308,8 @@ export default function OrdersPage() {
         .order("created_at", { ascending: true });
 
       setOrderItems((data as unknown as OrderItem[]) || []);
-    } catch {
+    } catch (err) {
+      console.error("loadOrderItems error:", err);
       setOrderItems([]);
     } finally {
       setDetailLoading(false);

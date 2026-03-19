@@ -357,8 +357,8 @@ export default function CashRegisterPage() {
         cash_out: cashOut,
         refunds,
       });
-    } catch {
-      // keep defaults
+    } catch (err) {
+      console.error("fetchShiftData error:", err);
     } finally {
       setLoading(false);
     }
@@ -455,8 +455,8 @@ export default function CashRegisterPage() {
           status: s.status,
         })),
       });
-    } catch {
-      // keep defaults
+    } catch (err) {
+      console.error("fetchShiftHistory error:", err);
     } finally {
       setDailyLoading(false);
     }
@@ -483,8 +483,9 @@ export default function CashRegisterPage() {
       });
       setOpeningAmount("");
       await fetchActiveShift();
-    } catch {
-      // handle silently
+    } catch (err) {
+      window.alert("Error al abrir el turno. Inténtalo de nuevo.");
+      console.error("openShift error:", err);
     } finally {
       setOpenLoading(false);
     }
@@ -511,8 +512,9 @@ export default function CashRegisterPage() {
       setMovementAmount("");
       setMovementDesc("");
       await fetchActiveShift();
-    } catch {
-      // handle silently
+    } catch (err) {
+      window.alert("Error al registrar el movimiento. Inténtalo de nuevo.");
+      console.error("addMovement error:", err);
     } finally {
       setMovementLoading(false);
     }
@@ -558,8 +560,9 @@ export default function CashRegisterPage() {
       setClosingAmount("");
       setCloseNotes("");
       await fetchActiveShift();
-    } catch {
-      // handle silently
+    } catch (err) {
+      window.alert("Error al cerrar el turno. Inténtalo de nuevo.");
+      console.error("closeShift error:", err);
     } finally {
       setCloseLoading(false);
     }

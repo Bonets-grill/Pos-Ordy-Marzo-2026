@@ -251,8 +251,8 @@ export default function DashboardPage() {
         totalMembers: totalMembersCount,
         pointsToday,
       });
-    } catch {
-      // Keep default placeholder values on error
+    } catch (err) {
+      console.error("fetchDashboard error:", err);
     } finally {
       setLoading(false);
     }

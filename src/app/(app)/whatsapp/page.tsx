@@ -102,8 +102,8 @@ export default function WhatsAppPage() {
       } else {
         setInstance(null);
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("loadInstance error:", err);
     }
   }, []);
 
