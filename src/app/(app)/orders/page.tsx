@@ -372,8 +372,9 @@ export default function OrdersPage() {
         );
       }
       setCancelModalOpen(false);
-    } catch {
-      // ignore
+    } catch (err) {
+      window.alert("Error al cancelar el pedido. Inténtalo de nuevo.");
+      console.error("submitCancel error:", err);
     } finally {
       setCancelSaving(false);
     }
@@ -391,7 +392,21 @@ export default function OrdersPage() {
     setRefundSaving(true);
     try {
       const supabase = createClient();
-      await supabase
+
+      // Verify current status — state machine only allows closed→refunded
+      const { data: currentOrder } = await supabase
+        .from("orders")
+        .select("status")
+        .eq("id", refundOrderId)
+        .eq("tenant_id", tenantId)
+        .single();
+
+      if (currentOrder?.status !== "closed") {
+        window.alert("Solo se pueden reembolsar pedidos cerrados (pagados).");
+        return;
+      }
+
+      const { error: refundErr } = await supabase
         .from("orders")
         .update({
           status: "refunded",
@@ -400,6 +415,11 @@ export default function OrdersPage() {
         })
         .eq("id", refundOrderId)
         .eq("tenant_id", tenantId);
+
+      if (refundErr) {
+        window.alert(`Error al procesar el reembolso: ${refundErr.message}`);
+        return;
+      }
 
       await fetchOrders();
       if (selectedOrder?.id === refundOrderId) {
@@ -410,8 +430,9 @@ export default function OrdersPage() {
         );
       }
       setRefundModalOpen(false);
-    } catch {
-      // ignore
+    } catch (err) {
+      window.alert("Error inesperado al procesar el reembolso. Inténtalo de nuevo.");
+      console.error("submitRefund error:", err);
     } finally {
       setRefundSaving(false);
     }
