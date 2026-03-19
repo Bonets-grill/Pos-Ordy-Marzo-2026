@@ -379,7 +379,7 @@ export default function PaymentsPage() {
       // Update order status to completed/paid
       await supabase
         .from("orders")
-        .update({ status: "completed" })
+        .update({ status: "closed" })
         .eq("id", manualOrderId);
 
       setShowManualModal(false);

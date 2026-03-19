@@ -379,7 +379,7 @@ export default function KdsPage() {
       .from("order_items")
       .select("id")
       .eq("order_id", order.id)
-      .in("kds_status", ["pending", "preparing", "ready"]);
+      .in("kds_status", ["pending", "preparing"]);
 
     if (!remaining || remaining.length === 0) {
       await supabase
