@@ -295,13 +295,16 @@ export default function KdsPage() {
   }
 
   // Filter by station
+  // Items with kds_station=null appear in ALL stations (created from POS without station)
   const filteredOrders =
     activeStation === "all"
       ? orders
       : orders
           .map((o) => ({
             ...o,
-            items: o.items.filter((i) => i.kds_station === activeStation),
+            items: o.items.filter(
+              (i) => i.kds_station === activeStation || i.kds_station === null
+            ),
           }))
           .filter((o) => o.items.length > 0);
 
