@@ -1327,7 +1327,7 @@ export default function SettingsPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {[
-              { icon: "1️⃣", title: "Cobras en el POS", desc: "Al completar el pago aparece el botón "Imprimir ticket"." },
+              { icon: "1️⃣", title: "Cobras en el POS", desc: "Al completar el pago aparece el botón 'Imprimir ticket'." },
               { icon: "2️⃣", title: "Imprimir (navegador)", desc: "Abre una ventana optimizada para 80mm. Usa Ctrl+P / Cmd+P para imprimir desde cualquier impresora conectada al equipo." },
               { icon: "3️⃣", title: "Compartir / Copiar", desc: "Envía el recibo como texto plano por WhatsApp, email o cualquier app. También copia al portapapeles." },
             ].map(({ icon, title, desc }) => (
