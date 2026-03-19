@@ -467,8 +467,9 @@ export default function OrdersPage() {
         );
       }
       setNotesModalOpen(false);
-    } catch {
-      // ignore
+    } catch (err) {
+      window.alert("Error al guardar las notas. Inténtalo de nuevo.");
+      console.error("submitNotes error:", err);
     } finally {
       setNotesSaving(false);
     }
