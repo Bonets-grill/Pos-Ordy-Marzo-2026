@@ -1347,7 +1347,7 @@ export default function SettingsPage() {
             padding: "14px 16px",
             borderRadius: 8,
             background: "var(--bg-primary)",
-            border: "1px dashed var(--border)",
+            border: "1px solid var(--border)",
             display: "flex",
             alignItems: "flex-start",
             gap: 12,
@@ -1358,9 +1358,9 @@ export default function SettingsPage() {
                 {t("settings.printer_connection")}
               </div>
               <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                Para impresoras térmicas (Epson, Star, etc.) conectadas por USB o red local,
-                configura la impresora como predeterminada del sistema y selecciónala en el diálogo de impresión del navegador.
-                La página ya está optimizada para papel de 80mm.
+                Conecta la impresora térmica (Epson, Star, etc.) por USB o red local y configúrala
+                como impresora del sistema. Al pulsar &quot;Imprimir&quot; en el POS, selecciónala
+                en el diálogo del navegador. La página ya está optimizada para papel de 80mm.
               </div>
             </div>
             <span style={{
@@ -1368,14 +1368,14 @@ export default function SettingsPage() {
               fontWeight: 700,
               padding: "4px 10px",
               borderRadius: 20,
-              background: "var(--info)" + "22",
-              color: "var(--info)",
+              background: "var(--success)" + "22",
+              color: "var(--success)",
               textTransform: "uppercase" as const,
               letterSpacing: 0.5,
               whiteSpace: "nowrap" as const,
               flexShrink: 0,
             }}>
-              {t("settings.coming_soon")}
+              ✓ Disponible
             </span>
           </div>
         </div>
