@@ -300,7 +300,7 @@ export default function PaymentsPage() {
       setRefundReason("");
       fetchData();
     } catch (err) {
-      window.alert(`Error inesperado al procesar el reembolso. Inténtalo de nuevo.`);
+      window.alert(t("payments.error_refund"));
       console.error("Refund error:", err);
     } finally {
       setRefundLoading(false);
@@ -355,16 +355,14 @@ export default function PaymentsPage() {
 
     const parsedAmount = parseFloat(manualAmount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      window.alert("Payment amount must be a positive number");
+      window.alert(t("payments.error_amount_positive"));
       manualPayingRef.current = false;
       return;
     }
 
     const selectedOrder = unpaidOrders.find((o) => o.id === manualOrderId);
     if (selectedOrder && parsedAmount < selectedOrder.total) {
-      window.alert(
-        `Payment amount must be at least the order total (${formatCurrency(selectedOrder.total)})`
-      );
+      window.alert(`${t("payments.error_amount_min")} ${formatCurrency(selectedOrder.total)}`);
       manualPayingRef.current = false;
       return;
     }
@@ -391,7 +389,7 @@ export default function PaymentsPage() {
       setShowManualModal(false);
       fetchData();
     } catch (err) {
-      window.alert("Error inesperado al registrar el pago. Inténtalo de nuevo.");
+      window.alert(t("payments.error_payment"));
       console.error("Manual payment error:", err);
     } finally {
       manualPayingRef.current = false;

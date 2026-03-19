@@ -336,7 +336,7 @@ export default function OrdersPage() {
         );
       }
     } catch (err) {
-      window.alert("Error al actualizar el estado del pedido. Inténtalo de nuevo.");
+      window.alert(t("orders.error_status"));
       console.error("changeStatus error:", err);
     } finally {
       setActionLoading(false);
@@ -374,7 +374,7 @@ export default function OrdersPage() {
       }
       setCancelModalOpen(false);
     } catch (err) {
-      window.alert("Error al cancelar el pedido. Inténtalo de nuevo.");
+      window.alert(t("orders.error_cancel"));
       console.error("submitCancel error:", err);
     } finally {
       setCancelSaving(false);
@@ -403,7 +403,7 @@ export default function OrdersPage() {
         .single();
 
       if (currentOrder?.status !== "closed") {
-        window.alert("Solo se pueden reembolsar pedidos cerrados (pagados).");
+        window.alert(t("orders.error_refund_closed"));
         return;
       }
 
@@ -418,7 +418,7 @@ export default function OrdersPage() {
         .eq("tenant_id", tenantId);
 
       if (refundErr) {
-        window.alert(`Error al procesar el reembolso: ${refundErr.message}`);
+        window.alert(`${t("orders.error_refund")} ${refundErr.message}`);
         return;
       }
 
@@ -432,7 +432,7 @@ export default function OrdersPage() {
       }
       setRefundModalOpen(false);
     } catch (err) {
-      window.alert("Error inesperado al procesar el reembolso. Inténtalo de nuevo.");
+      window.alert(t("orders.error_refund"));
       console.error("submitRefund error:", err);
     } finally {
       setRefundSaving(false);
@@ -469,7 +469,7 @@ export default function OrdersPage() {
       }
       setNotesModalOpen(false);
     } catch (err) {
-      window.alert("Error al guardar las notas. Inténtalo de nuevo.");
+      window.alert(t("orders.error_notes"));
       console.error("submitNotes error:", err);
     } finally {
       setNotesSaving(false);
@@ -680,7 +680,7 @@ export default function OrdersPage() {
 
       setEditModalOpen(false);
     } catch (err) {
-      window.alert("Error al guardar los cambios. Inténtalo de nuevo.");
+      window.alert(t("orders.error_save"));
       console.error("submitEdit error:", err);
     } finally {
       setEditSaving(false);

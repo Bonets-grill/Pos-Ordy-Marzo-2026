@@ -484,7 +484,7 @@ export default function CashRegisterPage() {
       setOpeningAmount("");
       await fetchActiveShift();
     } catch (err) {
-      window.alert("Error al abrir el turno. Inténtalo de nuevo.");
+      window.alert(t("cash.error_open_shift"));
       console.error("openShift error:", err);
     } finally {
       setOpenLoading(false);
@@ -513,7 +513,7 @@ export default function CashRegisterPage() {
       setMovementDesc("");
       await fetchActiveShift();
     } catch (err) {
-      window.alert("Error al registrar el movimiento. Inténtalo de nuevo.");
+      window.alert(t("cash.error_movement"));
       console.error("addMovement error:", err);
     } finally {
       setMovementLoading(false);
@@ -561,7 +561,7 @@ export default function CashRegisterPage() {
       setCloseNotes("");
       await fetchActiveShift();
     } catch (err) {
-      window.alert("Error al cerrar el turno. Inténtalo de nuevo.");
+      window.alert(t("cash.error_close_shift"));
       console.error("closeShift error:", err);
     } finally {
       setCloseLoading(false);
