@@ -186,6 +186,7 @@ export default function PosPage() {
   const tenantNameRef = useRef("Restaurant");
   const receiptConfigRef = useRef<any>(null);
   const currencyRef = useRef("EUR");
+  const payingRef = useRef(false);
 
   /* ── Close recent dropdown on outside click ────────────── */
   useEffect(() => {
@@ -771,6 +772,7 @@ export default function PosPage() {
     } catch (err) {
       console.error("Send to kitchen error:", err);
     } finally {
+      payingRef.current = false;
       setSending(false);
     }
   }, [
@@ -802,6 +804,8 @@ export default function PosPage() {
   /* ── Pay ─────────────────────────────────────────────── */
   const handlePay = useCallback(async () => {
     if (!tenantId || !userId || cart.length === 0) return;
+    if (payingRef.current) return;
+    payingRef.current = true;
     setSending(true);
 
     try {
@@ -994,6 +998,7 @@ export default function PosPage() {
     } catch (err) {
       console.error("Pay error:", err);
     } finally {
+      payingRef.current = false;
       setSending(false);
     }
   }, [
@@ -1069,6 +1074,8 @@ export default function PosPage() {
   const handlePaySplit = useCallback(
     async (billNumber: number) => {
       if (!tenantId || !userId) return;
+      if (payingRef.current) return;
+      payingRef.current = true;
       setSplitSending(true);
       try {
         const bill = splitBills.find((b) => b.billNumber === billNumber);
@@ -1159,6 +1166,7 @@ export default function PosPage() {
       } catch (err) {
         console.error("Split pay error:", err);
       } finally {
+        payingRef.current = false;
         setSplitSending(false);
       }
     },

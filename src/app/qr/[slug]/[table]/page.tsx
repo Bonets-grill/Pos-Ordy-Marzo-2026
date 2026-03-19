@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 
 /* ── Types ─────────────────────────────────── */
@@ -233,6 +233,7 @@ export default function QRMenuPage() {
   const [customerName, setCustomerName] = useState(initialName);
   const [orderNotes, setOrderNotes] = useState("");
   const [sending, setSending] = useState(false);
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
@@ -394,6 +395,7 @@ export default function QRMenuPage() {
           customerNotes: orderNotes || undefined,
           deliveryAddress: initialAddress || undefined,
           items: orderItems,
+          idempotencyKey: idempotencyKeyRef.current,
         }),
       });
 
@@ -404,6 +406,7 @@ export default function QRMenuPage() {
       setOrderStatus("confirmed");
       setCart([]);
       setShowCart(false);
+      idempotencyKeyRef.current = crypto.randomUUID();
     } catch {
       alert(t.error);
     } finally {

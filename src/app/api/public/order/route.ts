@@ -106,6 +106,7 @@ export async function POST(req: NextRequest) {
       orderType,
       deliveryAddress,
       items,
+      idempotencyKey,
     } = body as {
       tenantSlug: unknown;
       tableNumber?: unknown;
@@ -116,7 +117,14 @@ export async function POST(req: NextRequest) {
       orderType?: unknown;
       deliveryAddress?: unknown;
       items: unknown;
+      idempotencyKey?: unknown;
     };
+
+    // --- Validate and sanitize idempotency key ---
+    const safeIdempotencyKey =
+      typeof idempotencyKey === "string" && UUID_RE.test(idempotencyKey)
+        ? idempotencyKey
+        : null;
 
     // --- Validate tenantSlug ---
     if (
@@ -200,6 +208,25 @@ export async function POST(req: NextRequest) {
     }
     const tenantId = tenant.id;
     const tenantLang: string = (tenant.locale || "es").slice(0, 2);
+
+    // -----------------------------------------------------------------------
+    // 1b. Idempotency check
+    // -----------------------------------------------------------------------
+    if (safeIdempotencyKey) {
+      const { data: existingOrder } = await supabase
+        .from("orders")
+        .select("id, order_number")
+        .eq("tenant_id", tenantId)
+        .eq("idempotency_key", safeIdempotencyKey)
+        .single();
+      if (existingOrder) {
+        return NextResponse.json({
+          orderId: existingOrder.id,
+          orderNumber: existingOrder.order_number,
+          idempotent: true,
+        });
+      }
+    }
 
     // -----------------------------------------------------------------------
     // 2. Resolve table
@@ -391,6 +418,7 @@ export async function POST(req: NextRequest) {
         tax_amount: taxAmount,
         total,
         source,
+        idempotency_key: safeIdempotencyKey || null,
         metadata: {
           customer_lang: safeLang,
           ...(safeDeliveryAddress ? { delivery_address: safeDeliveryAddress } : {}),
