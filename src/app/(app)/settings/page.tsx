@@ -1210,90 +1210,176 @@ export default function SettingsPage() {
 
   /* ─── Tab: Receipts ─── */
   function renderReceipts() {
+    const previewLines = [
+      "════════════════════════════",
+      settings.name.toUpperCase() || "MI RESTAURANTE",
+      settings.receipt_config.header_text || "",
+      "════════════════════════════",
+      "Pedido #42            Mesa 3",
+      "19/03/2026 14:30    dine_in",
+      "- - - - - - - - - - - - - -",
+      "2x Burger             14,00€",
+      "1x Coca-Cola           2,50€",
+      "- - - - - - - - - - - - - -",
+      "Subtotal              16,50€",
+      "IVA (10%)              1,65€",
+      "════════════════════════════",
+      "TOTAL                18,15€",
+      "════════════════════════════",
+      settings.receipt_config.footer_text || "¡Gracias por su visita!",
+    ].filter(Boolean);
+
     return (
-      <div style={cardStyle}>
-        <h2 style={sectionTitleStyle}>{t("settings.receipt_printer")}</h2>
+      <>
+        {/* Enable + config card */}
+        <div style={cardStyle}>
+          <h2 style={sectionTitleStyle}>{t("settings.receipt_printer")}</h2>
 
-        {/* Enable toggle */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 500 }}>
-            {t("settings.receipt_enable")}
-          </span>
-          <Toggle
-            value={settings.receipt_config.enabled}
-            onChange={(v) => updateReceiptConfig("enabled", v)}
-          />
+          {/* Enable toggle */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <span style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600 }}>
+                {t("settings.receipt_enable")}
+              </span>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "2px 0 0" }}>
+                Muestra el botón de imprimir/compartir al cobrar en el POS
+              </p>
+            </div>
+            <Toggle
+              value={settings.receipt_config.enabled}
+              onChange={(v) => updateReceiptConfig("enabled", v)}
+            />
+          </div>
+
+          {/* Fields only shown when enabled */}
+          {settings.receipt_config.enabled && (
+            <>
+              {/* Header text */}
+              <div>
+                <label style={labelStyle}>{t("settings.receipt_header")}</label>
+                <textarea
+                  value={settings.receipt_config.header_text}
+                  onChange={(e) => updateReceiptConfig("header_text", e.target.value)}
+                  placeholder={t("settings.receipt_header_placeholder")}
+                  style={textareaStyle}
+                />
+                <p style={{ fontSize: 11, color: "var(--text-muted)", margin: "4px 0 0" }}>
+                  Aparece bajo el nombre del restaurante. Ej: CIF, dirección, teléfono.
+                </p>
+              </div>
+
+              {/* Footer text */}
+              <div>
+                <label style={labelStyle}>{t("settings.receipt_footer")}</label>
+                <textarea
+                  value={settings.receipt_config.footer_text}
+                  onChange={(e) => updateReceiptConfig("footer_text", e.target.value)}
+                  placeholder={t("settings.receipt_footer_placeholder")}
+                  style={textareaStyle}
+                />
+                <p style={{ fontSize: 11, color: "var(--text-muted)", margin: "4px 0 0" }}>
+                  Aparece al final del recibo. Ej: web, redes sociales, mensaje de agradecimiento.
+                </p>
+              </div>
+            </>
+          )}
+
+          <SaveButton onClick={handleSaveReceipts} />
         </div>
 
-        {/* Header text */}
-        <div>
-          <label style={labelStyle}>{t("settings.receipt_header")}</label>
-          <textarea
-            value={settings.receipt_config.header_text}
-            onChange={(e) => updateReceiptConfig("header_text", e.target.value)}
-            placeholder={t("settings.receipt_header_placeholder")}
-            style={textareaStyle}
-          />
-        </div>
+        {/* Live preview */}
+        {settings.receipt_config.enabled && (
+          <div style={cardStyle}>
+            <h2 style={sectionTitleStyle}>Vista previa del recibo</h2>
+            <div style={{
+              fontFamily: '"Courier New", Courier, monospace',
+              fontSize: 12,
+              lineHeight: 1.7,
+              background: "#fff",
+              color: "#111",
+              borderRadius: 8,
+              padding: "20px 24px",
+              maxWidth: 320,
+              margin: "0 auto",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+              border: "1px solid #e5e7eb",
+            }}>
+              {previewLines.map((line, i) => (
+                <div key={i} style={{
+                  textAlign: (line.startsWith("═") || line.startsWith("- ") || i === 1 || line === (settings.receipt_config.footer_text || "¡Gracias por su visita!") || line === (settings.receipt_config.header_text || ""))
+                    ? "center" : "left",
+                  fontWeight: i === 1 ? 700 : (line.startsWith("TOTAL") ? 700 : 400),
+                  fontSize: line.startsWith("TOTAL") ? 13 : 12,
+                }}>
+                  {line}
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", margin: "8px 0 0" }}>
+              Vista previa aproximada — el formato exacto depende de la impresora
+            </p>
+          </div>
+        )}
 
-        {/* Footer text */}
-        <div>
-          <label style={labelStyle}>{t("settings.receipt_footer")}</label>
-          <textarea
-            value={settings.receipt_config.footer_text}
-            onChange={(e) => updateReceiptConfig("footer_text", e.target.value)}
-            placeholder={t("settings.receipt_footer_placeholder")}
-            style={textareaStyle}
-          />
-        </div>
+        {/* How printing works */}
+        <div style={cardStyle}>
+          <h2 style={sectionTitleStyle}>Cómo funciona la impresión</h2>
 
-        {/* Printer connection - coming soon */}
-        <div
-          style={{
-            padding: 16,
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[
+              { icon: "1️⃣", title: "Cobras en el POS", desc: "Al completar el pago aparece el botón "Imprimir ticket"." },
+              { icon: "2️⃣", title: "Imprimir (navegador)", desc: "Abre una ventana optimizada para 80mm. Usa Ctrl+P / Cmd+P para imprimir desde cualquier impresora conectada al equipo." },
+              { icon: "3️⃣", title: "Compartir / Copiar", desc: "Envía el recibo como texto plano por WhatsApp, email o cualquier app. También copia al portapapeles." },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>{title}</div>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Thermal printer info */}
+          <div style={{
+            marginTop: 4,
+            padding: "14px 16px",
             borderRadius: 8,
             background: "var(--bg-primary)",
             border: "1px dashed var(--border)",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <div
-              style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}
-            >
-              {t("settings.printer_connection")}
+            alignItems: "flex-start",
+            gap: 12,
+          }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>🖨️</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
+                {t("settings.printer_connection")}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                Para impresoras térmicas (Epson, Star, etc.) conectadas por USB o red local,
+                configura la impresora como predeterminada del sistema y selecciónala en el diálogo de impresión del navegador.
+                La página ya está optimizada para papel de 80mm.
+              </div>
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              {t("settings.printer_connection_desc")}
-            </div>
-          </div>
-          <span
-            style={{
+            <span style={{
               fontSize: 11,
               fontWeight: 700,
               padding: "4px 10px",
               borderRadius: 20,
               background: "var(--info)" + "22",
               color: "var(--info)",
-              textTransform: "uppercase",
+              textTransform: "uppercase" as const,
               letterSpacing: 0.5,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {t("settings.coming_soon")}
-          </span>
+              whiteSpace: "nowrap" as const,
+              flexShrink: 0,
+            }}>
+              {t("settings.coming_soon")}
+            </span>
+          </div>
         </div>
-
-        <SaveButton onClick={handleSaveReceipts} />
-      </div>
+      </>
     );
   }
 
