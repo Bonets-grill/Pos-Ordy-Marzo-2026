@@ -1,12 +1,13 @@
 "use client";
-import { useEffect } from "react";
 
 export default function PosLayout({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    document.documentElement.classList.add("kds-fullwidth");
-    return () => {
-      document.documentElement.classList.remove("kds-fullwidth");
-    };
-  }, []);
-  return <>{children}</>;
+  return (
+    <>
+      <style>{`
+        aside { display: none !important; }
+        main { margin-left: 0 !important; padding-top: 0 !important; }
+      `}</style>
+      {children}
+    </>
+  );
 }
