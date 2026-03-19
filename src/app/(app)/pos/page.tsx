@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useI18n } from "@/lib/i18n-provider";
 import { formatCurrency } from "@/lib/utils";
-import { Search, Plus, Minus, Trash2, X, CheckCircle, Split, Clock, ChevronDown, Users, ListChecks, UtensilsCrossed, ShoppingBag, Truck, ArrowLeft, AlertTriangle, DollarSign } from "lucide-react";
+import { Search, Plus, Minus, Trash2, X, CheckCircle, Split, Clock, ChevronDown, Users, ListChecks, UtensilsCrossed, ShoppingBag, Truck, ArrowLeft, AlertTriangle, DollarSign, Maximize, Minimize } from "lucide-react";
 import PosLoyaltyPanel from "@/components/loyalty/PosLoyaltyPanel";
 import ReceiptModal from "@/components/receipt/ReceiptModal";
 
@@ -1364,6 +1364,21 @@ export default function PosPage() {
     }
   }, [orderModes, orderModeSelected, fetchWaOrders]);
 
+  // Fullscreen
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
+
   /* ── Guard: Cash shift closed or outside business hours ── */
   if (guardChecked && (shiftOpen === false || isWithinHours === false)) {
     const noShift = shiftOpen === false;
@@ -1467,7 +1482,32 @@ export default function PosPage() {
       <div style={{
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         flex: 1, minHeight: 0, background: "var(--bg-primary)", gap: 32, padding: 24,
+        position: "relative",
       }}>
+        <a
+          href="/dashboard"
+          style={{
+            position: "absolute", top: 16, left: 16,
+            display: "flex", alignItems: "center", gap: 8,
+            color: "var(--text-secondary)", fontSize: 14, fontWeight: 600,
+            textDecoration: "none", padding: "8px 14px", borderRadius: 8,
+            border: "1px solid var(--border)", background: "var(--bg-card)",
+          }}
+        >
+          ← {t("nav.dashboard")}
+        </a>
+        <button
+          onClick={toggleFullscreen}
+          style={{
+            position: "absolute", top: 16, right: 16,
+            display: "flex", alignItems: "center", gap: 6,
+            color: "var(--text-secondary)", fontSize: 14, fontWeight: 600,
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: 8, padding: "8px 14px", cursor: "pointer",
+          }}
+        >
+          {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+        </button>
         <h1 style={{ color: "var(--text-primary)", fontSize: 28, fontWeight: 800, margin: 0 }}>
           {t("pos.order_type")}
         </h1>
@@ -1874,6 +1914,15 @@ export default function PosPage() {
               }}
             >
               <ArrowLeft size={16} />
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              style={{
+                background: "none", border: "1px solid var(--border)", borderRadius: 6,
+                padding: "4px 6px", cursor: "pointer", color: "var(--text-muted)", display: "flex", alignItems: "center",
+              }}
+            >
+              {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
             </button>
             <span style={{
               flex: 1, padding: "6px 12px", borderRadius: 8, fontSize: "0.8rem", fontWeight: 700,
