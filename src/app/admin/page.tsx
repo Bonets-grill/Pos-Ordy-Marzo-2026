@@ -180,7 +180,7 @@ const PLAN_COLORS: Record<string, string> = {
   enterprise: "#f59e0b",
 };
 
-type TabKey = "overview" | "tenants" | "users" | "orders" | "billing" | "metrics" | "audit" | "system";
+type TabKey = "overview" | "tenants" | "users" | "orders" | "billing" | "metrics" | "audit" | "system" | "monitor";
 
 const TABS: { key: TabKey; icon: typeof Crown; label: string }[] = [
   { key: "overview", icon: Gauge, label: "Overview" },
@@ -191,6 +191,7 @@ const TABS: { key: TabKey; icon: typeof Crown; label: string }[] = [
   { key: "metrics", icon: BarChart3, label: "Metrics" },
   { key: "audit", icon: FileText, label: "Audit Log" },
   { key: "system", icon: Settings, label: "System" },
+  { key: "monitor", icon: Activity, label: "Monitor" },
 ];
 
 const FEATURE_FLAGS = [
@@ -384,6 +385,13 @@ export default function SuperAdminPage() {
   const [auditPage, setAuditPage] = useState(1);
   const [auditTenantFilter, setAuditTenantFilter] = useState("all");
 
+  /* Monitor tab state */
+  const [monitorHealth, setMonitorHealth] = useState<Record<string, unknown> | null>(null);
+  const [monitorErrors, setMonitorErrors] = useState<Record<string, unknown>[]>([]);
+  const [monitorLoading, setMonitorLoading] = useState(false);
+  const [monitorLevel, setMonitorLevel] = useState<string>("all");
+  const [monitorAutoRefresh, setMonitorAutoRefresh] = useState(false);
+
   /* ── System tab state ── */
   const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
@@ -497,6 +505,24 @@ export default function SuperAdminPage() {
     } catch { /* fallback */ }
   }, [ordersLoaded]);
 
+  const fetchMonitor = useCallback(async () => {
+    setMonitorLoading(true);
+    try {
+      const [healthRes, errorsRes] = await Promise.all([
+        fetch("/api/admin/monitor?action=health"),
+        fetch("/api/admin/monitor?limit=100"),
+      ]);
+      const health = await healthRes.json();
+      const { errors } = await errorsRes.json();
+      setMonitorHealth(health);
+      setMonitorErrors(errors || []);
+    } catch (err) {
+      console.error("fetchMonitor error:", err);
+    } finally {
+      setMonitorLoading(false);
+    }
+  }, []);
+
   const fetchAuditLogs = useCallback(async () => {
     if (auditLoaded) return;
     try {
@@ -518,7 +544,8 @@ export default function SuperAdminPage() {
     if (activeTab === "orders") fetchAllOrders();
     if (activeTab === "audit") fetchAuditLogs();
     if (activeTab === "metrics" && !metricsLoaded) setMetricsLoaded(true);
-  }, [activeTab, authorized, fetchRecentOrders, fetchUsers, fetchAllOrders, fetchAuditLogs, metricsLoaded]);
+    if (activeTab === "monitor") fetchMonitor();
+  }, [activeTab, authorized, fetchRecentOrders, fetchUsers, fetchAllOrders, fetchAuditLogs, metricsLoaded, fetchMonitor]);
 
   useEffect(() => {
     if (authorized && !loadedTabs.current.has("overview")) {
@@ -526,6 +553,12 @@ export default function SuperAdminPage() {
       loadedTabs.current.add("overview");
     }
   }, [authorized, fetchRecentOrders]);
+
+  useEffect(() => {
+    if (!monitorAutoRefresh || activeTab !== "monitor") return;
+    const interval = setInterval(fetchMonitor, 10_000);
+    return () => clearInterval(interval);
+  }, [monitorAutoRefresh, activeTab, fetchMonitor]);
 
   /* ══════════════════════════════════════════════════════
      ACTIONS
@@ -1912,6 +1945,105 @@ export default function SuperAdminPage() {
      MAIN RENDER
      ══════════════════════════════════════════════════════ */
 
+  const renderMonitor = () => {
+    const health = monitorHealth as {
+      db?: { ok: boolean; latency_ms: number; error: string | null };
+      errors_5m?: number; warns_5m?: number; total_buffered?: number; timestamp?: string;
+    } | null;
+    const LEVEL_COLORS: Record<string, string> = { error: "#ef4444", warn: "#f59e0b", info: "#3b82f6" };
+    const filtered = monitorLevel === "all"
+      ? monitorErrors
+      : monitorErrors.filter((e: Record<string, unknown>) => e.level === monitorLevel);
+    return (
+      <>
+        <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+          <button onClick={fetchMonitor} disabled={monitorLoading} style={{ ...btnSecondary, gap: 6 }}>
+            <RefreshCw size={13} style={{ animation: monitorLoading ? "spin 1s linear infinite" : "none" }} />
+            Refresh
+          </button>
+          <button onClick={() => setMonitorAutoRefresh(p => !p)} style={{ ...btnSecondary, background: monitorAutoRefresh ? "var(--accent)22" : "var(--bg-card)", color: monitorAutoRefresh ? "var(--accent)" : "var(--text-secondary)", borderColor: monitorAutoRefresh ? "var(--accent)" : "var(--border)" }}>
+            <Activity size={13} />{monitorAutoRefresh ? "Auto 10s" : "Auto-refresh"}
+          </button>
+          <button onClick={() => setMonitorErrors([])} style={{ ...btnSecondary, color: "var(--danger)", borderColor: "var(--danger)44" }}>
+            <Trash2 size={13} /> Clear
+          </button>
+          <div style={{ display: "flex", gap: 6 }}>
+            {["all", "error", "warn", "info"].map(l => (
+              <button key={l} onClick={() => setMonitorLevel(l)} style={{ padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 500, border: `1px solid ${l === "all" ? "var(--border)" : LEVEL_COLORS[l] || "var(--border)"}`, cursor: "pointer", textTransform: "capitalize" as const, background: monitorLevel === l ? (LEVEL_COLORS[l] || "var(--accent)") + "33" : "transparent", color: LEVEL_COLORS[l] || "var(--text-secondary)" }}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 24 }}>
+          {[
+            { label: "Database", value: health?.db?.ok ? "OK" : health ? "Error" : "...", sub: health?.db ? `${health.db.latency_ms}ms${health.db.error ? ` ${health.db.error}` : ""}` : "Loading...", color: health?.db?.ok ? "var(--success)" : health ? "var(--danger)" : "var(--text-muted)", icon: CheckCircle2 },
+            { label: "Errors (5m)", value: String(health?.errors_5m ?? "..."), sub: `${health?.warns_5m ?? 0} warnings`, color: (health?.errors_5m ?? 0) > 0 ? "var(--danger)" : "var(--success)", icon: AlertTriangle },
+            { label: "Buffered Events", value: String(health?.total_buffered ?? "..."), sub: health?.timestamp ? new Date(health.timestamp).toLocaleTimeString() : "...", color: "var(--accent)", icon: Activity },
+          ].map((card, i) => (
+            <Card key={i}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <card.icon size={16} style={{ color: card.color }} />
+                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{card.label}</span>
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: card.color }}>{card.value}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{card.sub}</div>
+            </Card>
+          ))}
+        </div>
+        <Card style={{ padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
+            <XCircle size={16} style={{ color: "var(--danger)" }} />
+            <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>Error Stream</span>
+            <Badge text={`${filtered.length} events`} color="var(--text-muted)" />
+          </div>
+          {filtered.length === 0 ? (
+            <EmptyState icon={CheckCircle2} message="No errors captured" />
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: "var(--bg-secondary)", borderBottom: "2px solid var(--border)" }}>
+                    {["Level", "Time", "Message", "File:Line", "URL", "Tenant"].map((h, i) => (
+                      <th key={i} style={{ padding: "8px 12px", textAlign: "left", fontWeight: 600, fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((e: Record<string, unknown>, i: number) => {
+                    const level = String(e.level || "error");
+                    const file = e.file ? String(e.file) : null;
+                    const line = e.line != null ? Number(e.line) : null;
+                    const col = e.col != null ? Number(e.col) : null;
+                    const fileRef = file ? `${file.split("/").slice(-2).join("/")}:${line ?? "?"}${col != null ? `:${col}` : ""}` : "—";
+                    const ts = e.timestamp ? new Date(String(e.timestamp)).toLocaleTimeString() : "—";
+                    const url = e.url ? String(e.url).replace(/^https?:\/\/[^/]+/, "") : "—";
+                    return (
+                      <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                        <td style={{ padding: "8px 12px" }}><Badge text={level} color={LEVEL_COLORS[level] || "var(--text-muted)"} /></td>
+                        <td style={{ padding: "8px 12px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{ts}</td>
+                        <td style={{ padding: "8px 12px", color: "var(--text-primary)", maxWidth: 320 }}>
+                          <div style={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(e.message || "—")}</div>
+                          {typeof e.stack === "string" && e.stack.length > 0 && (
+                            <details style={{ marginTop: 4 }}>
+                              <summary style={{ fontSize: 10, color: "var(--text-muted)", cursor: "pointer" }}>stack trace</summary>
+                              <pre style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 4, whiteSpace: "pre-wrap", wordBreak: "break-all", maxHeight: 200, overflowY: "auto", background: "var(--bg-secondary)", padding: 8, borderRadius: 6 }}>{e.stack}</pre>
+                            </details>
+                          )}
+                        </td>
+                        <td style={{ padding: "8px 12px", fontFamily: "monospace", fontSize: 11, color: "var(--accent)", whiteSpace: "nowrap" }}>{fileRef}</td>
+                        <td style={{ padding: "8px 12px", color: "var(--text-muted)", fontSize: 11, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 11, color: "var(--text-muted)" }}>{e.tenant_id ? String(e.tenant_id).slice(0, 8) + "..." : "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </>
+    );
+  };
+
   const TAB_RENDERERS: Record<TabKey, () => React.ReactNode> = {
     overview: renderOverview,
     tenants: renderTenants,
@@ -1921,6 +2053,7 @@ export default function SuperAdminPage() {
     metrics: renderMetrics,
     audit: renderAudit,
     system: renderSystem,
+    monitor: renderMonitor,
   };
 
   return (
