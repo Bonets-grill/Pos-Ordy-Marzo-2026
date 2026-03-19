@@ -282,11 +282,18 @@ export default function PaymentsPage() {
         .update({ status: "refunded" })
         .eq("id", refundTarget.id);
 
-      // Update order status
-      await supabase
+      // Update order status — only allowed from closed due to state machine trigger
+      const { data: currentOrder } = await supabase
         .from("orders")
-        .update({ status: "refunded" })
-        .eq("id", refundTarget.order_id);
+        .select("status")
+        .eq("id", refundTarget.order_id)
+        .single();
+      if (currentOrder?.status === "closed") {
+        await supabase
+          .from("orders")
+          .update({ status: "refunded" })
+          .eq("id", refundTarget.order_id);
+      }
 
       setRefundTarget(null);
       setRefundReason("");

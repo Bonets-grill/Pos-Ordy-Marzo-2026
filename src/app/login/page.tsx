@@ -76,15 +76,6 @@ export default function LoginPage() {
           >
             Ordy POS
           </h1>
-          <p
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: "0.9rem",
-              margin: "0.5rem 0 0",
-            }}
-          >
-            {t("auth.demo_hint")}
-          </p>
         </div>
 
         {/* Error */}

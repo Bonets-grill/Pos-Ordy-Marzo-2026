@@ -198,7 +198,7 @@ export default function KdsPage() {
       .from("order_items")
       .select("id, order_id, name, quantity, notes, modifiers, kds_status, kds_station")
       .in("order_id", orderIds)
-      .in("kds_status", ["pending", "preparing"]);
+      .in("kds_status", ["pending", "preparing", "ready"]);
 
     const itemsByOrder: Record<string, OrderItem[]> = {};
     (itemsData || []).forEach((item: OrderItem) => {
@@ -379,7 +379,7 @@ export default function KdsPage() {
       .from("order_items")
       .select("id")
       .eq("order_id", order.id)
-      .in("kds_status", ["pending", "preparing"]);
+      .in("kds_status", ["pending", "preparing", "ready"]);
 
     if (!remaining || remaining.length === 0) {
       await supabase

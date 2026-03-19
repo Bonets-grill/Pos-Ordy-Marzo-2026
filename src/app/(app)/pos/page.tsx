@@ -676,6 +676,8 @@ export default function PosPage() {
   /* ── Send to kitchen ─────────────────────────────────── */
   const sendToKitchen = useCallback(async () => {
     if (!tenantId || !userId || cart.length === 0) return;
+    if (payingRef.current) return;
+    payingRef.current = true;
     setSending(true);
 
     try {
