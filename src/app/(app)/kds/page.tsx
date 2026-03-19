@@ -50,6 +50,16 @@ interface OrderWithItems extends Order {
   items: OrderItem[];
 }
 
+/* ─── Table Group ─── */
+// Groups multiple orders from the same table into one card
+// Orders without table_id (WA, takeaway, delivery) are shown individually
+interface TableGroup {
+  key: string;             // table_id or order.id for ungrouped
+  table_number: string | null;
+  orders: OrderWithItems[]; // sorted oldest→newest
+  activeOrder: OrderWithItems; // most recent = the one buttons act on
+}
+
 /* ─── Helpers ─── */
 
 function elapsedMinutes(created_at: string): number {
@@ -294,6 +304,36 @@ export default function KdsPage() {
             items: o.items.filter((i) => i.kds_station === activeStation),
           }))
           .filter((o) => o.items.length > 0);
+
+  // Group orders by table — orders without table_id stay individual
+  const tableGroups: TableGroup[] = (() => {
+    const grouped = new Map<string, OrderWithItems[]>();
+    for (const order of filteredOrders) {
+      const key = order.table_id || `__solo__${order.id}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(order);
+    }
+    const groups: TableGroup[] = [];
+    for (const [key, grpOrders] of grouped) {
+      // Sort oldest first so we show history top→bottom
+      const sorted = [...grpOrders].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      groups.push({
+        key,
+        table_number: sorted[0].restaurant_tables?.number || null,
+        orders: sorted,
+        activeOrder: sorted[sorted.length - 1], // most recent
+      });
+    }
+    // Sort groups by the oldest order in each group (FIFO)
+    groups.sort(
+      (a, b) =>
+        new Date(a.orders[0].created_at).getTime() -
+        new Date(b.orders[0].created_at).getTime()
+    );
+    return groups;
+  })();
 
   /* ─── Actions ─── */
 
@@ -697,7 +737,7 @@ export default function KdsPage() {
         >
           ...
         </div>
-      ) : filteredOrders.length === 0 ? (
+      ) : tableGroups.length === 0 ? (
         <div
           style={{
             flex: 1,
@@ -720,14 +760,16 @@ export default function KdsPage() {
           }}
           className="max-lg:!grid-cols-3 max-md:!grid-cols-2 max-sm:!grid-cols-1"
         >
-          {filteredOrders.map((order) => {
+          {tableGroups.map((group) => {
+            const order = group.activeOrder;
             const color = urgencyColor(order.created_at);
             const allPending = order.items.every((i) => i.kds_status === "pending");
             const allPreparing = order.items.some((i) => i.kds_status === "preparing");
+            const hasHistory = group.orders.length > 1;
 
             return (
               <div
-                key={order.id}
+                key={group.key}
                 className={urgencyClass(order.created_at)}
                 style={{
                   background: "var(--bg-card)",
@@ -758,7 +800,7 @@ export default function KdsPage() {
                         letterSpacing: "-0.02em",
                       }}
                     >
-                      #{order.order_number}
+                      {hasHistory ? `Mesa ${group.table_number}` : `#${order.order_number}`}
                     </span>
                     <span
                       style={{
@@ -767,7 +809,9 @@ export default function KdsPage() {
                         fontWeight: 500,
                       }}
                     >
-                      {orderLabel(order, t)}
+                      {hasHistory
+                        ? group.orders.map((o) => `#${o.order_number}`).join(" · ")
+                        : orderLabel(order, t)}
                       {order.customer_name ? ` — ${order.customer_name}` : ""}
                     </span>
                   </div>
@@ -832,6 +876,22 @@ export default function KdsPage() {
                     gap: 10,
                   }}
                 >
+                  {/* Previous orders — crossed out */}
+                  {hasHistory && group.orders.slice(0, -1).map((prevOrder) => (
+                    <div key={prevOrder.id}>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        #{prevOrder.order_number} · {t("kds.served")}
+                      </div>
+                      {prevOrder.items.map((item) => (
+                        <div key={item.id} style={{ display: "flex", alignItems: "baseline", gap: 8, opacity: 0.4, textDecoration: "line-through", marginBottom: 4 }}>
+                          <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-muted)", minWidth: 28 }}>{item.quantity}x</span>
+                          <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)" }}>{item.name}</span>
+                        </div>
+                      ))}
+                      <div style={{ borderBottom: "1px dashed var(--border)", margin: "6px 0 8px" }} />
+                    </div>
+                  ))}
+                  {/* Active order items */}
                   {order.items.map((item) => (
                     <div
                       key={item.id}
