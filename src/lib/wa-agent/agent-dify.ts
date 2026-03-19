@@ -105,6 +105,13 @@ export async function processMessageWithDify(
   const ctx = (session.context || {}) as Record<string, unknown>;
   const conversationId = (ctx.dify_conversation_id as string) || null;
 
+  // Pass client detected language to Dify — overrides the default 'español' from buildDifyInputs
+  const detectedLang = (ctx.detected_language as string) || 'es';
+  const langLabels: Record<string, string> = {
+    es: 'español', en: 'english', fr: 'français', de: 'deutsch', it: 'italiano',
+  };
+  inputs.language = langLabels[detectedLang] || 'español';
+
   // 5. Call Dify
   try {
     const body: Record<string, unknown> = {
