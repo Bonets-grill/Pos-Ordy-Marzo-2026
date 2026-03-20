@@ -349,15 +349,15 @@ export default function KdsPage() {
   /* ─── Actions ─── */
 
   async function markPreparing(order: OrderWithItems) {
-    const itemIds = order.items.map((i) => i.id);
-    await supabase
-      .from("order_items")
-      .update({ kds_status: "preparing" })
-      .in("id", itemIds);
-    await supabase
-      .from("orders")
-      .update({ status: "preparing" })
-      .eq("id", order.id);
+    await fetch("/api/orders/kds", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order_id: order.id,
+        item_ids: order.items.map((i) => i.id),
+        kds_status: "preparing",
+      }),
+    }).catch((err) => console.error("KDS preparing error:", err));
 
     // Auto-notify WhatsApp customer when order starts preparing
     if (order.source === "whatsapp" && order.customer_phone && tenantId) {
@@ -419,35 +419,24 @@ export default function KdsPage() {
   }
 
   async function markReady(order: OrderWithItems) {
-    const itemIds = order.items.map((i) => i.id);
-    await supabase
-      .from("order_items")
-      .update({ kds_status: "ready" })
-      .in("id", itemIds);
+    const res = await fetch("/api/orders/kds", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order_id: order.id,
+        item_ids: order.items.map((i) => i.id),
+        kds_status: "ready",
+      }),
+    }).catch((err) => { console.error("KDS ready error:", err); return null; });
 
-    // Check if ALL items in this order are now ready
-    const { data: remaining } = await supabase
-      .from("order_items")
-      .select("id")
-      .eq("order_id", order.id)
-      .in("kds_status", ["pending", "preparing"]);
-
-    if (!remaining || remaining.length === 0) {
-      await supabase
-        .from("orders")
-        .update({ status: "ready" })
-        .eq("id", order.id);
-
-      // Auto-notify WhatsApp customer when order is ready
-      if (order.source === "whatsapp" && order.customer_phone && tenantId) {
+    // Auto-notify WhatsApp customer when ALL items are ready
+    if (res?.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data.all_items_ready && order.source === "whatsapp" && order.customer_phone && tenantId) {
         fetch("/api/whatsapp/notify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: order.id,
-            type: "order_ready",
-            tenant_id: tenantId,
-          }),
+          body: JSON.stringify({ orderId: order.id, type: "order_ready", tenant_id: tenantId }),
         }).catch((err) => console.error("WA ready notify error:", err));
       }
     }
@@ -458,24 +447,19 @@ export default function KdsPage() {
     // Save for recall
     setLastBumped(order);
 
-    const itemIds = order.items.map((i) => i.id);
-    const { error: itemsErr } = await supabase
-      .from("order_items")
-      .update({ kds_status: "served" })
-      .in("id", itemIds);
+    const res = await fetch("/api/orders/kds", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order_id: order.id,
+        item_ids: order.items.map((i) => i.id),
+        kds_status: "served",
+      }),
+    }).catch((err) => { console.error("bumpOrder error:", err); return null; });
 
-    if (itemsErr) {
-      console.error("bumpOrder items error:", itemsErr);
+    if (!res?.ok) {
+      console.error("bumpOrder API error:", await res?.text().catch(() => "unknown"));
       return;
-    }
-
-    const { error: orderErr } = await supabase
-      .from("orders")
-      .update({ status: "served" })
-      .eq("id", order.id);
-
-    if (orderErr) {
-      console.error("bumpOrder order error:", orderErr);
     }
 
     fetchOrders();
