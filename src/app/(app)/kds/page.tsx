@@ -274,7 +274,7 @@ export default function KdsPage() {
       .channel("kds-items")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "order_items", filter: `tenant_id=eq.${tenantId}` },
+        { event: "*", schema: "public", table: "order_items" },
         () => fetchOrders()
       )
       .subscribe();
