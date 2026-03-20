@@ -58,6 +58,7 @@ interface CartItem {
   notes: string;
   modifiers: SelectedModifier[];
   modifiersTotal: number;
+  kds_station?: string | null;
 }
 
 interface ModifierGroup {
