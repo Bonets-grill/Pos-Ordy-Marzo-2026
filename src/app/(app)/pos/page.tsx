@@ -105,6 +105,7 @@ export default function PosPage() {
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [taxRate, setTaxRate] = useState(0);
+  const [taxIncluded, setTaxIncluded] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
@@ -239,7 +240,7 @@ export default function PosPage() {
         // Fetch tenant tax_rate + settings + name + receipt_config + business_hours
         const { data: tenant } = await supabase
           .from("tenants")
-          .select("name, tax_rate, settings, receipt_config, currency, business_hours")
+          .select("name, tax_rate, tax_included, settings, receipt_config, currency, business_hours")
           .eq("id", tid)
           .single();
 
@@ -247,6 +248,7 @@ export default function PosPage() {
         if (tenant?.receipt_config) receiptConfigRef.current = tenant.receipt_config;
         if (tenant?.currency) currencyRef.current = tenant.currency;
         if (tenant?.tax_rate) setTaxRate(tenant.tax_rate);
+        if (tenant?.tax_included !== undefined) setTaxIncluded(tenant.tax_included);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const s = tenant?.settings as any;
         if (s?.order_modes) {
@@ -579,8 +581,10 @@ export default function PosPage() {
     [cart]
   );
   const taxAmount = useMemo(
-    () => subtotal * (taxRate / 100),
-    [subtotal, taxRate]
+    () => taxIncluded
+      ? Math.round((subtotal - subtotal / (1 + taxRate / 100)) * 100) / 100
+      : Math.round(subtotal * (taxRate / 100) * 100) / 100,
+    [subtotal, taxRate, taxIncluded]
   );
   const loyaltyDiscount = useMemo(() => {
     if (!loyaltyReward) return 0;
@@ -592,8 +596,10 @@ export default function PosPage() {
   }, [loyaltyReward, subtotal]);
 
   const total = useMemo(
-    () => Math.max(0, subtotal + taxAmount - discount - loyaltyDiscount + tip),
-    [subtotal, taxAmount, discount, loyaltyDiscount, tip]
+    () => taxIncluded
+      ? Math.max(0, subtotal - discount - loyaltyDiscount + tip)
+      : Math.max(0, subtotal + taxAmount - discount - loyaltyDiscount + tip),
+    [subtotal, taxAmount, taxIncluded, discount, loyaltyDiscount, tip]
   );
 
   /* ── Show toast ──────────────────────────────────────── */
