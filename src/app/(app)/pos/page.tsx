@@ -754,7 +754,7 @@ export default function PosPage() {
             status: "confirmed",
             source: orderType === "delivery" ? "delivery" : orderType === "takeaway" ? "takeaway" : "pos",
             metadata: deliveryAddress ? { delivery_address: deliveryAddress } : null,
-            created_by: userId,
+            received_by: userId,
           })
           .select("id")
           .single();
@@ -898,7 +898,7 @@ export default function PosPage() {
             payment_status: "paid",
             source: orderType === "delivery" ? "delivery" : orderType === "takeaway" ? "takeaway" : "pos",
             metadata: deliveryAddress ? { delivery_address: deliveryAddress } : null,
-            created_by: userId,
+            received_by: userId,
           })
           .select("id, order_number")
           .single();
@@ -939,7 +939,7 @@ export default function PosPage() {
               amount: cashAmt,
               tip_amount: 0,
               status: "completed",
-              created_by: userId,
+              received_by: userId,
             },
             {
               tenant_id: tenantId,
@@ -948,7 +948,7 @@ export default function PosPage() {
               amount: cardAmt,
               tip_amount: tip,
               status: "completed",
-              created_by: userId,
+              received_by: userId,
             },
           ]);
         } else {
@@ -959,7 +959,7 @@ export default function PosPage() {
             amount: total,
             tip_amount: tip,
             status: "completed",
-            created_by: userId,
+            received_by: userId,
           });
         }
       }
@@ -1144,7 +1144,7 @@ export default function PosPage() {
             payment_status: "paid",
             source: orderType === "delivery" ? "delivery" : orderType === "takeaway" ? "takeaway" : "pos",
             metadata: deliveryAddress ? { delivery_address: deliveryAddress, split_bill: billNumber } : { split_bill: billNumber },
-            created_by: userId,
+            received_by: userId,
           })
           .select("id")
           .single();

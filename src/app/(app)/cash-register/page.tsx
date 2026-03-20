@@ -535,6 +535,21 @@ export default function CashRegisterPage() {
     const actual = parseFloat(closingAmount);
     if (isNaN(actual) || actual < 0) return;
 
+    // Check for occupied tables with active orders before closing
+    const { data: occupiedTables } = await supabase
+      .from("restaurant_tables")
+      .select("number, current_order_id")
+      .eq("tenant_id", tenantId)
+      .eq("status", "occupied");
+
+    if (occupiedTables && occupiedTables.length > 0) {
+      const tableNumbers = occupiedTables.map((t: any) => t.number).join(", ");
+      const confirm = window.confirm(
+        `⚠️ Hay ${occupiedTables.length} mesa(s) ocupada(s) sin cobrar: ${tableNumbers}.\n\n¿Seguro que quieres cerrar el turno?`
+      );
+      if (!confirm) return;
+    }
+
     setCloseLoading(true);
     try {
       const difference = actual - expectedCash;
