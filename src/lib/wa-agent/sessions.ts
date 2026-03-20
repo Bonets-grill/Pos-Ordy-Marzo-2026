@@ -15,44 +15,39 @@ export async function getOrCreateSession(
   // Upsert: insert if not exists, update last_message_at if exists.
   // Uses UNIQUE constraint (tenant_id, phone) to prevent race conditions
   // where concurrent messages could create duplicate sessions.
+  // Try to find existing session first — never overwrite context
+  const { data: existing } = await supabase
+    .from("wa_sessions")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .eq("phone", phone)
+    .single();
+
+  if (existing) {
+    await supabase
+      .from("wa_sessions")
+      .update({ last_message_at: new Date().toISOString() })
+      .eq("id", existing.id);
+    return existing as WASession;
+  }
+
+  // No session exists — create new one
   const { data: session, error } = await supabase
     .from("wa_sessions")
-    .upsert(
-      {
-        tenant_id: tenantId,
-        instance_id: instanceId,
-        phone,
-        state: "idle",
-        cart: [],
-        context: {},
-        last_message_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "tenant_id,phone",
-        ignoreDuplicates: false,
-      }
-    )
+    .insert({
+      tenant_id: tenantId,
+      instance_id: instanceId,
+      phone,
+      state: "idle",
+      cart: [],
+      context: {},
+      last_message_at: new Date().toISOString(),
+    })
     .select("*")
     .single();
 
   if (error) {
-    // Fallback: if upsert fails (e.g., constraint not yet applied), try select
-    const { data: existing } = await supabase
-      .from("wa_sessions")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .eq("phone", phone)
-      .single();
-
-    if (existing) {
-      await supabase
-        .from("wa_sessions")
-        .update({ last_message_at: new Date().toISOString() })
-        .eq("id", existing.id);
-      return existing as WASession;
-    }
-
-    throw new Error(`Failed to get/create session: ${error.message}`);
+    throw new Error(`Failed to create session: ${error.message}`);
   }
 
   return session as WASession;
