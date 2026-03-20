@@ -148,8 +148,11 @@ async function handleEvolutionWebhook(supabase: ReturnType<typeof createServiceC
     return NextResponse.json({ status: "ok" });
   }
 
-  // Extract phone number (remove @s.whatsapp.net)
-  const phone = remoteJid.replace("@s.whatsapp.net", "");
+  // Extract phone number — handle @lid format (new WhatsApp addressing mode)
+  const effectiveJid = remoteJid.includes("@lid") && key?.remoteJidAlt
+    ? (key.remoteJidAlt as string)
+    : remoteJid;
+  const phone = effectiveJid.replace("@s.whatsapp.net", "").replace("@lid", "");
 
   // Rate limiting: prevent WhatsApp spam (20 msgs/min per phone)
   // Uses distributed Redis limiter if feature flag enabled, otherwise in-memory
