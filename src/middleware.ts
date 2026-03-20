@@ -8,6 +8,38 @@ setInterval(() => {
   for (const [k, v] of rateLimits) if (v.resetAt <= now) rateLimits.delete(k);
 }, 60_000);
 
+// Track repeated rate limit hits for alerting
+const alertBuckets = new Map<string, { count: number; lastAlertAt: number }>();
+
+async function sendSecurityAlert(ip: string, path: string, type: string) {
+  const key = `alert:${ip}`;
+  const now = Date.now();
+  const bucket = alertBuckets.get(key);
+
+  // Only alert once per 10 minutes per IP
+  if (bucket && now - bucket.lastAlertAt < 10 * 60_000) {
+    alertBuckets.set(key, { ...bucket, count: bucket.count + 1 });
+    return;
+  }
+  alertBuckets.set(key, { count: 1, lastAlertAt: now });
+
+  try {
+    const evoUrl = process.env.EVOLUTION_API_URL;
+    const evoKey = process.env.EVOLUTION_API_KEY;
+    const instance = process.env.WA_ADMIN_INSTANCE || "";
+    const adminPhone = process.env.WA_ADMIN_PHONE || "";
+    if (!evoUrl || !adminPhone || !instance) return;
+
+    const msg = `🚨 *Ordy POS — Alerta de seguridad*\n\nTipo: ${type}\nIP: ${ip}\nRuta: ${path}\nHora: ${new Date().toISOString()}\n\n_Posible ataque de fuerza bruta_`;
+    await fetch(`${evoUrl}/message/sendText/${instance}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: evoKey || "" },
+      body: JSON.stringify({ number: adminPhone, text: msg }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch { /* silent — never block request for alert failure */ }
+}
+
 function checkRateLimit(key: string, max: number, windowMs: number): boolean {
   const now = Date.now();
   const entry = rateLimits.get(key);
@@ -27,6 +59,7 @@ export async function middleware(request: NextRequest) {
   if (path.startsWith("/login") || path.startsWith("/api/auth")) {
     if (checkRateLimit(`login:${ip}`, 10, 5 * 60_000)) {
       console.warn(`[SECURITY] Rate limit: login blocked ip=${ip} path=${path}`);
+      sendSecurityAlert(ip, path, "Login brute force");
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
   }
