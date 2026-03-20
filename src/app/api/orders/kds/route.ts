@@ -149,7 +149,7 @@ export async function PATCH(req: NextRequest) {
       .select("amount")
       .eq("order_id", order_id as string)
       .eq("status", "completed");
-    const totalPaid = (pays || []).reduce((s, p) => s + Number(p.amount), 0);
+    const totalPaid = (pays || []).reduce((s: number, p: { amount: unknown }) => s + Number(p.amount), 0);
 
     if (totalPaid >= Number(order.total) - 0.01) {
       // Pagada y servida → cerrar
@@ -211,10 +211,10 @@ export async function GET(req: NextRequest) {
     .order("kds_status", { ascending: true });
 
   const summary = {
-    pending:    (items || []).filter(i => i.kds_status === "pending").length,
-    preparing:  (items || []).filter(i => i.kds_status === "preparing").length,
-    ready:      (items || []).filter(i => i.kds_status === "ready").length,
-    served:     (items || []).filter(i => i.kds_status === "served").length,
+    pending:    (items || []).filter((i: { kds_status: string }) => i.kds_status === "pending").length,
+    preparing:  (items || []).filter((i: { kds_status: string }) => i.kds_status === "preparing").length,
+    ready:      (items || []).filter((i: { kds_status: string }) => i.kds_status === "ready").length,
+    served:     (items || []).filter((i: { kds_status: string }) => i.kds_status === "served").length,
   };
 
   return NextResponse.json({
