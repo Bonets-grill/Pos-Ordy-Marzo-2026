@@ -643,16 +643,9 @@ export default function QRMenuPage() {
                 {fmtPrice(detailItem.price, tenant.currency)}
               </p>
               {localDesc(detailItem, lang) && (
-                <div style={{
-                  maxHeight: 120,
-                  overflowY: "auto",
-                  WebkitOverflowScrolling: "touch",
-                  marginBottom: 16,
-                }}>
-                  <p style={{ color: "#999", fontSize: 14, margin: 0, lineHeight: 1.4 }}>
-                    {localDesc(detailItem, lang)}
-                  </p>
-                </div>
+                <p style={{ color: "#999", fontSize: 14, margin: "0 0 16px", lineHeight: 1.5 }}>
+                  {localDesc(detailItem, lang)}
+                </p>
               )}
 
               {/* Allergens */}
