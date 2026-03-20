@@ -322,13 +322,18 @@ export default function KdsPage() {
       const sorted = [...grpOrders].sort(
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
-      // activeOrder = oldest order that still has pending/preparing/ready items
-      // If all orders are fully served, fall back to most recent
-      const activeOrder = sorted.find(o => o.items.length > 0) || sorted[sorted.length - 1];
+      // Split orders: those with active items vs fully served (no items left)
+      // fetchOrders already filters items to pending/preparing/ready only
+      // so items.length === 0 means fully served
+      const activeOrders = sorted.filter(o => o.items.length > 0);
+      const servedOrders = sorted.filter(o => o.items.length === 0);
+      const activeOrder = activeOrders[activeOrders.length - 1] || sorted[sorted.length - 1];
+      // Rebuild sorted: served first (history), then active orders
+      const resorted = [...servedOrders, ...activeOrders];
       groups.push({
         key,
-        table_number: sorted[0].restaurant_tables?.number || null,
-        orders: sorted,
+        table_number: resorted[0].restaurant_tables?.number || null,
+        orders: resorted,
         activeOrder,
       });
     }
