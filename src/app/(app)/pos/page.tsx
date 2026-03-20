@@ -857,6 +857,14 @@ export default function PosPage() {
           return;
         }
 
+        // Fetch order_number for receipt
+        const { data: existingOrderData } = await supabase
+          .from("orders")
+          .select("order_number")
+          .eq("id", existingOrderId)
+          .single();
+        orderNumber = existingOrderData?.order_number || null;
+
         // Insert new items if any were added
         const newItems = cart.filter((c) => !originalItemIds.has(c.id));
         if (newItems.length > 0) {
