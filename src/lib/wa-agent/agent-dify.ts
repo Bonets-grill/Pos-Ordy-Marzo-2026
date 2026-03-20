@@ -125,6 +125,7 @@ export async function processMessageWithDify(
     }
 
     const resp = await fetch(`${DIFY_API_URL}/chat-messages`, {
+      signal: AbortSignal.timeout(30000),
       method: "POST",
       headers: {
         Authorization: `Bearer ${DIFY_API_KEY}`,
@@ -150,6 +151,7 @@ export async function processMessageWithDify(
           const retryBody = { ...body };
           delete retryBody.conversation_id;
           const retryResp = await fetch(`${DIFY_API_URL}/chat-messages`, {
+            signal: AbortSignal.timeout(30000),
             method: "POST",
             headers: {
               Authorization: `Bearer ${DIFY_API_KEY}`,

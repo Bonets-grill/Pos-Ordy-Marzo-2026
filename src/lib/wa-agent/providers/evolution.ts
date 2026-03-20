@@ -22,6 +22,7 @@ export class EvolutionProvider implements WAProviderInterface {
     const apiKey = params.instance.evolution_api_key || this.globalApiKey;
 
     const response = await fetch(`${url}/message/sendText/${instanceName}`, {
+      signal: AbortSignal.timeout(15000),
       method: "POST",
       headers: this.headers(apiKey),
       body: JSON.stringify({
