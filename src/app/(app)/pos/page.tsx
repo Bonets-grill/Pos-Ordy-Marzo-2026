@@ -335,6 +335,7 @@ export default function PosPage() {
             .select("id, name_es, name_en, name_fr, name_de, name_it, price, category_id")
             .eq("tenant_id", tid)
             .eq("active", true)
+            .eq("available", true)
             .order("name_es", { ascending: true }),
           supabase
             .from("restaurant_tables")
