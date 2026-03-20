@@ -744,52 +744,42 @@ export default function PosPage() {
             .eq("id", item.id);
         }
       } else {
-        // Create new order
-        const { data: order, error: orderErr } = await supabase
-          .from("orders")
-          .insert({
-            tenant_id: tenantId,
-            table_id: orderType === "dine_in" && selectedTable ? selectedTable : null,
+        // Create new order via API (validated, audited, idempotent)
+        const kitchenRes = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             order_type: orderType,
+            table_id: orderType === "dine_in" && selectedTable ? selectedTable : null,
             customer_name: loyaltyCustomer?.name || customerName || null,
             customer_phone: customerPhone || null,
             loyalty_customer_id: loyaltyCustomer?.id || null,
             loyalty_reward_applied: loyaltyReward?.title || null,
-            subtotal,
-            tax_amount: taxAmount,
             discount_amount: discount + loyaltyDiscount,
             tip_amount: tip,
-            total,
-            status: "confirmed",
-            source: orderType === "delivery" ? "delivery" : orderType === "takeaway" ? "takeaway" : "pos",
-            metadata: deliveryAddress ? { delivery_address: deliveryAddress } : null,
-            received_by: userId,
-          })
-          .select("id")
-          .single();
+            delivery_address: deliveryAddress || null,
+            items: cart.map((c) => ({
+              menu_item_id: c.menu_item_id,
+              name: c.name,
+              quantity: c.qty,
+              unit_price: c.price,
+              modifiers: c.modifiers || [],
+              modifiers_total: c.modifiers?.reduce((s: number, m: { price_delta?: number }) => s + (m.price_delta || 0), 0) || 0,
+              notes: c.notes || null,
+              kds_station: c.kds_station || null,
+            })),
+          }),
+        });
 
-        if (orderErr || !order) {
-          console.error("Order insert error:", orderErr);
+        if (!kitchenRes.ok) {
+          const errData = await kitchenRes.json().catch(() => ({}));
+          console.error("Order API error:", errData);
           setSending(false);
           return;
         }
 
-        orderId = order.id;
-
-        const orderItems = buildOrderItems(order.id, cart);
-        const { error: itemsErr } = await supabase
-          .from("order_items")
-          .insert(orderItems);
-
-        if (itemsErr) console.error("Order items insert error:", itemsErr);
-
-        // Mark table as occupied for dine-in
-        if (orderType === "dine_in" && selectedTable) {
-          await supabase
-            .from("restaurant_tables")
-            .update({ status: "occupied", current_order_id: order.id })
-            .eq("id", selectedTable);
-        }
+        const kitchenData = await kitchenRes.json();
+        orderId = kitchenData.order_id;
       }
 
       // Earn loyalty points if customer is linked
@@ -887,51 +877,50 @@ export default function PosPage() {
           await supabase.from("order_items").insert(orderItems);
         }
       } else {
-        // Create new order as paid
-        const { data: order, error: orderErr } = await supabase
-          .from("orders")
-          .insert({
-            tenant_id: tenantId,
-            table_id: orderType === "dine_in" && selectedTable ? selectedTable : null,
+        // Create order via API then pay+close
+        const payOrderRes = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             order_type: orderType,
+            table_id: orderType === "dine_in" && selectedTable ? selectedTable : null,
             customer_name: loyaltyCustomer?.name || customerName || null,
             customer_phone: customerPhone || null,
             loyalty_customer_id: loyaltyCustomer?.id || null,
             loyalty_reward_applied: loyaltyReward?.title || null,
-            subtotal,
-            tax_amount: taxAmount,
             discount_amount: discount + loyaltyDiscount,
             tip_amount: tip,
-            total,
-            status: "closed",
-            payment_status: "paid",
-            source: orderType === "delivery" ? "delivery" : orderType === "takeaway" ? "takeaway" : "pos",
-            metadata: deliveryAddress ? { delivery_address: deliveryAddress } : null,
-            received_by: userId,
-          })
-          .select("id, order_number")
-          .single();
+            delivery_address: deliveryAddress || null,
+            items: cart.map((c) => ({
+              menu_item_id: c.menu_item_id,
+              name: c.name,
+              quantity: c.qty,
+              unit_price: c.price,
+              modifiers: c.modifiers || [],
+              modifiers_total: c.modifiers?.reduce((s: number, m: { price_delta?: number }) => s + (m.price_delta || 0), 0) || 0,
+              notes: c.notes || null,
+              kds_station: c.kds_station || null,
+            })),
+          }),
+        });
 
-        if (orderErr || !order) {
-          console.error("Order insert error:", orderErr);
+        if (!payOrderRes.ok) {
+          const errData = await payOrderRes.json().catch(() => ({}));
+          console.error("Order API error:", errData);
           setSending(false);
           return;
         }
 
-        orderId = order.id;
-        orderNumber = order.order_number;
-
-        const orderItems = buildOrderItems(order.id, cart);
-        await supabase.from("order_items").insert(orderItems);
+        const payOrderData = await payOrderRes.json();
+        orderId = payOrderData.order_id;
+        orderNumber = payOrderData.order_number;
       }
 
-      // Create payment record(s)
+      // Register payment via API (validates duplicates + amount)
       if (orderId) {
         if (payMethod === "mixed") {
           const cashAmt = parseFloat(mixedCashAmount) || 0;
           const cardAmt = parseFloat(mixedCardAmount) || 0;
-
-          // SAFETY: Validate mixed payment sum equals total
           const mixedSum = Math.round((cashAmt + cardAmt) * 100) / 100;
           const expectedTotal = Math.round(total * 100) / 100;
           if (Math.abs(mixedSum - expectedTotal) > 0.01) {
@@ -939,59 +928,24 @@ export default function PosPage() {
             setSending(false);
             return;
           }
-
-          await supabase.from("payments").insert([
-            {
-              tenant_id: tenantId,
-              order_id: orderId,
-              method: "cash",
-              amount: cashAmt,
-              tip_amount: 0,
-              status: "completed",
-              received_by: userId,
-            },
-            {
-              tenant_id: tenantId,
-              order_id: orderId,
-              method: "card",
-              amount: cardAmt,
-              tip_amount: tip,
-              status: "completed",
-              received_by: userId,
-            },
-          ]);
-        } else {
-          await supabase.from("payments").insert({
-            tenant_id: tenantId,
-            order_id: orderId,
-            method: payMethod,
-            amount: total,
-            tip_amount: tip,
-            status: "completed",
-            received_by: userId,
+          // Pay cash portion
+          await fetch("/api/orders/pay", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: orderId, method: "cash", amount: cashAmt, tip_amount: 0, auto_close: false }),
           });
-        }
-      }
-
-      // Free table for dine-in (check both selectedTable and existing order's table_id)
-      const tableToFree = selectedTable || null;
-      if (tableToFree) {
-        await supabase
-          .from("restaurant_tables")
-          .update({ status: "available", current_order_id: null })
-          .eq("id", tableToFree);
-      } else if (existingOrderId) {
-        // If we paid an existing order, check if it had a table_id
-        const { data: paidOrder } = await supabase
-          .from("orders")
-          .select("table_id")
-          .eq("id", existingOrderId)
-          .single();
-        if (paidOrder?.table_id) {
-          await supabase
-            .from("restaurant_tables")
-            .update({ status: "available", current_order_id: null })
-            .eq("id", paidOrder.table_id);
+          // Pay card portion + close
+          await fetch("/api/orders/pay", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: orderId, method: "card", amount: cardAmt, tip_amount: tip, auto_close: true }),
+          });
+        } else {
+          await fetch("/api/orders/pay", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: orderId, method: payMethod, amount: total, tip_amount: tip, auto_close: true }),
+          });
         }
       }
 
