@@ -26,6 +26,7 @@ export async function middleware(request: NextRequest) {
   // Rate limit: login page — 10 attempts / 5 min
   if (path.startsWith("/login") || path.startsWith("/api/auth")) {
     if (checkRateLimit(`login:${ip}`, 10, 5 * 60_000)) {
+      console.warn(`[SECURITY] Rate limit: login blocked ip=${ip} path=${path}`);
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
   }
@@ -33,6 +34,7 @@ export async function middleware(request: NextRequest) {
   // Rate limit: public API — 60 req / min per IP
   if (path.startsWith("/api/public")) {
     if (checkRateLimit(`pub:${ip}`, 60, 60_000)) {
+      console.warn(`[SECURITY] Rate limit: public API blocked ip=${ip} path=${path}`);
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
   }
@@ -40,6 +42,7 @@ export async function middleware(request: NextRequest) {
   // Rate limit: WhatsApp webhook — 100 req / min
   if (path.startsWith("/api/whatsapp")) {
     if (checkRateLimit(`wa:${ip}`, 100, 60_000)) {
+      console.warn(`[SECURITY] Rate limit: WhatsApp blocked ip=${ip} path=${path}`);
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
   }
@@ -75,6 +78,9 @@ export async function middleware(request: NextRequest) {
 
   // Redirect unauthenticated users to login
   if (!user && !request.nextUrl.pathname.startsWith("/login") && !request.nextUrl.pathname.startsWith("/qr")) {
+    if (request.nextUrl.pathname.startsWith("/admin") || request.nextUrl.pathname.startsWith("/dashboard")) {
+      console.warn(`[SECURITY] Unauthenticated access attempt: ip=${ip} path=${path}`);
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
