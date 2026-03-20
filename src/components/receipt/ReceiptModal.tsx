@@ -36,6 +36,7 @@ interface ReceiptConfig {
   enabled: boolean;
   header_text: string;
   footer_text: string;
+  tax_label?: string;
 }
 
 interface ReceiptModalProps {
@@ -112,7 +113,7 @@ export function generateReceiptText(
 
   lines.push(dash);
   lines.push(row("Subtotal", fmt(order.subtotal)));
-  if (order.tax_amount > 0) lines.push(row("IVA", fmt(order.tax_amount)));
+  if (order.tax_amount > 0) lines.push(row(config?.tax_label || "IVA", fmt(order.tax_amount)));
   if (order.discount_amount > 0)
     lines.push(row("Descuento", `-${fmt(order.discount_amount)}`));
   if (order.tip_amount > 0) lines.push(row("Propina", fmt(order.tip_amount)));
