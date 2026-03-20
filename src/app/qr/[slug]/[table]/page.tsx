@@ -345,6 +345,19 @@ export default function QRMenuPage() {
   // Add to cart
   const addToCart = () => {
     if (!detailItem) return;
+
+    // Validate required modifier groups
+    const itemGroups = getItemGroups(detailItem.id);
+    for (const group of itemGroups) {
+      if (group.required) {
+        const selected = detailMods[group.id] || [];
+        if (selected.length < (group.min_select || 1)) {
+          alert(`${localName(group, lang)}: ${t.required}`);
+          return;
+        }
+      }
+    }
+
     const selectedMods: Modifier[] = [];
     Object.values(detailMods).forEach((ids) => {
       ids.forEach((id) => {
