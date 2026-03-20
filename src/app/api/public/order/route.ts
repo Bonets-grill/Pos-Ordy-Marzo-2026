@@ -8,8 +8,8 @@ import { createServiceClient } from "@/lib/supabase-server";
 interface OrderItemInput {
   menu_item_id: string;
   quantity: number;
-  modifier_ids?: string[];       // preferred — array of modifier UUIDs
-  modifiers?: { name: string; price_delta: number }[]; // kept for KDS display fallback
+  modifier_ids?: string[];
+  modifiers?: { name: string; price_delta: number }[];
   notes?: string;
 }
 
@@ -31,10 +31,8 @@ interface ValidatedItem {
 
 const RATE_WINDOW_MS = 60_000;
 const RATE_MAX = 10;
-
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
 
-// Purge stale entries every 2 minutes to prevent unbounded growth
 setInterval(() => {
   const now = Date.now();
   for (const [ip, bucket] of rateBuckets) {
@@ -65,10 +63,8 @@ function isUUID(v: unknown): v is string {
   return typeof v === "string" && UUID_RE.test(v);
 }
 
-/** Strip HTML tags and trim. Returns empty string if input is falsy. */
 function sanitize(input: unknown, maxLen: number): string {
   if (typeof input !== "string") return "";
-  // Remove HTML tags, collapse whitespace, trim
   return input.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().slice(0, maxLen);
 }
 
@@ -82,7 +78,6 @@ function round2(n: number): number {
 
 export async function POST(req: NextRequest) {
   try {
-    // --- Rate limit ---
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
@@ -94,56 +89,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // --- Parse body ---
     const body = await req.json();
     const {
-      tenantSlug,
-      tableNumber,
-      customerLang,
-      customerName,
-      customerPhone,
-      customerNotes,
-      orderType,
-      deliveryAddress,
-      items,
-      idempotencyKey,
+      tenantSlug, tableNumber, customerLang, customerName,
+      customerPhone, customerNotes, orderType, deliveryAddress,
+      items, idempotencyKey,
     } = body as {
-      tenantSlug: unknown;
-      tableNumber?: unknown;
-      customerLang?: unknown;
-      customerName?: unknown;
-      customerPhone?: unknown;
-      customerNotes?: unknown;
-      orderType?: unknown;
-      deliveryAddress?: unknown;
-      items: unknown;
-      idempotencyKey?: unknown;
+      tenantSlug: unknown; tableNumber?: unknown; customerLang?: unknown;
+      customerName?: unknown; customerPhone?: unknown; customerNotes?: unknown;
+      orderType?: unknown; deliveryAddress?: unknown; items: unknown; idempotencyKey?: unknown;
     };
 
-    // --- Validate and sanitize idempotency key ---
     const safeIdempotencyKey =
       typeof idempotencyKey === "string" && UUID_RE.test(idempotencyKey)
-        ? idempotencyKey
-        : null;
+        ? idempotencyKey : null;
 
-    // --- Validate tenantSlug ---
-    if (
-      typeof tenantSlug !== "string" ||
-      !SLUG_RE.test(tenantSlug) ||
-      tenantSlug.length > 100
-    ) {
+    if (typeof tenantSlug !== "string" || !SLUG_RE.test(tenantSlug) || tenantSlug.length > 100) {
       return NextResponse.json({ error: "Invalid tenant slug" }, { status: 400 });
     }
 
-    // --- Validate orderType ---
     if (orderType !== undefined && orderType !== null) {
       if (typeof orderType !== "string" || !VALID_ORDER_TYPES.has(orderType)) {
         return NextResponse.json({ error: "Invalid order type" }, { status: 400 });
       }
     }
-    const safeOrderType: string = typeof orderType === "string" && VALID_ORDER_TYPES.has(orderType) ? orderType : "qr";
+    const safeOrderType: string =
+      typeof orderType === "string" && VALID_ORDER_TYPES.has(orderType) ? orderType : "qr";
 
-    // --- Validate items array ---
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "Missing items" }, { status: 400 });
     }
@@ -151,7 +123,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Too many items (max 50)" }, { status: 400 });
     }
 
-    // --- Validate each item shape ---
     for (const item of items) {
       if (!item || typeof item !== "object") {
         return NextResponse.json({ error: "Invalid item" }, { status: 400 });
@@ -159,19 +130,14 @@ export async function POST(req: NextRequest) {
       if (!isUUID(item.menu_item_id)) {
         return NextResponse.json({ error: "Invalid menu_item_id" }, { status: 400 });
       }
-      // quantity: integer, 1..50
       if (
         typeof item.quantity !== "number" ||
         !Number.isInteger(item.quantity) ||
         item.quantity < 1 ||
         item.quantity > 50
       ) {
-        return NextResponse.json(
-          { error: "Invalid quantity (must be 1-50)" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Invalid quantity (must be 1-50)" }, { status: 400 });
       }
-      // modifier_ids must be UUIDs if present
       if (item.modifier_ids !== undefined) {
         if (!Array.isArray(item.modifier_ids) || item.modifier_ids.length > 20) {
           return NextResponse.json({ error: "Invalid modifier_ids" }, { status: 400 });
@@ -184,7 +150,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // --- Sanitize text fields ---
     const safeName = sanitize(customerName, 100);
     const safePhone = sanitize(customerPhone, 30);
     const safeCustomerNotes = sanitize(customerNotes, 500);
@@ -194,9 +159,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient();
 
-    // -----------------------------------------------------------------------
     // 1. Resolve tenant
-    // -----------------------------------------------------------------------
     const { data: tenant } = await supabase
       .from("tenants")
       .select("id, tax_rate, tax_included, locale, currency")
@@ -209,9 +172,7 @@ export async function POST(req: NextRequest) {
     const tenantId = tenant.id;
     const tenantLang: string = (tenant.locale || "es").slice(0, 2);
 
-    // -----------------------------------------------------------------------
     // 1b. Idempotency check
-    // -----------------------------------------------------------------------
     if (safeIdempotencyKey) {
       const { data: existingOrder } = await supabase
         .from("orders")
@@ -228,9 +189,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // -----------------------------------------------------------------------
     // 2. Resolve table
-    // -----------------------------------------------------------------------
     let tableId: string | null = null;
     if (safeTableNumber) {
       const { data: table } = await supabase
@@ -243,9 +202,7 @@ export async function POST(req: NextRequest) {
       tableId = table?.id || null;
     }
 
-    // -----------------------------------------------------------------------
-    // 3. Fetch menu items from DB — server-side price verification
-    // -----------------------------------------------------------------------
+    // 3. Fetch menu items
     const menuItemIds = [...new Set((items as OrderItemInput[]).map((i) => i.menu_item_id))];
 
     const { data: dbMenuItems, error: menuErr } = await supabase
@@ -259,34 +216,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to validate menu items" }, { status: 500 });
     }
 
-    // Build lookup map
     const menuMap = new Map<string, (typeof dbMenuItems)[number]>();
-    for (const mi of dbMenuItems || []) {
-      menuMap.set(mi.id, mi);
-    }
+    for (const mi of dbMenuItems || []) menuMap.set(mi.id, mi);
 
-    // Verify ALL requested items exist, belong to tenant, and are available
     for (const item of items as OrderItemInput[]) {
       const dbItem = menuMap.get(item.menu_item_id);
       if (!dbItem) {
-        return NextResponse.json(
-          { error: `Menu item not found: ${item.menu_item_id}` },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: `Menu item not found: ${item.menu_item_id}` }, { status: 400 });
       }
       if (!dbItem.active || !dbItem.available) {
-        return NextResponse.json(
-          { error: `Item not available: ${item.menu_item_id}` },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: `Item not available: ${item.menu_item_id}` }, { status: 400 });
       }
     }
 
-    // -----------------------------------------------------------------------
-    // 4. Fetch modifier links and modifiers from DB — server-side price verification
-    // -----------------------------------------------------------------------
-
-    // Collect all modifier IDs sent by client
+    // 4. Fetch modifiers and links
     const allModifierIds = new Set<string>();
     for (const item of items as OrderItemInput[]) {
       if (item.modifier_ids) {
@@ -294,8 +237,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Build modifier lookup from DB
-    const modifierMap = new Map<string, { id: string; group_id: string; name_es: string; name_en: string; price_delta: number; active: boolean }>();
+    const modifierMap = new Map<string, {
+      id: string; group_id: string; name_es: string; name_en: string;
+      price_delta: number; active: boolean;
+    }>();
 
     if (allModifierIds.size > 0) {
       const { data: dbModifiers, error: modErr } = await supabase
@@ -309,27 +254,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Failed to validate modifiers" }, { status: 500 });
       }
 
-      for (const mod of dbModifiers || []) {
-        modifierMap.set(mod.id, mod);
-      }
+      for (const mod of dbModifiers || []) modifierMap.set(mod.id, mod);
     }
 
-    // Fetch valid item-group links for the requested items
     const { data: itemModLinks } = await supabase
       .from("menu_item_modifier_groups")
       .select("item_id, group_id")
       .in("item_id", menuItemIds);
 
-    // Build set of valid (item_id, group_id) pairs
     const validLinks = new Set<string>();
     for (const link of itemModLinks || []) {
       validLinks.add(`${link.item_id}:${link.group_id}`);
     }
 
-    // -----------------------------------------------------------------------
-    // 5. Build validated items with DB-sourced prices
-    // -----------------------------------------------------------------------
-
+    // 5. Build validated items — DEFENSIVE: skip invalid modifiers instead of rejecting
     const nameKey = `name_${tenantLang}` as "name_es" | "name_en" | "name_fr" | "name_de" | "name_it";
 
     const validatedItems: ValidatedItem[] = [];
@@ -338,36 +276,30 @@ export async function POST(req: NextRequest) {
       const dbItem = menuMap.get(item.menu_item_id)!;
       const unitPrice = Number(dbItem.price);
 
-      // Resolve modifiers from DB
       const resolvedModifiers: { name: string; price_delta: number }[] = [];
       let modifiersTotal = 0;
 
       if (item.modifier_ids && item.modifier_ids.length > 0) {
         for (const mid of item.modifier_ids) {
           const dbMod = modifierMap.get(mid);
+
+          // DEFENSIVE: skip modifiers not found, inactive, or with broken links
+          // instead of rejecting the entire order
           if (!dbMod) {
-            return NextResponse.json(
-              { error: `Modifier not found: ${mid}` },
-              { status: 400 }
-            );
+            console.warn(`Modifier not found: ${mid} — skipping`);
+            continue;
           }
           if (!dbMod.active) {
-            return NextResponse.json(
-              { error: `Modifier not available: ${mid}` },
-              { status: 400 }
-            );
+            console.warn(`Modifier inactive: ${mid} — skipping`);
+            continue;
           }
-          // Verify this modifier's group is linked to this menu item
           if (!validLinks.has(`${item.menu_item_id}:${dbMod.group_id}`)) {
-            return NextResponse.json(
-              { error: `Modifier ${mid} not valid for item ${item.menu_item_id}` },
-              { status: 400 }
-            );
+            console.warn(`Modifier ${mid} has no link to item ${item.menu_item_id} — skipping`);
+            continue;
           }
 
           const modPrice = Number(dbMod.price_delta);
           const modName = (dbMod as Record<string, unknown>)[nameKey] as string || dbMod.name_es || dbMod.name_en;
-
           resolvedModifiers.push({ name: modName, price_delta: modPrice });
           modifiersTotal += modPrice;
         }
@@ -390,18 +322,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // -----------------------------------------------------------------------
-    // 6. Calculate totals from validated data
-    // -----------------------------------------------------------------------
+    // 6. Calculate totals
     const subtotal = round2(validatedItems.reduce((sum, i) => sum + i.subtotal, 0));
     const taxAmount = tenant.tax_included
       ? 0
       : round2(subtotal * (tenant.tax_rate / 100));
     const total = round2(subtotal + taxAmount);
 
-    // -----------------------------------------------------------------------
     // 7. Create order
-    // -----------------------------------------------------------------------
     const source = safeOrderType === "delivery" ? "delivery" : safeOrderType === "takeaway" ? "takeaway" : "qr";
 
     const { data: order, error: orderErr } = await supabase
@@ -433,9 +361,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
     }
 
-    // -----------------------------------------------------------------------
     // 8. Create order items
-    // -----------------------------------------------------------------------
     const orderItems = validatedItems.map((item) => ({
       order_id: order.id,
       tenant_id: tenantId,
@@ -451,17 +377,12 @@ export async function POST(req: NextRequest) {
       kds_status: "pending",
     }));
 
-    const { error: itemsErr } = await supabase
-      .from("order_items")
-      .insert(orderItems);
-
+    const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) {
       console.error("Order items error:", itemsErr.message);
     }
 
-    // -----------------------------------------------------------------------
-    // 9. Update table status to occupied
-    // -----------------------------------------------------------------------
+    // 9. Update table status
     if (tableId) {
       await supabase
         .from("restaurant_tables")
@@ -480,13 +401,12 @@ export async function POST(req: NextRequest) {
 }
 
 // ---------------------------------------------------------------------------
-// GET — check order status (customer polls this)
+// GET — check order status
 // ---------------------------------------------------------------------------
 
 export async function GET(req: NextRequest) {
   const orderId = req.nextUrl.searchParams.get("orderId");
 
-  // Validate UUID format
   if (!orderId || !UUID_RE.test(orderId)) {
     return NextResponse.json({ error: "Invalid or missing orderId" }, { status: 400 });
   }
