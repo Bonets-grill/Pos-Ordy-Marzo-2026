@@ -45,19 +45,16 @@ export function verifyEvolutionSignature(
   }
 
   try {
-    const expectedSignature = createHmac("sha256", secret)
-      .update(rawBody)
-      .digest("hex");
-
-    // Compare using timing-safe comparison to prevent timing attacks
+    // Evolution API sends the secret directly as a static header value
+    // (not HMAC-calculated). Compare directly with timing-safe comparison.
     const sigBuffer = Buffer.from(signatureHeader, "utf-8");
-    const expectedBuffer = Buffer.from(expectedSignature, "utf-8");
+    const secretBuffer = Buffer.from(secret, "utf-8");
 
-    if (sigBuffer.length !== expectedBuffer.length) {
+    if (sigBuffer.length !== secretBuffer.length) {
       return { valid: false, reason: "signature_length_mismatch" };
     }
 
-    if (timingSafeEqual(sigBuffer, expectedBuffer)) {
+    if (timingSafeEqual(sigBuffer, secretBuffer)) {
       return { valid: true };
     }
 
