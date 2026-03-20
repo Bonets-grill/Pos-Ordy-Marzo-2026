@@ -4,45 +4,30 @@ import { requireAuth } from "@/lib/api-auth";
 
 /**
  * PATCH /api/orders/kds
+ * Actualiza kds_status de items de una order.
+ * Transiciones: pending → preparing → ready → served
  *
- * Actualiza el kds_status de uno o varios items de una order.
- * Replica el flujo de kds/page.tsx.
- *
- * Transiciones válidas:
- *   pending → preparing → ready → served
- *
- * Cuando todos los items de una order pasan a "ready",
- * la order se actualiza a status="ready" automáticamente.
- *
- * Cuando todos los items pasan a "served",
- * la order se actualiza a status="closed" si ya está pagada,
- * o permanece en "ready" si no.
- *
- * Body:
- * {
- *   order_id: string        // UUID de la order
- *   item_ids?: string[]     // UUIDs de items específicos (opcional — si no, aplica a todos)
- *   kds_status: "preparing" | "ready" | "served"
- * }
+ * Body: { order_id, item_ids?, kds_status }
  *
  * GET /api/orders/kds?order_id=xxx
- * Devuelve items de la order con su kds_status actual.
  */
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const VALID_KDS_STATUSES = ["preparing", "ready", "served"] as const;
 type KdsStatus = typeof VALID_KDS_STATUSES[number];
 
-// Transiciones permitidas
+interface KdsItem { id: string; kds_status: string; name: string; }
+interface KdsItemStatus { kds_status: string; }
+interface Payment { amount: unknown; }
+
 const ALLOWED_TRANSITIONS: Record<string, KdsStatus[]> = {
-  pending:    ["preparing"],
-  preparing:  ["ready"],
-  ready:      ["served"],
-  served:     [], // terminal
+  pending:   ["preparing"],
+  preparing: ["ready"],
+  ready:     ["served"],
+  served:    [],
 };
 
 export async function PATCH(req: NextRequest) {
-  // 1. Auth
   const auth = await requireAuth();
   if ("error" in auth) return auth.error;
   const { tenantId } = auth;
@@ -56,7 +41,6 @@ export async function PATCH(req: NextRequest) {
 
   const { order_id, item_ids, kds_status } = body as Record<string, unknown>;
 
-  // 2. Validar inputs
   if (!order_id || !UUID_RE.test(order_id as string))
     return NextResponse.json({ error: "Invalid order_id" }, { status: 400 });
 
@@ -72,7 +56,6 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  // 3. Verificar que la order existe y pertenece al tenant
   const { data: order } = await svc
     .from("orders")
     .select("id, order_number, status, total, tenant_id")
@@ -81,10 +64,9 @@ export async function PATCH(req: NextRequest) {
     .single();
 
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
-  if (["cancelled"].includes(order.status))
+  if (order.status === "cancelled")
     return NextResponse.json({ error: "Cannot update KDS for cancelled order" }, { status: 400 });
 
-  // 4. Obtener items a actualizar
   let itemQuery = svc
     .from("order_items")
     .select("id, kds_status, name")
@@ -96,13 +78,11 @@ export async function PATCH(req: NextRequest) {
   }
 
   const { data: items } = await itemQuery;
-
   if (!items || items.length === 0)
     return NextResponse.json({ error: "No items found" }, { status: 404 });
 
-  // 5. Validar transiciones
   const invalidTransitions: string[] = [];
-  for (const item of items) {
+  for (const item of items as KdsItem[]) {
     const allowed = ALLOWED_TRANSITIONS[item.kds_status] || [];
     if (!allowed.includes(kds_status as KdsStatus)) {
       invalidTransitions.push(`"${item.name}": ${item.kds_status} → ${kds_status} (not allowed)`);
@@ -113,12 +93,11 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({
       error: "Invalid KDS transitions",
       invalid: invalidTransitions,
-      hint: `Valid transitions: pending→preparing→ready→served`,
+      hint: "Valid transitions: pending→preparing→ready→served",
     }, { status: 400 });
   }
 
-  // 6. Actualizar items
-  const itemIdsToUpdate = items.map((i: { id: string }) => i.id);
+  const itemIdsToUpdate = (items as KdsItem[]).map((i: KdsItem) => i.id);
   const { error: updateErr } = await svc
     .from("order_items")
     .update({ kds_status: kds_status as string })
@@ -128,35 +107,30 @@ export async function PATCH(req: NextRequest) {
   if (updateErr)
     return NextResponse.json({ error: "Failed to update items", details: updateErr.message }, { status: 500 });
 
-  // 7. Verificar estado global de la order tras el update
   const { data: allItems } = await svc
     .from("order_items")
     .select("kds_status")
     .eq("order_id", order_id as string)
     .eq("tenant_id", tenantId);
 
-  const allStatuses = (allItems || []).map((i: { kds_status: string }) => i.kds_status);
-  const allReady    = allStatuses.every(s => ["ready", "served"].includes(s));
-  const allServed   = allStatuses.every(s => s === "served");
-  const anyActive   = allStatuses.some(s => s === "preparing");
+  const allStatuses: string[] = (allItems || [] as KdsItemStatus[]).map((i: KdsItemStatus) => i.kds_status ?? "");
+  const allReady  = allStatuses.every((s: string) => ["ready", "served"].includes(s));
+  const allServed = allStatuses.every((s: string) => s === "served");
+  const anyActive = allStatuses.some((s: string) => s === "preparing");
 
   let orderStatusUpdate: string | null = null;
 
   if (allServed && order.status !== "closed") {
-    // Verificar si ya está pagada
     const { data: pays } = await svc
       .from("payments")
       .select("amount")
       .eq("order_id", order_id as string)
       .eq("status", "completed");
-    const totalPaid = (pays || []).reduce((s: number, p: { amount: unknown }) => s + Number(p.amount), 0);
-
+    const totalPaid = (pays || [] as Payment[]).reduce((s: number, p: Payment) => s + Number(p.amount), 0);
     if (totalPaid >= Number(order.total) - 0.01) {
-      // Pagada y servida → cerrar
       await svc.from("orders").update({ status: "closed", served_at: new Date().toISOString() }).eq("id", order_id as string);
       orderStatusUpdate = "closed";
     } else {
-      // Servida pero sin pago → marcar ready para que caja la cobre
       await svc.from("orders").update({ status: "ready" }).eq("id", order_id as string);
       orderStatusUpdate = "ready";
     }
@@ -169,14 +143,14 @@ export async function PATCH(req: NextRequest) {
   }
 
   return NextResponse.json({
-    updated_items:    itemIdsToUpdate.length,
-    kds_status:       kds_status,
-    order_id:         order_id as string,
-    order_number:     order.order_number,
-    order_status:     orderStatusUpdate || order.status,
+    updated_items:       itemIdsToUpdate.length,
+    kds_status,
+    order_id:            order_id as string,
+    order_number:        order.order_number,
+    order_status:        orderStatusUpdate || order.status,
     order_status_changed: !!orderStatusUpdate,
-    all_items_ready:  allReady,
-    all_items_served: allServed,
+    all_items_ready:     allReady,
+    all_items_served:    allServed,
   });
 }
 
@@ -193,7 +167,6 @@ export async function GET(req: NextRequest) {
   if (!orderId || !UUID_RE.test(orderId))
     return NextResponse.json({ error: "Invalid order_id" }, { status: 400 });
 
-  // Verificar que la order pertenece al tenant
   const { data: order } = await svc
     .from("orders")
     .select("id, order_number, status")
@@ -210,11 +183,12 @@ export async function GET(req: NextRequest) {
     .eq("tenant_id", tenantId)
     .order("kds_status", { ascending: true });
 
+  const typedItems = (items || []) as KdsItem[];
   const summary = {
-    pending:    (items || []).filter((i: { kds_status: string }) => i.kds_status === "pending").length,
-    preparing:  (items || []).filter((i: { kds_status: string }) => i.kds_status === "preparing").length,
-    ready:      (items || []).filter((i: { kds_status: string }) => i.kds_status === "ready").length,
-    served:     (items || []).filter((i: { kds_status: string }) => i.kds_status === "served").length,
+    pending:   typedItems.filter((i: KdsItem) => i.kds_status === "pending").length,
+    preparing: typedItems.filter((i: KdsItem) => i.kds_status === "preparing").length,
+    ready:     typedItems.filter((i: KdsItem) => i.kds_status === "ready").length,
+    served:    typedItems.filter((i: KdsItem) => i.kds_status === "served").length,
   };
 
   return NextResponse.json({
