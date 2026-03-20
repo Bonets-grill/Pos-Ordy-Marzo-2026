@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOpenNow } from "@/lib/business-hours";
 import { createServiceClient } from "@/lib/supabase-server";
 
 // ---------------------------------------------------------------------------
@@ -162,12 +163,19 @@ export async function POST(req: NextRequest) {
     // 1. Resolve tenant
     const { data: tenant } = await supabase
       .from("tenants")
-      .select("id, tax_rate, tax_included, locale, currency")
+      .select("id, tax_rate, tax_included, locale, currency, business_hours, timezone")
       .eq("slug", tenantSlug)
       .eq("active", true)
       .single();
     if (!tenant) {
       return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+    }
+
+    // Block orders when restaurant is closed
+    const bh = (tenant as any).business_hours;
+    const tz = (tenant as any).timezone;
+    if (bh && !isOpenNow(bh, tz)) {
+      return NextResponse.json({ error: "Restaurant is currently closed" }, { status: 503 });
     }
     const tenantId = tenant.id;
     const tenantLang: string = (tenant.locale || "es").slice(0, 2);

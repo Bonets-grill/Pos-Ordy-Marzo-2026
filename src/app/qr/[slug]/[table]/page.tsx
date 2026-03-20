@@ -399,6 +399,14 @@ export default function QRMenuPage() {
         }),
       });
 
+      if (res.status === 503) {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.error === "Restaurant is currently closed"
+          ? ({"es":"El restaurante está cerrado ahora mismo","en":"The restaurant is currently closed","fr":"Le restaurant est actuellement fermé","de":"Das Restaurant ist momentan geschlossen","it":"Il ristorante è attualmente chiuso"}[lang] || "Closed")
+          : t.error;
+        alert(msg);
+        return;
+      }
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
       setOrderId(data.orderId);
