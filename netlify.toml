@@ -7,3 +7,7 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[[scheduled_functions]]
+  function = "health-check-cron"
+  schedule = "0 */2 * * *"

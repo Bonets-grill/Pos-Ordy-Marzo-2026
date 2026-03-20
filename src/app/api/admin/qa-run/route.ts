@@ -946,6 +946,107 @@ export async function POST(req: NextRequest) {
     // Realtime enabled check (we test by checking if recent orders exist)
     pass("integrity", "Database accessible", "All queries executed successfully");
 
+    // ── NEW: Modifier orphan check ─────────────────────
+    const { data: allLinks } = await supabase
+      .from("menu_item_modifier_groups")
+      .select("group_id")
+      .eq("tenant_id", tenantId);
+    const { data: allMods } = await supabase
+      .from("modifiers")
+      .select("id, name_es, group_id")
+      .eq("tenant_id", tenantId)
+      .eq("active", true);
+    if (allLinks && allMods) {
+      const linkedGroupIds = new Set((allLinks || []).map((l: any) => l.group_id));
+      const orphanMods = (allMods || []).filter((m: any) => !linkedGroupIds.has(m.group_id));
+      if (orphanMods.length > 0) {
+        fail("menu", "No orphan modifiers", `${orphanMods.length} modifiers sin link a ningún item: ${orphanMods.map((m: any) => m.name_es).join(", ")} — pedidos QR fallarán silenciosamente`, true);
+      } else {
+        pass("menu", "No orphan modifiers", `${(allMods || []).length} modifiers correctamente vinculados`);
+      }
+    }
+
+    // ── NEW: Tax label check ───────────────────────────
+    const receiptConfig = tenant?.receipt_config as any;
+    if (receiptConfig?.tax_label) {
+      pass("tenant", "Tax label configured", `Etiqueta: ${receiptConfig.tax_label}`);
+    } else {
+      fail("tenant", "Tax label configured", "Sin tax_label en receipt_config — recibo mostrará IVA en vez del impuesto local");
+    }
+
+    // ── NEW: WhatsApp instance connected ──────────────
+    const waSettings = (tenant as any)?.settings?.whatsapp;
+    if (waSettings?.enabled && waSettings?.instance_name) {
+      try {
+        const evoUrl = process.env.EVOLUTION_API_URL;
+        const evoKey = process.env.EVOLUTION_API_KEY;
+        const evoRes = await fetch(`${evoUrl}/instance/fetchInstances`, {
+          headers: { apikey: evoKey || "" },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (evoRes.ok) {
+          const evoData = await evoRes.json();
+          const instances = Array.isArray(evoData) ? evoData : (evoData.data || []);
+          const inst = instances.find((i: any) => i.name === waSettings.instance_name || i.instance?.instanceName === waSettings.instance_name);
+          const state = inst?.connectionStatus || inst?.instance?.state || "unknown";
+          if (state === "open") {
+            pass("whatsapp", "WhatsApp instance connected", `Instancia ${waSettings.instance_name} — conectada`);
+          } else {
+            fail("whatsapp", "WhatsApp instance connected", `Instancia ${waSettings.instance_name} — estado: ${state} (debería ser open)`, true);
+          }
+        } else {
+          fail("whatsapp", "WhatsApp instance connected", `Evolution API error: ${evoRes.status}`, true);
+        }
+      } catch (e: any) {
+        fail("whatsapp", "WhatsApp instance connected", `Evolution API no responde: ${e.message}`, true);
+      }
+    }
+
+    // ── NEW: Business hours & current status ──────────
+    const bhTenant = (tenant as any)?.business_hours;
+    if (bhTenant) {
+      const DAY_NAMES = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+      const tz = (tenant as any)?.timezone;
+      const now = tz ? new Date(new Date().toLocaleString("en-US", { timeZone: tz })) : new Date();
+      const dayName = DAY_NAMES[now.getDay()];
+      const todayH = bhTenant[dayName];
+      if (!todayH || todayH.closed) {
+        pass("tenant", "Business hours — current status", `Hoy (${dayName}): CERRADO — pedidos QR bloqueados correctamente`);
+      } else {
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        const [oH, oM] = (todayH.open || "00:00").split(":").map(Number);
+        const [cH, cM] = (todayH.close || "23:59").split(":").map(Number);
+        const openMin = oH * 60 + oM;
+        const closeMin = cH * 60 + cM;
+        const isOpen = closeMin < openMin ? (nowMin >= openMin || nowMin <= closeMin) : (nowMin >= openMin && nowMin <= closeMin);
+        pass("tenant", "Business hours — current status", `Hoy (${dayName}): ${isOpen ? "ABIERTO" : "FUERA DE HORARIO"} ${todayH.open}–${todayH.close}`);
+      }
+    }
+
+    // ── NEW: Stale occupied tables ────────────────────
+    const { data: occupiedTables } = await supabase
+      .from("restaurant_tables")
+      .select("number, current_order_id")
+      .eq("tenant_id", tenantId)
+      .eq("status", "occupied");
+    if (occupiedTables && occupiedTables.length > 0) {
+      const stale = [];
+      for (const t of occupiedTables) {
+        if (!t.current_order_id) { stale.push(t.number); continue; }
+        const { data: o } = await supabase.from("orders").select("status").eq("id", t.current_order_id).single();
+        if (!o || ["closed","cancelled","refunded"].includes(o.status)) stale.push(t.number);
+      }
+      if (stale.length > 0) {
+        fail("tables", "No stale occupied tables", `Mesas bloqueadas sin pedido activo: ${stale.join(", ")} — ejecuta liberación manual`, true);
+      } else {
+        pass("tables", "No stale occupied tables", `${occupiedTables.length} mesas ocupadas con pedidos activos`);
+      }
+    } else {
+      pass("tables", "No stale occupied tables", "Todas las mesas disponibles");
+    }
+
+
+
   } catch (e: any) {
     fail("system", "Unexpected error", e.message, true);
   }
