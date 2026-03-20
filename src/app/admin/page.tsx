@@ -2054,6 +2054,93 @@ export default function SuperAdminPage() {
     audit: renderAudit,
     system: renderSystem,
     monitor: renderMonitor,
+    smoke: () => {
+      const vColor = smokeResults?.summary.verdict === 'green' ? '#22c55e' : smokeResults?.summary.verdict === 'yellow' ? '#f59e0b' : '#ef4444';
+      const vLabel = smokeResults?.summary.verdict === 'green' ? 'LISTO PARA PRODUCCION' : smokeResults?.summary.verdict === 'yellow' ? 'ADVERTENCIAS' : 'FALLOS CRITICOS';
+      return (
+        <div style={{ padding: '24px', maxWidth: 900 }}>
+          <h2 style={{ marginBottom: 8, fontSize: 20, fontWeight: 700 }}>Smoke Test por Tenant</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 24, fontSize: 14 }}>Checks de produccion completos para cualquier tenant.</p>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select
+              value={smokeTenantId}
+              onChange={e => setSmokeTenantId(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 14, minWidth: 280 }}
+            >
+              <option value=''>Selecciona un tenant</option>
+              {(dashboardData?.tenants || []).map((t: Record<string, unknown>) => (
+                <option key={t.id as string} value={t.id as string}>{t.name as string} ({t.slug as string})</option>
+              ))}
+            </select>
+            <button
+              onClick={async () => {
+                if (!smokeTenantId) return;
+                setSmokeRunning(true);
+                setSmokeResults(null);
+                setSmokeError(null);
+                try {
+                  const res = await fetch('/api/admin/qa-run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tenantId: smokeTenantId }),
+                  });
+                  if (!res.ok) { setSmokeError('Error ' + res.status); return; }
+                  setSmokeResults(await res.json());
+                } catch(e) {
+                  setSmokeError((e as Error).message);
+                } finally {
+                  setSmokeRunning(false);
+                }
+              }}
+              disabled={smokeRunning || smokeTenantId === ''}
+              style={{
+                padding: '8px 20px', borderRadius: 8,
+                background: smokeRunning || smokeTenantId === '' ? 'var(--border)' : 'var(--accent)',
+                color: 'white', border: 'none',
+                cursor: smokeRunning || smokeTenantId === '' ? 'not-allowed' : 'pointer',
+                fontWeight: 600, fontSize: 14,
+              }}
+            >
+              {smokeRunning ? 'Ejecutando...' : 'Run'}
+            </button>
+          </div>
+          {smokeError && (
+            <div style={{ padding: 12, background: '#fef2f2', borderRadius: 8, color: '#dc2626', marginBottom: 16 }}>
+              {smokeError}
+            </div>
+          )}
+          {smokeResults && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderRadius: 12, background: 'var(--bg-secondary)', marginBottom: 20, border: '2px solid ' + vColor }}>
+                <span style={{ fontSize: 18, fontWeight: 800, color: vColor }}>{vLabel}</span>
+                <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{smokeResults.summary.passed}/{smokeResults.summary.total} checks pasaron</span>
+              </div>
+              {smokeResults.summary.phaseResults.map((phase: Record<string, unknown>) => (
+                <div key={phase.phase as string} style={{ marginBottom: 16, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 16px', background: (phase.failures as unknown[]).length === 0 ? '#f0fdf4' : '#fef2f2' }}>
+                    <span style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }}>{phase.phase as string}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{phase.passed as number}/{phase.total as number}</span>
+                  </div>
+                  <div style={{ padding: '8px 0' }}>
+                    {smokeResults.results
+                      .filter((r: { phase: string }) => r.phase === phase.phase)
+                      .map((r: { test: string; passed: boolean; critical?: boolean; detail?: string }, i: number) => (
+                        <div key={i} style={{ display: 'flex', gap: 10, padding: '6px 16px', borderBottom: '1px solid #f3f4f6' }}>
+                          <span style={{ fontSize: 15 }}>{r.passed ? 'OK' : r.critical ? 'FAIL' : 'WARN'}</span>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 500 }}>{r.test}</div>
+                            {r.detail && <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{r.detail}</div>}
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    },
   };
 
   return (
