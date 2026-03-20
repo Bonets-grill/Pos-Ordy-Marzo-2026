@@ -180,7 +180,7 @@ const PLAN_COLORS: Record<string, string> = {
   enterprise: "#f59e0b",
 };
 
-type TabKey = "overview" | "tenants" | "users" | "orders" | "billing" | "metrics" | "audit" | "system" | "monitor";
+type TabKey = "overview" | "tenants" | "users" | "orders" | "billing" | "metrics" | "audit" | "system" | "monitor" | "smoke";
 
 const TABS: { key: TabKey; icon: typeof Crown; label: string }[] = [
   { key: "overview", icon: Gauge, label: "Overview" },
