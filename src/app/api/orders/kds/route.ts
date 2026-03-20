@@ -135,7 +135,7 @@ export async function PATCH(req: NextRequest) {
     .eq("order_id", order_id as string)
     .eq("tenant_id", tenantId);
 
-  const allStatuses = (allItems || []).map(i => i.kds_status);
+  const allStatuses = (allItems || []).map((i: { kds_status: string }) => i.kds_status);
   const allReady    = allStatuses.every(s => ["ready", "served"].includes(s));
   const allServed   = allStatuses.every(s => s === "served");
   const anyActive   = allStatuses.some(s => s === "preparing");
