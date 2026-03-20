@@ -392,7 +392,12 @@ export default function SuperAdminPage() {
   const [monitorLevel, setMonitorLevel] = useState<string>("all");
   const [monitorAutoRefresh, setMonitorAutoRefresh] = useState(false);
 
-  /* ── System tab state ── */
+  const [smokeRunning, setSmokeRunning] = React.useState(false);
+  const [smokeResults, setSmokeResults] = React.useState<null | Record<string, unknown>>(null);
+  const [smokeTenantId, setSmokeTenantId] = React.useState("");
+  const [smokeError, setSmokeError] = React.useState<null | string>(null);
+
+  /* __ System tab state __ */
   const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
       try {
