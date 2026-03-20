@@ -759,7 +759,7 @@ export default function PosPage() {
             tip_amount: tip,
             delivery_address: deliveryAddress || null,
             items: cart.map((c) => ({
-              menu_item_id: c.menu_item_id,
+              menu_item_id: c.menuItemId,
               name: c.name,
               quantity: c.qty,
               unit_price: c.price,
@@ -892,7 +892,7 @@ export default function PosPage() {
             tip_amount: tip,
             delivery_address: deliveryAddress || null,
             items: cart.map((c) => ({
-              menu_item_id: c.menu_item_id,
+              menu_item_id: c.menuItemId,
               name: c.name,
               quantity: c.qty,
               unit_price: c.price,
