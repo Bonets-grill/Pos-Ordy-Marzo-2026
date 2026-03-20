@@ -765,7 +765,7 @@ export default function KdsPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(3, 1fr)",
             gap: 16,
             alignItems: "start",
           }}
@@ -789,6 +789,7 @@ export default function KdsPage() {
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
+                  maxHeight: "calc(100vh - 140px)",
                 }}
               >
                 {/* Header */}
@@ -885,6 +886,7 @@ export default function KdsPage() {
                     display: "flex",
                     flexDirection: "column",
                     gap: 10,
+                    overflowY: "auto",
                   }}
                 >
                   {/* Previous orders — crossed out */}
