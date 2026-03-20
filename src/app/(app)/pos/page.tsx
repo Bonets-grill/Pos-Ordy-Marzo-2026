@@ -734,6 +734,15 @@ export default function PosPage() {
             .insert(orderItems);
           if (itemsErr) console.error("Order items insert error:", itemsErr);
         }
+
+        // Update quantity of existing items that changed
+        const existingItems = cart.filter((c) => originalItemIds.has(c.id));
+        for (const item of existingItems) {
+          await supabase
+            .from("order_items")
+            .update({ quantity: item.qty, subtotal: item.price * item.qty, kds_status: "pending" })
+            .eq("id", item.id);
+        }
       } else {
         // Create new order
         const { data: order, error: orderErr } = await supabase
