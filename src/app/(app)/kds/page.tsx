@@ -322,11 +322,14 @@ export default function KdsPage() {
       const sorted = [...grpOrders].sort(
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
+      // activeOrder = oldest order that still has pending/preparing/ready items
+      // If all orders are fully served, fall back to most recent
+      const activeOrder = sorted.find(o => o.items.length > 0) || sorted[sorted.length - 1];
       groups.push({
         key,
         table_number: sorted[0].restaurant_tables?.number || null,
         orders: sorted,
-        activeOrder: sorted[sorted.length - 1], // most recent
+        activeOrder,
       });
     }
     // Sort groups by the oldest order in each group (FIFO)
