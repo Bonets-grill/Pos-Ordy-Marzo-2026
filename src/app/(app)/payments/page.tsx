@@ -386,6 +386,19 @@ export default function PaymentsPage() {
         .update({ status: "closed" })
         .eq("id", manualOrderId);
 
+      // Release table — fetch table_id from order and mark as available
+      const { data: paidOrder } = await supabase
+        .from("orders")
+        .select("table_id")
+        .eq("id", manualOrderId)
+        .single();
+      if (paidOrder?.table_id) {
+        await supabase
+          .from("restaurant_tables")
+          .update({ status: "available", current_order_id: null })
+          .eq("id", paidOrder.table_id);
+      }
+
       setShowManualModal(false);
       fetchData();
     } catch (err) {

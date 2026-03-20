@@ -556,6 +556,13 @@ export default function CashRegisterPage() {
         })
         .eq("id", activeShift.id);
 
+      // Release all occupied tables for this tenant
+      await supabase
+        .from("restaurant_tables")
+        .update({ status: "available", current_order_id: null })
+        .eq("tenant_id", tenantId)
+        .eq("status", "occupied");
+
       setShowCloseModal(false);
       setClosingAmount("");
       setCloseNotes("");
