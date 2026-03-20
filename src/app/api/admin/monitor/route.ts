@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase-server";
 
 const MAX_ERRORS = 200;
@@ -29,6 +30,9 @@ async function requireSuperAdmin(supabase: ReturnType<typeof createServiceClient
 }
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   const supabase = createServiceClient();
   const admin = await requireSuperAdmin(supabase);
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -65,6 +69,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   try {
     const body = await req.json() as Partial<ErrorEntry>;
     if (!body.message || typeof body.message !== "string")

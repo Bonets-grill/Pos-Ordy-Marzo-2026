@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase-server";
 import { generateAgentPrompt, syncPromptToDify, checkPromptSyncNeeded } from "@/lib/wa-agent/dify-sync";
 
@@ -11,6 +12,9 @@ import { generateAgentPrompt, syncPromptToDify, checkPromptSyncNeeded } from "@/
  * Body: { tenant_id }
  */
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   try {
     const supabase = createServiceClient();
 
@@ -53,6 +57,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   try {
     const supabase = createServiceClient();
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase-server";
 import { SCENARIO_CATALOG, getCatalogSummary, getScenariosByGroup } from "@/lib/inspection/scenario-registry";
 import { getScenarioCountSummary, runScenarios, persistInspectionRun } from "@/lib/inspection/scenario-runner";
@@ -21,6 +22,9 @@ export const maxDuration = 60;
  *   - summary: Return count summary by group
  */
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   try {
     const supabase = createServiceClient();
 
@@ -116,6 +120,9 @@ export async function GET(req: NextRequest) {
  * Body: { tenant_id?: string, groups?: ScenarioGroup[], use_inspection_tenant?: boolean }
  */
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   try {
     const supabase = createServiceClient();
 

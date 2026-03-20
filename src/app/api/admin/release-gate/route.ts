@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase-server";
 import { runAllDBScans } from "@/lib/inspection/db-scans";
 import { evaluateReleaseGate } from "@/lib/inspection/release-gate";
@@ -16,6 +17,9 @@ import type { ReleaseGateInput, ScenarioResult } from "@/lib/inspection/types";
  * Run full release gate evaluation with DB scans, persist results.
  */
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   try {
     const supabase = createServiceClient();
 
@@ -102,6 +106,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   // Same as GET but with explicit body for future scenario execution
   const body = await req.json().catch(() => ({}));
   const url = new URL(req.url);

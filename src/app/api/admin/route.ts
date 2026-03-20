@@ -22,6 +22,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 import { createClient as createServerClient, createServiceClient } from "@/lib/supabase-server";
 
 type Svc = ReturnType<typeof createServiceClient>;
@@ -101,6 +102,9 @@ const PLAN_PRICES: Record<string, number> = {
 ───────────────────────────────────────────── */
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   const admin = await requireSuperAdmin();
   if (!admin) return err("Unauthorized", 403);
 
@@ -140,6 +144,9 @@ export async function GET(req: NextRequest) {
 ───────────────────────────────────────────── */
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   const admin = await requireSuperAdmin();
   if (!admin) return err("Unauthorized", 403);
 

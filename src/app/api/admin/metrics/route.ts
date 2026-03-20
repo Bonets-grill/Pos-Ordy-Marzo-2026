@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase-server";
 import { metrics } from "@/lib/observability/metrics";
 
@@ -14,6 +15,9 @@ import { metrics } from "@/lib/observability/metrics";
  * Auth: super_admin or Bearer token (for Prometheus scraper)
  */
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   try {
     const supabase = createServiceClient();
 
