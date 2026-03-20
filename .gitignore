@@ -42,3 +42,8 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
+smoke-test.js
+check-wa.js
+health-check.js
+*.bak
+*.bak2
