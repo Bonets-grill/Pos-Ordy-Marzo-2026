@@ -15,8 +15,9 @@ export async function POST(req: NextRequest) {
   if (!tenantId) return NextResponse.json({ error: "No tenant" }, { status: 403 });
 
   try {
-    const { provider, name, agent_name, agent_language, agent_personality, agent_instructions, welcome_message, away_message } = await req.json() as {
-      provider: WAProvider;
+    const body = await req.json() as {
+      action?: string;
+      provider?: WAProvider;
       name?: string;
       agent_name?: string;
       agent_language?: string;
@@ -25,6 +26,19 @@ export async function POST(req: NextRequest) {
       welcome_message?: string;
       away_message?: string;
     };
+    const { action, provider, name, agent_name, agent_language, agent_personality, agent_instructions, welcome_message, away_message } = body;
+
+    // Handle reconnect action
+    if (action === "connect") {
+      const supabase = createServiceClient();
+      const { data: inst } = await supabase.from("wa_instances").select("evolution_instance_id").eq("tenant_id", tenantId).single();
+      if (!inst?.evolution_instance_id) return NextResponse.json({ error: "No instance found" }, { status: 404 });
+      const evoUrl = process.env.EVOLUTION_API_URL;
+      const evoKey = process.env.EVOLUTION_API_KEY;
+      const res = await fetch(`${evoUrl}/instance/connect/${inst.evolution_instance_id}`, { headers: { apikey: evoKey || "" } });
+      const data = await res.json();
+      return NextResponse.json({ qrCode: data.base64 || null, code: data.code || null });
+    }
 
     if (!provider || !["evolution", "meta"].includes(provider)) {
       return NextResponse.json({ error: "Invalid provider" }, { status: 400 });

@@ -218,6 +218,16 @@ export default function WhatsAppPage() {
   };
 
   const handleReconnect = async () => {
+    setQrCode(null);
+    try {
+      const res = await fetch("/api/whatsapp/instance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "connect" })
+      });
+      const data = await res.json();
+      if (data.qrCode) setQrCode(data.qrCode);
+    } catch {}
     await loadInstance();
   };
 
