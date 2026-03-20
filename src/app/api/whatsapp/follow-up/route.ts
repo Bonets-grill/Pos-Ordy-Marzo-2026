@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   try {
     // Simple auth check
     const auth = req.headers.get("authorization")?.replace("Bearer ", "");
-    const secret = process.env.CRON_SECRET || process.env.DIFY_TOOLS_SECRET || "ordy-dify-tools-2026";
+    const secret = process.env.CRON_SECRET || process.env.DIFY_TOOLS_SECRET || "";
     if (auth !== secret) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

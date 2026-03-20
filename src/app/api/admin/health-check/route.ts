@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase-server";
 
-const CRON_SECRET = process.env.CRON_SECRET || "ordy-health-2026";
+const CRON_SECRET = process.env.CRON_SECRET || "";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const secret = searchParams.get("secret");
   const tenantId = searchParams.get("tenantId");
 
-  if (secret !== CRON_SECRET) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!CRON_SECRET || secret !== CRON_SECRET) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!tenantId) return NextResponse.json({ error: "tenantId required" }, { status: 400 });
 
   const supabase = createServiceClient();
