@@ -284,6 +284,21 @@ export default function OrdersPage() {
     fetchOrders();
   }, [fetchOrders]);
 
+  // Realtime subscription — refresh orders on new/updated orders
+  useEffect(() => {
+    if (!tenantId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel("orders-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `tenant_id=eq.${tenantId}` },
+        () => { fetchOrders(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [tenantId, fetchOrders]);
+
   // Reset page when filter or search changes
   useEffect(() => {
     setPage(0);
