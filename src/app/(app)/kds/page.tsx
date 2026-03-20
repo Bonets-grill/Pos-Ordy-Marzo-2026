@@ -904,8 +904,11 @@ export default function KdsPage() {
                       <div style={{ borderBottom: "1px dashed var(--border)", margin: "6px 0 8px" }} />
                     </div>
                   ))}
-                  {/* Active order items */}
-                  {order.items.map((item) => (
+                  {/* Active order items — ready items tachados, pending/preparing activos con badge NUEVO */}
+                  {order.items.map((item) => {
+                    const isServed = item.kds_status === "ready";
+                    const isNew = item.kds_status === "pending";
+                    return (
                     <div
                       key={item.id}
                       style={{
@@ -914,6 +917,8 @@ export default function KdsPage() {
                         gap: 2,
                         paddingBottom: 8,
                         borderBottom: "1px solid var(--border)",
+                        opacity: isServed ? 0.45 : 1,
+                        textDecoration: isServed ? "line-through" : "none",
                       }}
                     >
                       <div
@@ -927,7 +932,7 @@ export default function KdsPage() {
                           style={{
                             fontSize: 20,
                             fontWeight: 800,
-                            color: "var(--accent)",
+                            color: isServed ? "var(--text-muted)" : "var(--accent)",
                             minWidth: 28,
                           }}
                         >
@@ -937,11 +942,24 @@ export default function KdsPage() {
                           style={{
                             fontSize: 18,
                             fontWeight: 600,
-                            color: "var(--text-primary)",
+                            color: isServed ? "var(--text-muted)" : "var(--text-primary)",
                           }}
                         >
                           {item.name}
                         </span>
+                        {isNew && (
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            background: "var(--accent)",
+                            color: "#000",
+                            borderRadius: 4,
+                            padding: "2px 6px",
+                            marginLeft: 4,
+                            letterSpacing: "0.05em",
+                            textDecoration: "none",
+                          }}>NUEVO</span>
+                        )}
                       </div>
                       {(() => {
                         const mods = Array.isArray(item.modifiers) ? item.modifiers : [];
@@ -973,7 +991,8 @@ export default function KdsPage() {
                         </div>
                       )}
                     </div>
-                  ))}
+                  );
+                  })}
                   <span
                     style={{
                       fontSize: 12,
