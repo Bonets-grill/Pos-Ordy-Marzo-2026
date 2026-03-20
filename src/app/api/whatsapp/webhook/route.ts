@@ -262,11 +262,16 @@ async function handleEvolutionWebhook(supabase: ReturnType<typeof createServiceC
   log.info("agent_called", `Dify response: ${response.substring(0, 80)}`, { latency_ms: agentMs });
 
   const provider = getProvider("evolution");
-  await provider.sendMessage({
-    to: phone,
-    text: response,
-    instance: instance as WAInstance,
-  });
+  try {
+    await provider.sendMessage({
+      to: phone,
+      text: response,
+      instance: instance as WAInstance,
+    });
+  } catch (sendErr) {
+    console.error("[WEBHOOK] Failed to send WA message:", (sendErr as Error).message);
+    metrics.errorsTotal.inc({ source: "webhook", type: "send_failed" });
+  }
   const totalMs = spanDuration(rootSpan);
   metrics.webhookLatency.observe(totalMs, { source: "evolution" });
   metrics.notificationsSent.inc({ source: "evolution" });
