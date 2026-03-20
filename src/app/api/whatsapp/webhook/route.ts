@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
     const body = JSON.parse(rawBody);
     const supabase = createServiceClient();
 
-    // Webhook signature verification (feature-flagged)
-    const sigVerifyEnabled = await isFeatureEnabled(supabase, "webhook_signature_verification");
+    // Webhook signature verification — active when EVOLUTION_WEBHOOK_SECRET is set
+    const sigVerifyEnabled = true;
     if (sigVerifyEnabled) {
       if (body.object === "whatsapp_business_account") {
         const sig = req.headers.get("x-hub-signature-256");
