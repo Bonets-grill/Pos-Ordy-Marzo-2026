@@ -719,6 +719,7 @@ export default function PosPage() {
             discount_amount: discount + loyaltyDiscount,
             tip_amount: tip,
             total,
+            status: "confirmed",
             customer_name: loyaltyCustomer?.name || customerName || null,
             customer_phone: customerPhone || null,
           })
