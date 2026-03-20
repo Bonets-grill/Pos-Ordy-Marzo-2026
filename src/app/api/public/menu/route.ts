@@ -5,6 +5,7 @@ export async function GET(req: NextRequest) {
   try {
     const slug = req.nextUrl.searchParams.get("slug");
     const tableNumber = req.nextUrl.searchParams.get("table");
+    const orderMode = req.nextUrl.searchParams.get("mode"); // "takeaway" | "delivery" | null
 
     if (!slug) {
       return NextResponse.json({ error: "Missing slug" }, { status: 400 });
@@ -50,10 +51,11 @@ export async function GET(req: NextRequest) {
     // 4. Get menu items
     const { data: items } = await supabase
       .from("menu_items")
-      .select("id, category_id, name_es, name_en, name_fr, name_de, name_it, description_es, description_en, description_fr, description_de, description_it, price, image_url, available, allergens, prep_time_minutes, sort_order")
+      .select("id, category_id, name_es, name_en, name_fr, name_de, name_it, description_es, description_en, description_fr, description_de, description_it, price, image_url, available, available_takeaway, available_delivery, allergens, prep_time_minutes, sort_order")
       .eq("tenant_id", tenantId)
       .eq("active", true)
       .eq("available", true)
+      .eq(orderMode === "takeaway" ? "available_takeaway" : orderMode === "delivery" ? "available_delivery" : "available", true)
       .order("sort_order", { ascending: true })
       .order("name_es", { ascending: true });
 

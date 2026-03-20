@@ -257,7 +257,8 @@ export default function QRMenuPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/public/menu?slug=${slug}${tableNumber ? `&table=${tableNumber}` : ""}`);
+      const modeParam = orderMode ? `&mode=${orderMode}` : "";
+      const res = await fetch(`/api/public/menu?slug=${slug}${tableNumber ? `&table=${tableNumber}` : ""}${modeParam}`);
       if (!res.ok) throw new Error("Not found");
       const data = await res.json();
       setTenant(data.tenant);

@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
 
     const { data: dbMenuItems, error: menuErr } = await supabase
       .from("menu_items")
-      .select("id, name_es, name_en, name_fr, name_de, name_it, price, available, active, kds_station, tenant_id")
+      .select("id, name_es, name_en, name_fr, name_de, name_it, price, available, active, available_takeaway, available_delivery, kds_station, tenant_id")
       .in("id", menuItemIds)
       .eq("tenant_id", tenantId);
 

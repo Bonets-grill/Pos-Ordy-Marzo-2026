@@ -37,6 +37,8 @@ interface Product {
   price: number;
   cost: number | null;
   available: boolean;
+  available_takeaway: boolean;
+  available_delivery: boolean;
   prep_time_minutes: number | null;
   kds_station: string | null;
   allergens: string[];
@@ -117,7 +119,7 @@ const blankProduct: Omit<Product, "id" | "tenant_id"> = {
   category_id: null,
   name_es: "", name_en: "", name_fr: null, name_de: null, name_it: null,
   description_es: null, description_en: null,
-  price: 0, cost: null, available: true,
+  price: 0, cost: null, available: true, available_takeaway: true, available_delivery: true,
   prep_time_minutes: null, kds_station: null, allergens: [], image_url: null,
 };
 
@@ -559,6 +561,8 @@ export default function MenuPage() {
       price: prod.price,
       cost: prod.cost,
       available: prod.available,
+      available_takeaway: prod.available_takeaway,
+      available_delivery: prod.available_delivery,
       prep_time_minutes: prod.prep_time_minutes,
       kds_station: prod.kds_station,
       allergens: prod.allergens || [],
@@ -678,6 +682,18 @@ export default function MenuPage() {
   const toggleProdAvailable = async (prod: Product) => {
     const supabase = createClient();
     await supabase.from("menu_items").update({ available: !prod.available }).eq("id", prod.id);
+    await loadProducts();
+  };
+
+  const toggleProdTakeaway = async (prod: Product) => {
+    const supabase = createClient();
+    await supabase.from("menu_items").update({ available_takeaway: !prod.available_takeaway }).eq("id", prod.id);
+    await loadProducts();
+  };
+
+  const toggleProdDelivery = async (prod: Product) => {
+    const supabase = createClient();
+    await supabase.from("menu_items").update({ available_delivery: !prod.available_delivery }).eq("id", prod.id);
     await loadProducts();
   };
 
@@ -1574,22 +1590,42 @@ export default function MenuPage() {
                       </span>
                     )}
 
-                    {/* Available toggle */}
-                    <div style={{ marginTop: "auto", paddingTop: 6 }}>
+                    {/* Available toggles */}
+                    <div style={{ marginTop: "auto", paddingTop: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleProdAvailable(prod); }}
                         style={{
-                          padding: "3px 12px",
-                          borderRadius: 999,
-                          border: "none",
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
-                          cursor: "pointer",
+                          padding: "3px 10px", borderRadius: 999, border: "none",
+                          fontSize: "0.7rem", fontWeight: 600, cursor: "pointer",
                           background: prod.available ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)",
                           color: prod.available ? "#22c55e" : "#f87171",
                         }}
                       >
                         {prod.available ? t("menu.available") : t("common.inactive")}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleProdTakeaway(prod); }}
+                        title="Disponible para takeaway"
+                        style={{
+                          padding: "3px 10px", borderRadius: 999, border: "none",
+                          fontSize: "0.7rem", fontWeight: 600, cursor: "pointer",
+                          background: prod.available_takeaway ? "rgba(59,130,246,0.15)" : "rgba(239,68,68,0.12)",
+                          color: prod.available_takeaway ? "#3b82f6" : "#f87171",
+                        }}
+                      >
+                        🛍️ {prod.available_takeaway ? "Takeaway" : "No takeaway"}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleProdDelivery(prod); }}
+                        title="Disponible para delivery"
+                        style={{
+                          padding: "3px 10px", borderRadius: 999, border: "none",
+                          fontSize: "0.7rem", fontWeight: 600, cursor: "pointer",
+                          background: prod.available_delivery ? "rgba(168,85,247,0.15)" : "rgba(239,68,68,0.12)",
+                          color: prod.available_delivery ? "#a855f7" : "#f87171",
+                        }}
+                      >
+                        🚚 {prod.available_delivery ? "Delivery" : "No delivery"}
                       </button>
                     </div>
                   </div>
