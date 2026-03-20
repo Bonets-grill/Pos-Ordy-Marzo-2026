@@ -361,6 +361,24 @@ export default function PosPage() {
     load();
   }, [supabase]);
 
+  // Realtime — update table status instantly when changed
+  useEffect(() => {
+    if (!tenantId) return;
+    const channel = supabase
+      .channel("pos-tables-realtime")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "restaurant_tables" },
+        (payload) => {
+          setTables((prev) =>
+            prev.map((t) => (t.id === payload.new.id ? { ...t, ...payload.new } : t))
+          );
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [tenantId, supabase]);
+
   /* ── Filtered products ───────────────────────────────── */
   const filteredItems = useMemo(() => {
     let items = menuItems;
