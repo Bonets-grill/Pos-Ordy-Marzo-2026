@@ -1634,6 +1634,7 @@ export default function PosPage() {
                       key={tb.id}
                       onClick={() => {
                         if (!isSelectable) return;
+                        setReceiptData(null);
                         setSelectedTable(tb.id);
                         if (isOccupied) loadTableOrder(tb.id);
                         else setExistingOrderId(null);
