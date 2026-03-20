@@ -118,7 +118,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   // 6. Actualizar items
-  const itemIdsToUpdate = items.map(i => i.id);
+  const itemIdsToUpdate = items.map((i: { id: string }) => i.id);
   const { error: updateErr } = await svc
     .from("order_items")
     .update({ kds_status: kds_status as string })
