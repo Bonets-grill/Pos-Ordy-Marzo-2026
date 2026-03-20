@@ -643,9 +643,16 @@ export default function QRMenuPage() {
                 {fmtPrice(detailItem.price, tenant.currency)}
               </p>
               {localDesc(detailItem, lang) && (
-                <p style={{ color: "#999", fontSize: 14, margin: "0 0 16px", lineHeight: 1.4 }}>
-                  {localDesc(detailItem, lang)}
-                </p>
+                <div style={{
+                  maxHeight: 120,
+                  overflowY: "auto",
+                  WebkitOverflowScrolling: "touch",
+                  marginBottom: 16,
+                }}>
+                  <p style={{ color: "#999", fontSize: 14, margin: 0, lineHeight: 1.4 }}>
+                    {localDesc(detailItem, lang)}
+                  </p>
+                </div>
               )}
 
               {/* Allergens */}
@@ -952,6 +959,7 @@ const bottomSheetStyle: React.CSSProperties = {
   maxWidth: 500,
   maxHeight: "90vh",
   overflowY: "auto",
+  WebkitOverflowScrolling: "touch",
 };
 
 const qtyBtn: React.CSSProperties = {
