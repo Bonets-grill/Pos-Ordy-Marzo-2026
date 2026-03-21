@@ -2061,6 +2061,7 @@ export default function SuperAdminPage() {
     system: renderSystem,
     monitor: renderMonitor,
     smoke: () => {
+      if (tenants.length === 0) return <div style={{padding:24}}>Cargando...</div>;
       const vColor = smokeResults?.summary.verdict === 'green' ? '#22c55e' : smokeResults?.summary.verdict === 'yellow' ? '#f59e0b' : '#ef4444';
       const vLabel = smokeResults?.summary.verdict === 'green' ? 'LISTO PARA PRODUCCION' : smokeResults?.summary.verdict === 'yellow' ? 'ADVERTENCIAS' : 'FALLOS CRITICOS';
       return (
