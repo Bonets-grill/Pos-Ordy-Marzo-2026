@@ -2074,7 +2074,7 @@ export default function SuperAdminPage() {
             >
               <option value=''>Selecciona un tenant</option>
               {(tenants || []).map((t) => (
-                <option key={t.id as string} value={t.id as string}>{t.name as string} ({t.slug as string})</option>
+                <option key={String(t.id)} value={String(t.id)}>{String(t.name)} ({String(t.slug)})</option>
               ))}
             </select>
             <button
@@ -2120,7 +2120,7 @@ export default function SuperAdminPage() {
                 <span style={{ fontSize: 18, fontWeight: 800, color: vColor }}>{vLabel}</span>
                 <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{smokeResults.summary.passed}/{smokeResults.summary.total} checks pasaron</span>
               </div>
-              {smokeResults.summary.phaseResults.map((phase: Record<string, unknown>) => (
+              {smokeResults.summary.phaseResults.map((phase: any) => (
                 <div key={phase.phase as string} style={{ marginBottom: 16, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 16px', background: (phase.failures as unknown[]).length === 0 ? '#f0fdf4' : '#fef2f2' }}>
                     <span style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }}>{phase.phase as string}</span>
@@ -2128,8 +2128,8 @@ export default function SuperAdminPage() {
                   </div>
                   <div style={{ padding: '8px 0' }}>
                     {smokeResults.results
-                      .filter((r: { phase: string }) => r.phase === phase.phase)
-                      .map((r: { test: string; passed: boolean; critical?: boolean; detail?: string }, i: number) => (
+                      .filter((r: any) => r.phase === phase.phase)
+                      .map((r: any, i: number) => (
                         <div key={i} style={{ display: 'flex', gap: 10, padding: '6px 16px', borderBottom: '1px solid #f3f4f6' }}>
                           <span style={{ fontSize: 15 }}>{r.passed ? 'OK' : r.critical ? 'FAIL' : 'WARN'}</span>
                           <div>
