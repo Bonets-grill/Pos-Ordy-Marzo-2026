@@ -2074,7 +2074,7 @@ export default function SuperAdminPage() {
               style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 14, minWidth: 280 }}
             >
               <option value=''>Selecciona un tenant</option>
-              {(tenants || []).map((t) => (
+              {(tenants ?? []).map((t) => (
                 <option key={String(t.id)} value={String(t.id)}>{String(t.name)} ({String(t.slug)})</option>
               ))}
             </select>
