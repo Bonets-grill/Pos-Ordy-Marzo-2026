@@ -393,7 +393,7 @@ export default function SuperAdminPage() {
   const [monitorAutoRefresh, setMonitorAutoRefresh] = useState(false);
 
   const [smokeRunning, setSmokeRunning] = React.useState(false);
-  const [smokeResults, setSmokeResults] = React.useState<null | Record<string, unknown>>(null);
+  const [smokeResults, setSmokeResults] = React.useState<null | any>(null);
   const [smokeTenantId, setSmokeTenantId] = React.useState("");
   const [smokeError, setSmokeError] = React.useState<null | string>(null);
 
