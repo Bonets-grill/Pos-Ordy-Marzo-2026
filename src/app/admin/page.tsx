@@ -192,6 +192,7 @@ const TABS: { key: TabKey; icon: typeof Crown; label: string }[] = [
   { key: "audit", icon: FileText, label: "Audit Log" },
   { key: "system", icon: Settings, label: "System" },
   { key: "monitor", icon: Activity, label: "Monitor" },
+  { key: "smoke", icon: Activity, label: "Smoke Test" },
 ];
 
 const FEATURE_FLAGS = [
