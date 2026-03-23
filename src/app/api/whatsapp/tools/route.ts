@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 import { createServiceClient } from "@/lib/supabase-server";
 import { isFeatureEnabled } from "@/lib/safety/feature-flags";
 import { createOrderWithItems } from "@/lib/safety/transactions";
@@ -839,6 +840,23 @@ async function confirmOrder(supabase: SupabaseClient, tenantId: string, phone: s
   // Metrics: order created
   metrics.ordersCreated.inc({ source: "whatsapp" });
 
+  // Airtable: registrar orden WhatsApp (multi-tenant)
+  getTenantName(tenantId).then(tenantName => {
+    sendToAirtableAsync('orders', {
+      'Order Number': typedOrder!.order_number,
+      'Status': 'confirmed',
+      'Source': 'whatsapp',
+      'Order Type': tableId ? 'dine_in' : 'takeaway',
+      'Total': total,
+      'Items Count': cart.length,
+      'Customer Name': session.customer_name || '',
+      'Customer Phone': phone || '',
+      'Order ID': typedOrder!.id,
+      'Tenant Name': tenantName,
+      'Timestamp': new Date().toISOString(),
+    })
+  })
+
   return {
     result: "confirmed",
     order_number: typedOrder.order_number,
@@ -1209,6 +1227,22 @@ async function makeReservation(
     console.error("[TOOLS] Reservation failed:", error);
     return { result: "error", message: "Error al crear la reserva. Intenta de nuevo." };
   }
+
+  // Airtable: registrar reserva (multi-tenant)
+  getTenantName(tenantId).then(tenantName => {
+    sendToAirtableAsync('reservations', {
+      'Customer Name': customerName,
+      'Customer Phone': phone,
+      'Date': date,
+      'Time': time,
+      'Party Size': partySize,
+      'Status': autoConfirm ? 'confirmed' : 'pending',
+      'Notes': notes || '',
+      'Reservation ID': reservation?.id || '',
+      'Tenant Name': tenantName,
+      'Timestamp': new Date().toISOString(),
+    })
+  })
 
   return {
     result: "reserved",

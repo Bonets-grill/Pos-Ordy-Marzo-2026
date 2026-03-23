@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { sendToAirtableFromClient } from "@/lib/airtable/client-dispatcher";
 import { useI18n } from "@/lib/i18n-provider";
 import { formatCurrency, timeAgo } from "@/lib/utils";
 import QRCode from "qrcode";
@@ -413,6 +414,11 @@ ${qrCards
         .from("restaurant_tables")
         .insert({ ...tableForm, tenant_id: tenantId, status: "available" });
     }
+    sendToAirtableFromClient('restaurant_tables', {
+      'Number': tableForm.number, 'Label': tableForm.label || '',
+      'Capacity': tableForm.capacity, 'Shape': tableForm.shape || 'square',
+      'Zone': tableForm.zone_id || '', 'Status': 'available', 'Active': true,
+    });
     setTableModal(false);
     setSaving(false);
     await loadTables();
@@ -459,6 +465,10 @@ ${qrCards
     } else {
       await supabase.from("zones").insert({ ...zoneForm, tenant_id: tenantId });
     }
+    sendToAirtableFromClient('zones', {
+      'Name': zoneForm.name, 'Color': zoneForm.color,
+      'Sort Order': zoneForm.position || 0, 'Active': true,
+    });
     setZoneModal(false);
     setSaving(false);
     await loadZones();

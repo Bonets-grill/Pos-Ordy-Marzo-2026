@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { sendToAirtableFromClient } from "@/lib/airtable/client-dispatcher";
 import { useI18n } from "@/lib/i18n-provider";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
@@ -507,6 +508,13 @@ export default function CashRegisterPage() {
         amount: movementType === "cash_out" ? -Math.abs(amount) : amount,
         description: movementDesc || null,
         created_by: userId,
+      });
+      sendToAirtableFromClient('cash_movements', {
+        'Type': movementType,
+        'Amount': movementType === "cash_out" ? -Math.abs(amount) : amount,
+        'Description': movementDesc || '',
+        'Staff': '',
+        'Shift Date': new Date().toISOString().split('T')[0],
       });
       setShowMovementModal(false);
       setMovementAmount("");

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase-server";
 import { requireAuth } from "@/lib/api-auth";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 
 /**
  * POST /api/admin/simulate-shift
@@ -184,6 +185,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to create shift" }, { status: 500 });
   }
   stats.shift_id = shift.id;
+
+  // Airtable: registrar apertura de turno (multi-tenant)
+  const tenantName = await getTenantName(tenantId);
+  sendToAirtableAsync('cash_shifts', {
+    'Shift Date': shiftOpenedAt.toISOString().split('T')[0],
+    'Opened By': 'Staff',
+    'Opening Amount': stats.opening_amount,
+    'Status': 'open',
+    'Notes': '[SIM] Simulated shift',
+    'Tenant Name': tenantName,
+  })
 
   // ═══════════════════════════════════════════
   // STEP 2: CREATE DINE-IN ORDERS FOR ALL TABLES
@@ -591,6 +603,40 @@ export async function POST(req: NextRequest) {
       notes: "[SIM] Simulated shift — completed",
     })
     .eq("id", shift.id);
+
+  // Airtable: registrar cierre de turno
+  sendToAirtableAsync('cash_shifts', {
+    'Shift Date': new Date().toISOString().split('T')[0],
+    'Opened By': 'Staff',
+    'Closed By': 'Staff',
+    'Opening Amount': stats.opening_amount,
+    'Closing Amount': closingAmount,
+    'Expected Amount': expectedAmount,
+    'Difference': cashDiff,
+    'Cash Sales': cashSales,
+    'Card Sales': cardSales,
+    'Total Sales': totalSales,
+    'Total Orders': stats.orders_created,
+    'Status': 'closed',
+    'Notes': '[SIM] Simulated shift — completed',
+    'Tenant Name': tenantName,
+  })
+
+  // Airtable: registrar resumen diario
+  sendToAirtableAsync('daily_summaries', {
+    'Date': new Date().toISOString().split('T')[0],
+    'Total Orders': stats.orders_created,
+    'Total Revenue': totalSales,
+    'Avg Ticket': stats.orders_created > 0 ? Math.round(totalSales / stats.orders_created * 100) / 100 : 0,
+    'Total Tips': Math.round(stats.total_tips * 100) / 100,
+    'POS Orders': stats.dine_in_orders,
+    'QR Orders': stats.takeaway_orders,
+    'WhatsApp Orders': stats.wa_orders,
+    'Cash Payments': cashSales,
+    'Card Payments': cardSales,
+    'Tenant Name': tenantName,
+    'Period': 'daily',
+  })
 
   // Reset tables to available
   await supabase

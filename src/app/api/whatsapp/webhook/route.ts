@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase-server";
 import { processMessageWithDify } from "@/lib/wa-agent/agent-dify";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 import { getProvider } from "@/lib/wa-agent/provider";
 import type { WAInstance, IncomingMessage } from "@/lib/wa-agent/types";
 import { MetaProvider } from "@/lib/wa-agent/providers/meta";
@@ -244,6 +245,20 @@ async function handleEvolutionWebhook(supabase: ReturnType<typeof createServiceC
   metrics.activeWebhooks.inc({ source: "evolution" });
   log.info("webhook_received", `WA message from ${phone}: ${text.trim().substring(0, 50)}`);
 
+  // Airtable: registrar mensaje WhatsApp entrante (multi-tenant)
+  getTenantName(tenantId).then(tenantName => {
+    sendToAirtableAsync('whatsapp_messages', {
+      'Phone': phone,
+      'Message': text.trim().substring(0, 500),
+      'Detected Language': detectedLang || 'es',
+      'Instance Name': instanceName || '',
+      'Provider': 'evolution',
+      'Is New Customer': !langSession,
+      'Tenant Name': tenantName,
+      'Timestamp': new Date().toISOString(),
+    })
+  })
+
   const incomingMessage: IncomingMessage = {
     from: phone,
     text: text.trim(),
@@ -337,6 +352,20 @@ async function handleMetaWebhook(supabase: ReturnType<typeof createServiceClient
     if (metaIdempotencyEnabled && metaEventId) await markWebhookProcessed(supabase, metaEventId, "meta");
     return NextResponse.json({ status: "ok" });
   }
+
+  // Airtable: registrar mensaje WhatsApp entrante Meta (multi-tenant)
+  getTenantName(instance.tenant_id).then(tenantName => {
+    sendToAirtableAsync('whatsapp_messages', {
+      'Phone': parsed.from,
+      'Message': parsed.text.substring(0, 500),
+      'Detected Language': detectLanguage(parsed.text) || 'es',
+      'Instance Name': instance.instance_name || '',
+      'Provider': 'meta',
+      'Is New Customer': false,
+      'Tenant Name': tenantName,
+      'Timestamp': new Date().toISOString(),
+    })
+  })
 
   // Process with agent
   const incomingMessage: IncomingMessage = {

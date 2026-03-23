@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { sendToAirtableFromClient } from "@/lib/airtable/client-dispatcher";
 import { useI18n } from "@/lib/i18n-provider";
 import { formatCurrency, formatDate, timeAgo } from "@/lib/utils";
 
@@ -190,6 +191,13 @@ export default function LoyaltyCustomersPage() {
       visits_count: 0,
       total_spent: 0,
     });
+    sendToAirtableFromClient('loyalty_customers', {
+      'Full Name': addForm.full_name, 'Phone': addForm.phone || '',
+      'Email': addForm.email || '', 'Birthday': addForm.birthday || '',
+      'Current Points': 0, 'Total Earned': 0, 'Total Redeemed': 0,
+      'Visits': 0, 'Total Spent': 0, 'Tier': 'Bronze',
+      'Source': 'pos', 'Active': true,
+    });
     setSaving(false);
     setAddModal(false);
     setAddForm(blankCustomer);
@@ -244,6 +252,16 @@ export default function LoyaltyCustomersPage() {
       .update({ current_points_balance: selectedCustomer.current_points_balance + pts })
       .eq("id", selectedCustomer.id);
 
+    sendToAirtableFromClient('loyalty', {
+      'Customer Name': selectedCustomer.full_name,
+      'Customer Phone': selectedCustomer.phone || '',
+      'Customer ID': selectedCustomer.id,
+      'Event Type': direction === 'add' ? 'points_earned' : 'points_deducted',
+      'Points Earned': pts,
+      'Total Points': selectedCustomer.current_points_balance + pts,
+      'Tier': '',
+      'Reward Name': adjustReason || '',
+    });
     setSaving(false);
     setAdjustPoints(0);
     setAdjustReason("");
@@ -290,6 +308,16 @@ export default function LoyaltyCustomersPage() {
       })
       .eq("id", selectedCustomer.id);
 
+    sendToAirtableFromClient('loyalty', {
+      'Customer Name': selectedCustomer.full_name,
+      'Customer Phone': selectedCustomer.phone || '',
+      'Customer ID': selectedCustomer.id,
+      'Event Type': 'reward_redeemed',
+      'Points Earned': -reward.points_cost,
+      'Total Points': selectedCustomer.current_points_balance - reward.points_cost,
+      'Tier': '',
+      'Reward Name': reward.title_es,
+    });
     setSaving(false);
 
     // Refresh

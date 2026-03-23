@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { sendToAirtableFromClient } from "@/lib/airtable/client-dispatcher";
 import { useI18n } from "@/lib/i18n-provider";
 import { formatDate } from "@/lib/utils";
 
@@ -179,6 +180,11 @@ export default function LoyaltyCampaignsPage() {
     } else {
       await supabase.from("loyalty_campaigns").insert(payload);
     }
+    sendToAirtableFromClient('loyalty_campaigns', {
+      'Name': form.name, 'Campaign Type': form.campaign_type,
+      'Multiplier': form.multiplier, 'Bonus Points': form.bonus_points,
+      'Starts At': form.starts_at, 'Ends At': form.ends_at, 'Active': true,
+    });
     setModal(false);
     setSaving(false);
     await loadCampaigns();

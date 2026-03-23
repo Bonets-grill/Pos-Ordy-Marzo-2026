@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { sendToAirtableFromClient } from "@/lib/airtable/client-dispatcher";
 import { useI18n } from "@/lib/i18n-provider";
 import {
   Settings,
@@ -489,6 +490,10 @@ export default function SettingsPage() {
       slug: newStation.slug.trim().toLowerCase().replace(/[^a-z0-9-_]/g, ""),
       color: newStation.color,
     });
+    sendToAirtableFromClient('kds_stations', {
+      'Name': newStation.name.trim(), 'Slug': newStation.slug.trim(),
+      'Color': newStation.color, 'Active': true,
+    });
     setNewStation({ name: "", slug: "", color: "#3B82F6" });
     fetchAll();
   }
@@ -510,6 +515,10 @@ export default function SettingsPage() {
       role: newUser.role,
       tenant_id: tenantId,
       active: true,
+    });
+    sendToAirtableFromClient('staff', {
+      'Name': newUser.name.trim(), 'Email': newUser.email.trim(),
+      'Role': newUser.role, 'Active': true,
     });
     setNewUser({ name: "", email: "", role: "waiter" });
     setShowAddUser(false);

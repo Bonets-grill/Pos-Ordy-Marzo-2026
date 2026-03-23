@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase-server";
 import { requireAuth } from "@/lib/api-auth";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 
 /**
  * POST /api/orders/[id]/close
@@ -124,6 +125,20 @@ export async function POST(req: NextRequest) {
     .update({ kds_status: "served" })
     .eq("order_id", order_id as string)
     .in("kds_status", ["pending", "preparing", "ready"]);
+
+  // Airtable: registrar cierre de orden (multi-tenant)
+  getTenantName(tenantId).then(tenantName => {
+    sendToAirtableAsync('orders', {
+      'Order Number': order.order_number,
+      'Status': 'closed',
+      'Source': order.source || 'pos',
+      'Total': orderTotal,
+      'Customer Name': '',
+      'Order ID': order_id as string,
+      'Tenant Name': tenantName,
+      'Timestamp': new Date().toISOString(),
+    })
+  })
 
   return NextResponse.json({
     success: true,

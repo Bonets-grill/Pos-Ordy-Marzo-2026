@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { sendToAirtableFromClient } from "@/lib/airtable/client-dispatcher";
 import { useI18n } from "@/lib/i18n-provider";
 
 /* ── Types ────────────────────────────────────────────── */
@@ -202,6 +203,11 @@ export default function LoyaltyRewardsPage() {
     } else {
       await supabase.from("loyalty_rewards").insert(payload);
     }
+    sendToAirtableFromClient('loyalty_rewards', {
+      'Reward Type': form.reward_type, 'Points Cost': form.points_cost,
+      'Discount Amount': form.discount_amount, 'Discount Percent': form.discount_percent,
+      'Free Product': form.free_product_name, 'Active': form.active,
+    });
     setModal(false);
     setSaving(false);
     await loadRewards();

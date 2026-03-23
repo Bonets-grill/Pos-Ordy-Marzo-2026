@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n-provider";
 import { Search, Plus, Minus, GripVertical, Image as ImageIcon, CheckSquare, Square, ToggleLeft, ToggleRight, Sparkles, Loader2, Wand2, Globe, Check, X as XIcon, Download } from "lucide-react";
 import { translateText, memorySeed } from "@/lib/translate-memory";
 import SortableList from "@/components/SortableList";
+import { sendToAirtableFromClient } from "@/lib/airtable/client-dispatcher";
 
 /* ── Types ────────────────────────────────────────────── */
 
@@ -480,6 +481,13 @@ export default function MenuPage() {
     } else {
       await supabase.from("menu_categories").insert(payload);
     }
+    // Airtable sync
+    sendToAirtableFromClient('menu_categories', {
+      'Name ES': catForm.name_es, 'Name EN': catForm.name_en,
+      'Name FR': catForm.name_fr, 'Name DE': catForm.name_de, 'Name IT': catForm.name_it,
+      'Icon': catForm.icon, 'Color': catForm.color, 'Sort Order': catForm.sort_order,
+      'Active': true,
+    });
     setCatModal(false);
     setSaving(false);
     await loadCategories();
@@ -598,6 +606,25 @@ export default function MenuPage() {
         await supabase.from("menu_item_modifier_groups").insert(rows);
       }
     }
+    // Airtable sync — menu item
+    sendToAirtableFromClient('menu_items', {
+      'Item ID': itemId, 'Category': prodForm.category_id,
+      'Name ES': prodForm.name_es, 'Name EN': prodForm.name_en,
+      'Name FR': prodForm.name_fr, 'Name DE': prodForm.name_de, 'Name IT': prodForm.name_it,
+      'Description ES': prodForm.description_es, 'Description EN': prodForm.description_en,
+      'Price': prodForm.price, 'Cost': prodForm.cost,
+      'Available': prodForm.available, 'KDS Station': prodForm.kds_station,
+      'Allergens': (prodForm.allergens || []).join(','), 'Active': true,
+    });
+    // Airtable sync — menu change audit
+    sendToAirtableFromClient('menu_changes', {
+      'Item Name': prodForm.name_es,
+      'Change Type': prodEdit ? 'updated' : 'created',
+      'Price': prodForm.price,
+      'Previous Price': prodEdit?.price || 0,
+      'Category': prodForm.category_id,
+      'Item ID': itemId || '',
+    });
     setProdModal(false);
     setSaving(false);
     await loadProducts();
@@ -762,6 +789,13 @@ export default function MenuPage() {
     } else {
       await supabase.from("modifier_groups").insert(payload);
     }
+    // Airtable sync
+    sendToAirtableFromClient('modifier_groups', {
+      'Name ES': modGroupForm.name_es, 'Name EN': modGroupForm.name_en,
+      'Name FR': modGroupForm.name_fr, 'Name DE': modGroupForm.name_de, 'Name IT': modGroupForm.name_it,
+      'Min Select': modGroupForm.min_select, 'Max Select': modGroupForm.max_select,
+      'Required': modGroupForm.required, 'Sort Order': modGroupForm.sort_order, 'Active': true,
+    });
     setModGroupModal(false);
     setSaving(false);
     await loadModifierGroups();
@@ -816,6 +850,12 @@ export default function MenuPage() {
     } else {
       await supabase.from("modifiers").insert(payload);
     }
+    // Airtable sync
+    sendToAirtableFromClient('modifiers', {
+      'Group ID': modOptGroupId, 'Name ES': modOptForm.name_es, 'Name EN': modOptForm.name_en,
+      'Name FR': modOptForm.name_fr, 'Name DE': modOptForm.name_de, 'Name IT': modOptForm.name_it,
+      'Price Delta': modOptForm.price_delta, 'Sort Order': modOptForm.sort_order, 'Active': true,
+    });
     setModOptModal(false);
     setSaving(false);
     await loadModifierOptions();

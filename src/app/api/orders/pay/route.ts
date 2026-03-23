@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase-server";
 import { requireAuth } from "@/lib/api-auth";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 
 /**
  * POST /api/orders/[id]/pay
@@ -204,6 +205,25 @@ export async function POST(req: NextRequest) {
       }
     }
   }
+
+  // Airtable: registrar pago(s) (multi-tenant)
+  getTenantName(tenantId).then(tenantName => {
+    for (const pay of insertedPayments) {
+      sendToAirtableAsync('payments', {
+        'Order Number': order.order_number,
+        'Method': pay.method,
+        'Amount': pay.amount,
+        'Tip Amount': tipAmt,
+        'Total Paid': newTotalPaid,
+        'Order Total': orderTotal,
+        'Pending': round2(orderTotal - newTotalPaid),
+        'Fully Paid': fullyPaid,
+        'Order ID': order_id as string,
+        'Tenant Name': tenantName,
+        'Timestamp': new Date().toISOString(),
+      })
+    }
+  })
 
   return NextResponse.json({
     payments: insertedPayments,

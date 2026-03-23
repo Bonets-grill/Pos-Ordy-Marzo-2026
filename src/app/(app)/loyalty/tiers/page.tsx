@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { sendToAirtableFromClient } from "@/lib/airtable/client-dispatcher";
 import { useI18n } from "@/lib/i18n-provider";
 
 /* ── Types ────────────────────────────────────────────── */
@@ -193,6 +194,11 @@ export default function LoyaltyTiersPage() {
     } else {
       await supabase.from("loyalty_tiers").insert(payload);
     }
+    sendToAirtableFromClient('loyalty_tiers', {
+      'Name': form.name, 'Color': form.color, 'Icon': form.icon || '',
+      'Min Points': form.min_points, 'Points Multiplier': form.points_multiplier,
+      'Perks': perksArray.join('|'), 'Sort Order': form.sort_order, 'Active': true,
+    });
     setModal(false);
     setSaving(false);
     await loadTiers();

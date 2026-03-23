@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isOpenNow } from "@/lib/business-hours";
 import { createServiceClient } from "@/lib/supabase-server";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -397,6 +398,42 @@ export async function POST(req: NextRequest) {
         .update({ status: "occupied", current_order_id: order.id })
         .eq("id", tableId);
     }
+
+    // Airtable: registrar orden pública (QR/WhatsApp/takeaway/delivery, multi-tenant)
+    getTenantName(tenantId).then(tenantName => {
+      sendToAirtableAsync('orders', {
+        'Order Number': order.order_number,
+        'Status': 'confirmed',
+        'Source': source,
+        'Order Type': safeOrderType,
+        'Total': total,
+        'Items Count': validatedItems.length,
+        'Customer Name': safeName || '',
+        'Customer Phone': safePhone || '',
+        'Order ID': order.id,
+        'Tenant Name': tenantName,
+        'Timestamp': new Date().toISOString(),
+      })
+      for (const item of validatedItems) {
+        sendToAirtableAsync('order_items', {
+          'Order ID': order.id,
+          'Order Number': order.order_number,
+          'Item Name': item.name,
+          'Menu Item ID': item.menu_item_id,
+          'Quantity': item.quantity,
+          'Unit Price': item.unit_price,
+          'Modifiers': JSON.stringify(item.modifiers),
+          'Modifiers Total': item.modifiers_total,
+          'Subtotal': item.subtotal,
+          'Notes': item.notes || '',
+          'KDS Station': item.kds_station || '',
+          'KDS Status': 'pending',
+          'Voided': false,
+          'Tenant Name': tenantName,
+          'Timestamp': new Date().toISOString(),
+        })
+      }
+    })
 
     return NextResponse.json({
       orderId: order.id,

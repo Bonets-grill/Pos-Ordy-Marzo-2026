@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase-server";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 
 const CRON_SECRET = process.env.CRON_SECRET || "";
 
@@ -104,6 +105,22 @@ export async function GET(req: NextRequest) {
             body: JSON.stringify({ number: adminPhone, text: alertMsg }),
           });
         } catch { /* silent */ }
+      }
+    }
+
+    // Airtable: registrar alertas del sistema
+    if (issues.length > 0 && tenantId) {
+      const tenantName = await getTenantName(tenantId);
+      for (const issue of issues) {
+        sendToAirtableAsync('system_alerts', {
+          'Alert Type': 'health_check',
+          'Severity': issue.critical ? 'critical' : 'warning',
+          'Message': issue.msg,
+          'Details': '',
+          'Tenant Name': tenantName,
+          'Resolved': false,
+          'Timestamp': new Date().toISOString(),
+        });
       }
     }
 

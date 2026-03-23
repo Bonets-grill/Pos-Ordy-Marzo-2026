@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase-server";
 import { requireAuth } from "@/lib/api-auth";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 
 /**
  * PATCH /api/orders/kds
@@ -141,6 +142,23 @@ export async function PATCH(req: NextRequest) {
     await svc.from("orders").update({ status: "preparing" }).eq("id", order_id as string);
     orderStatusUpdate = "preparing";
   }
+
+  // Airtable: registrar eventos KDS (multi-tenant)
+  getTenantName(tenantId).then(tenantName => {
+    for (const item of items as KdsItem[]) {
+      sendToAirtableAsync('kds_events', {
+        'Order Number': order.order_number,
+        'Item Name': item.name,
+        'KDS Station': '',
+        'Previous Status': item.kds_status,
+        'New Status': kds_status as string,
+        'Staff': '',
+        'Time In Status Min': 0,
+        'Tenant Name': tenantName,
+        'Timestamp': new Date().toISOString(),
+      })
+    }
+  })
 
   return NextResponse.json({
     updated_items:       itemIdsToUpdate.length,

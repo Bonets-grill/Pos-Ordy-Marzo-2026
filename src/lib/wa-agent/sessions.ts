@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { WASession, WAMessage } from "./types";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 
 const MAX_HISTORY = 20; // last 20 messages for context window
 
@@ -49,6 +50,19 @@ export async function getOrCreateSession(
   if (error) {
     throw new Error(`Failed to create session: ${error.message}`);
   }
+
+  // Airtable: registrar nueva sesión WhatsApp
+  getTenantName(tenantId).then(tenantName => {
+    sendToAirtableAsync('wa_sessions', {
+      'Session ID': session?.id || '',
+      'Phone': phone,
+      'Customer Name': '',
+      'State': 'idle',
+      'Cart': '[]',
+      'Tenant Name': tenantName,
+      'Last Message At': new Date().toISOString(),
+    });
+  });
 
   return session as WASession;
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase-server";
 import { requireAuth } from "@/lib/api-auth";
+import { sendToAirtableAsync, getTenantName } from "@/lib/airtable/dispatcher";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const VALID_ORDER_TYPES = new Set(["dine_in", "takeaway", "delivery"]);
@@ -130,6 +131,42 @@ export async function POST(req: NextRequest) {
     await svc.from("restaurant_tables").update({ status: "occupied", current_order_id: order.id })
       .eq("id", table_id as string).eq("tenant_id", tenantId);
   }
+
+  // Airtable: registrar orden + items (multi-tenant)
+  getTenantName(tenantId).then(tenantName => {
+    sendToAirtableAsync('orders', {
+      'Order Number': order.order_number,
+      'Status': 'confirmed',
+      'Source': source,
+      'Order Type': order_type as string,
+      'Total': total,
+      'Items Count': orderItems.length,
+      'Customer Name': customer_name ? String(customer_name).slice(0, 100) : '',
+      'Customer Phone': customer_phone ? String(customer_phone).slice(0, 30) : '',
+      'Order ID': order.id,
+      'Tenant Name': tenantName,
+      'Timestamp': new Date().toISOString(),
+    })
+    for (const item of validatedItems) {
+      sendToAirtableAsync('order_items', {
+        'Order ID': order.id,
+        'Order Number': order.order_number,
+        'Item Name': item.name,
+        'Menu Item ID': item.menu_item_id,
+        'Quantity': item.quantity,
+        'Unit Price': item.unit_price,
+        'Modifiers': JSON.stringify(item.modifiers),
+        'Modifiers Total': item.modifiers_total,
+        'Subtotal': item.subtotal,
+        'Notes': item.notes || '',
+        'KDS Station': item.kds_station || '',
+        'KDS Status': 'pending',
+        'Voided': false,
+        'Tenant Name': tenantName,
+        'Timestamp': new Date().toISOString(),
+      })
+    }
+  })
 
   return NextResponse.json({
     order_id: order.id, order_number: order.order_number, status: "confirmed",
