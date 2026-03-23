@@ -118,7 +118,7 @@ export async function processMessageWithDify(
       inputs,
       query: message.text,
       response_mode: "streaming",
-      user: message.from,
+      user: `wa_${tenantId.slice(0, 8)}_${message.from}`,
     };
     if (conversationId) {
       body.conversation_id = conversationId;
