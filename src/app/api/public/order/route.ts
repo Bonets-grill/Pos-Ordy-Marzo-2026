@@ -178,6 +178,18 @@ export async function POST(req: NextRequest) {
     if (bh && !isOpenNow(bh, tz)) {
       return NextResponse.json({ error: "Restaurant is currently closed" }, { status: 503 });
     }
+
+    // Block orders when cash register is closed
+    const { data: openShift } = await supabase
+      .from("cash_shifts")
+      .select("id")
+      .eq("tenant_id", tenant.id)
+      .eq("status", "open")
+      .single();
+    if (!openShift) {
+      return NextResponse.json({ error: "Cash register is closed" }, { status: 503 });
+    }
+
     const tenantId = tenant.id;
     const tenantLang: string = (tenant.locale || "es").slice(0, 2);
 
