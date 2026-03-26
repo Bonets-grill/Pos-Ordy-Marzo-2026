@@ -242,9 +242,9 @@ function checkIsOpen(businessHours: Record<string, unknown> | null, timezone?: s
   const localStr = now.toLocaleString("en-US", { timeZone: tz });
   const local = new Date(localStr);
 
-  const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   const dayKey = days[local.getDay()];
-  const dayData = businessHours[dayKey] as { closed?: boolean; open?: string; close?: string; shifts?: { open: string; close: string }[] } | undefined;
+  const dayData = businessHours[dayKey] as { closed?: boolean; open?: string; close?: string; open2?: string; close2?: string; split?: boolean; shifts?: { open: string; close: string }[] } | undefined;
   if (!dayData || dayData.closed) return false;
 
   const nowMin = local.getHours() * 60 + local.getMinutes();
@@ -266,7 +266,14 @@ function checkIsOpen(businessHours: Record<string, unknown> | null, timezone?: s
     return hours * 60 + minutes;
   }
 
-  const shifts = dayData.shifts || [{ open: dayData.open!, close: dayData.close! }];
+  let shifts: { open: string; close: string }[] = [];
+  if (dayData.shifts) {
+    shifts = dayData.shifts;
+  } else {
+    if (dayData.open && dayData.close) shifts.push({ open: dayData.open, close: dayData.close });
+    if (dayData.split && dayData.open2 && dayData.close2) shifts.push({ open: dayData.open2, close: dayData.close2 });
+  }
+  if (shifts.length === 0) return false;
   return shifts.some((s) => {
     const openMin = parseTimeToMinutes(s.open);
     let closeMin = parseTimeToMinutes(s.close);

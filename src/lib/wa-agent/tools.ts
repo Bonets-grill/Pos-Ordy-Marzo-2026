@@ -488,18 +488,20 @@ export async function checkBusinessHours(
 
   if (ctx.tenant.business_hours) {
     const dayNames: Record<string, string> = {
-      mon: "Lunes", tue: "Martes", wed: "Miércoles", thu: "Jueves",
-      fri: "Viernes", sat: "Sábado", sun: "Domingo",
+      monday: "Lunes", tuesday: "Martes", wednesday: "Miércoles", thursday: "Jueves",
+      friday: "Viernes", saturday: "Sábado", sunday: "Domingo",
     };
     for (const [key, label] of Object.entries(dayNames)) {
-      const day = ctx.tenant.business_hours[key] as { closed?: boolean; open?: string; close?: string; shifts?: { open: string; close: string }[] } | undefined;
+      const day = ctx.tenant.business_hours[key] as { closed?: boolean; open?: string; close?: string; open2?: string; close2?: string; split?: boolean; shifts?: { open: string; close: string }[] } | undefined;
       if (!day || day.closed) {
         response += `  ${label}: Cerrado\n`;
       } else if (day.shifts) {
         const times = day.shifts.map((s) => `${s.open}-${s.close}`).join(", ");
         response += `  ${label}: ${times}\n`;
       } else {
-        response += `  ${label}: ${day.open}-${day.close}\n`;
+        const t1 = day.open && day.close ? `${day.open}-${day.close}` : null;
+        const t2 = day.split && day.open2 && day.close2 ? `${day.open2}-${day.close2}` : null;
+        response += `  ${label}: ${[t1, t2].filter(Boolean).join(" y ") || "Cerrado"}\n`;
       }
     }
   } else {
