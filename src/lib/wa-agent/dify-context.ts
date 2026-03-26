@@ -107,13 +107,18 @@ export async function buildDifyInputs(
   // Business hours
   let hoursText = "No configurado";
   if (tenant.business_hours) {
-    const bh = tenant.business_hours as Record<string, { open: string; close: string; closed?: boolean }>;
+    const bh = tenant.business_hours as Record<string, { open?: string; close?: string; open2?: string; close2?: string; split?: boolean; closed?: boolean }>;
     const dayNames: Record<string, string> = {
       monday: "Lunes", tuesday: "Martes", wednesday: "Miércoles",
       thursday: "Jueves", friday: "Viernes", saturday: "Sábado", sunday: "Domingo"
     };
     hoursText = Object.entries(bh)
-      .map(([day, h]) => `${dayNames[day] || day}: ${h.closed ? "CERRADO" : `${h.open} - ${h.close}`}`)
+      .map(([day, h]) => {
+        if (h.closed) return `${dayNames[day] || day}: CERRADO`;
+        const t1 = h.open && h.close ? `${h.open}-${h.close}` : null;
+        const t2 = h.split && h.open2 && h.close2 ? `${h.open2}-${h.close2}` : null;
+        return `${dayNames[day] || day}: ${[t1, t2].filter(Boolean).join(" y ")}`;
+      })
       .join(" | ");
   }
 
