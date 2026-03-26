@@ -683,6 +683,17 @@ async function confirmOrder(supabase: SupabaseClient, tenantId: string, phone: s
     return { result: "closed", message: "Lo sentimos, el restaurante está cerrado en este momento. No podemos procesar el pedido." };
   }
 
+  // Block orders when cash register is closed
+  const { data: openShift } = await supabase
+    .from("cash_shifts")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("status", "open")
+    .single();
+  if (!openShift) {
+    return { result: "closed", message: "Lo sentimos, la caja está cerrada en este momento. No podemos procesar el pedido." };
+  }
+
   // Get tenant tax config
   const { data: tenant } = await supabase
     .from("tenants")
