@@ -97,7 +97,7 @@ interface TenantTaxRow {
 }
 
 interface TenantHoursRow {
-  business_hours: Record<string, { open: string; close: string; closed?: boolean }>;
+  business_hours: Record<string, { open: string; close: string; closed?: boolean; split?: boolean; open2?: string; close2?: string }>;
   timezone: string;
 }
 
