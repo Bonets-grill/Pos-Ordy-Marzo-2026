@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const { data: order } = await supabase
       .from("orders")
-      .select("id, order_number, customer_name, customer_phone, total, metadata, order_type")
+      .select("id, order_number, customer_name, customer_phone, total, metadata, order_type, source")
       .eq("id", orderId)
       .single();
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Order not found or no phone" }, { status: 404 });
     }
 
-    if (order.order_type !== "whatsapp") {
+    if (order.source !== "whatsapp") {
       return NextResponse.json({ error: "Not a WhatsApp order" }, { status: 400 });
     }
 
