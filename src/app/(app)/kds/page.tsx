@@ -363,6 +363,7 @@ export default function KdsPage() {
     if (order.source === "whatsapp" && order.customer_phone && tenantId) {
       fetch("/api/whatsapp/notify", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: order.id,
@@ -382,6 +383,7 @@ export default function KdsPage() {
     try {
       await fetch("/api/whatsapp/notify", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: waAcceptOrder.id,
@@ -405,6 +407,7 @@ export default function KdsPage() {
     try {
       await fetch("/api/whatsapp/notify", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: order.id,
@@ -435,6 +438,7 @@ export default function KdsPage() {
       if (data.all_items_ready && order.source === "whatsapp" && order.customer_phone && tenantId) {
         fetch("/api/whatsapp/notify", {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderId: order.id, type: "order_ready", tenant_id: tenantId }),
         }).catch((err) => console.error("WA ready notify error:", err));
