@@ -126,6 +126,83 @@ export async function POST(req: NextRequest) {
     .eq("order_id", order_id as string)
     .in("kds_status", ["pending", "preparing", "ready"]);
 
+  // Accrue loyalty points on close
+  try {
+    const { data: loySettings } = await svc
+      .from("loyalty_settings")
+      .select("enabled, points_per_euro, min_order_amount, auto_enroll, auto_create_from_qr, auto_create_from_takeaway")
+      .eq("tenant_id", tenantId)
+      .single();
+
+    if (loySettings?.enabled && orderTotal >= Number(loySettings.min_order_amount || 0)) {
+      const { data: loyOrder } = await svc
+        .from("orders")
+        .select("source, customer_phone, loyalty_customer_id")
+        .eq("id", order_id as string)
+        .single();
+
+      let loyCustomerId = loyOrder?.loyalty_customer_id || null;
+
+      // Auto-enroll si está configurado y no tiene customer
+      if (!loyCustomerId && loySettings.auto_enroll && loyOrder?.customer_phone) {
+        const autoEnrollSources = [];
+        if (loySettings.auto_create_from_qr) autoEnrollSources.push("qr");
+        if (loySettings.auto_create_from_takeaway) autoEnrollSources.push("takeaway", "whatsapp");
+        if (autoEnrollSources.includes(loyOrder.source || "")) {
+          const { data: existing } = await svc
+            .from("loyalty_customers")
+            .select("id, current_points_balance, total_points_earned, visits_count, total_spent")
+            .eq("tenant_id", tenantId)
+            .eq("phone", loyOrder.customer_phone)
+            .single();
+          if (existing) {
+            loyCustomerId = existing.id;
+          } else {
+            const { data: newCust } = await svc
+              .from("loyalty_customers")
+              .insert({ tenant_id: tenantId, phone: loyOrder.customer_phone, source: loyOrder.source, current_points_balance: 0, total_points_earned: 0, total_points_redeemed: 0, visits_count: 0, total_spent: 0, active: true })
+              .select("id")
+              .single();
+            if (newCust) loyCustomerId = newCust.id;
+          }
+        }
+      }
+
+      if (loyCustomerId) {
+        const pointsEarned = Math.floor(orderTotal * Number(loySettings.points_per_euro || 1));
+        if (pointsEarned > 0) {
+          const { data: cust } = await svc
+            .from("loyalty_customers")
+            .select("current_points_balance, total_points_earned, visits_count, total_spent")
+            .eq("id", loyCustomerId)
+            .single();
+          if (cust) {
+            const newBalance = Number(cust.current_points_balance || 0) + pointsEarned;
+            await svc.from("loyalty_customers").update({
+              current_points_balance: newBalance,
+              total_points_earned: Number(cust.total_points_earned || 0) + pointsEarned,
+              visits_count: Number(cust.visits_count || 0) + 1,
+              total_spent: round2(Number(cust.total_spent || 0) + orderTotal),
+              last_visit_at: new Date().toISOString(),
+            }).eq("id", loyCustomerId);
+            await svc.from("loyalty_points_ledger").insert({
+              tenant_id: tenantId,
+              customer_id: loyCustomerId,
+              order_id: order_id as string,
+              movement_type: "earn",
+              points_delta: pointsEarned,
+              balance_after: newBalance,
+              source: "order_close",
+              description: `Orden #${order.order_number} - €${orderTotal}`,
+            });
+          }
+        }
+      }
+    }
+  } catch (loyErr) {
+    console.error("[CLOSE] Loyalty error:", loyErr);
+  }
+
   // Airtable: registrar cierre de orden (multi-tenant)
   getTenantName(tenantId).then(tenantName => {
     sendToAirtableAsync('orders', {

@@ -206,6 +206,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Update cash_shift totals
+  const { data: openShift } = await svc
+    .from("cash_shifts")
+    .select("id, cash_sales, card_sales, total_sales, total_orders")
+    .eq("tenant_id", tenantId)
+    .eq("status", "open")
+    .single();
+  if (openShift) {
+    const cashDelta = method === "cash" ? payAmount : method === "mixed" ? round2(Number(cash_amount || 0)) : 0;
+    const cardDelta = method === "card" ? payAmount : method === "mixed" ? round2(Number(card_amount || 0)) : 0;
+    await svc.from("cash_shifts").update({
+      cash_sales:   round2(Number(openShift.cash_sales  || 0) + cashDelta),
+      card_sales:   round2(Number(openShift.card_sales  || 0) + cardDelta),
+      total_sales:  round2(Number(openShift.total_sales || 0) + payAmount),
+      total_orders: fullyPaid ? Number(openShift.total_orders || 0) + 1 : Number(openShift.total_orders || 0),
+    }).eq("id", openShift.id);
+  }
+
   // Airtable: registrar pago(s) (multi-tenant)
   getTenantName(tenantId).then(tenantName => {
     for (const pay of insertedPayments) {

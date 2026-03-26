@@ -143,6 +143,25 @@ export async function PATCH(req: NextRequest) {
     orderStatusUpdate = "preparing";
   }
 
+  // Notify WA customer when all items are ready
+  if (allReady && !allServed && orderStatusUpdate === "ready") {
+    try {
+      const { data: waOrder } = await svc
+        .from("orders")
+        .select("source, customer_phone")
+        .eq("id", order_id as string)
+        .single();
+      if (waOrder?.source === "whatsapp" && waOrder?.customer_phone) {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ordy-pos-app.netlify.app";
+        fetch(`${baseUrl}/api/whatsapp/notify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.NEXTAUTH_SECRET || ""}` },
+          body: JSON.stringify({ orderId: order_id, type: "order_ready", tenant_id: tenantId }),
+        }).catch(() => {});
+      }
+    } catch {}
+  }
+
   // Airtable: registrar eventos KDS (multi-tenant)
   getTenantName(tenantId).then(tenantName => {
     for (const item of items as KdsItem[]) {
