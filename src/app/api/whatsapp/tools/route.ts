@@ -677,6 +677,12 @@ async function confirmOrder(supabase: SupabaseClient, tenantId: string, phone: s
   if (cart.length === 0) return { result: "error", message: "El carrito está vacío. Añade productos primero." };
   if (!session.customer_name) return { result: "error", message: "Necesito el nombre del cliente primero. Usa set_customer_name." };
 
+  // Block orders when restaurant is closed
+  const hoursCheck = await checkBusinessHours(supabase, tenantId);
+  if (hoursCheck.is_open === false) {
+    return { result: "closed", message: "Lo sentimos, el restaurante está cerrado en este momento. No podemos procesar el pedido." };
+  }
+
   // Get tenant tax config
   const { data: tenant } = await supabase
     .from("tenants")
@@ -932,18 +938,33 @@ async function checkBusinessHours(supabase: SupabaseClient, tenantId: string) {
   const dayKey = days[now.getDay()];
   const todayH = bh[dayKey];
 
-  let isOpen = true;
+  let isOpen = false;
   if (todayH?.closed) {
     isOpen = false;
-  } else if (todayH?.open && todayH?.close) {
+  } else if (todayH) {
     const nowMin = now.getHours() * 60 + now.getMinutes();
-    const [oH, oM] = todayH.open.split(":").map(Number);
-    const [cH, cM] = todayH.close.split(":").map(Number);
-    const openMin = oH * 60 + oM;
-    const closeMin = cH * 60 + cM;
-    isOpen = closeMin < openMin
-      ? (nowMin >= openMin || nowMin <= closeMin)
-      : (nowMin >= openMin && nowMin <= closeMin);
+    // First shift
+    if (todayH.open && todayH.close) {
+      const [oH, oM] = todayH.open.split(":").map(Number);
+      const [cH, cM] = todayH.close.split(":").map(Number);
+      const openMin = oH * 60 + oM;
+      const closeMin = cH * 60 + cM;
+      if (openMin !== closeMin) {
+        isOpen = closeMin < openMin
+          ? (nowMin >= openMin || nowMin <= closeMin)
+          : (nowMin >= openMin && nowMin <= closeMin);
+      }
+    }
+    // Second shift (split hours)
+    if (!isOpen && todayH.split && todayH.open2 && todayH.close2) {
+      const [o2H, o2M] = todayH.open2.split(":").map(Number);
+      const [c2H, c2M] = todayH.close2.split(":").map(Number);
+      const open2Min = o2H * 60 + o2M;
+      const close2Min = c2H * 60 + c2M;
+      isOpen = close2Min < open2Min
+        ? (nowMin >= open2Min || nowMin <= close2Min)
+        : (nowMin >= open2Min && nowMin <= close2Min);
+    }
   }
 
   const schedule = Object.entries(bh).map(([day, h]: [string, { open: string; close: string; closed?: boolean }]) => ({
