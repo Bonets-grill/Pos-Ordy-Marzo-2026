@@ -8,7 +8,7 @@
 # ── Customer-facing (QR Menu + Order) ────────────────────────
 7c37f1f5e046d1481c360d6dcef3e2cdd1486883da2c8b671709068f5687d19a  src/app/qr/[slug]/[table]/page.tsx
 c3e056c3654005ba4abb7ebfa78a3e469d945884c549e8e49201aa29d88e70ef  src/app/api/public/menu/route.ts
-b2cb8d1a7dded05376ff42e0b844e436ffa48e829274258c166a50baf615afb5  src/app/api/public/order/route.ts
+d92bc951dcb620f90e77d52b362c87a9d7a5040d9b30529d8a29d772632adb7c  src/app/api/public/order/route.ts
 # ── Staff-facing (KDS + Orders + Payments) ───────────────────
 fd33c1dbae25a2495b6bfc1482575f5fd0c333f7013d6d655413db00ad031d84  src/app/(app)/kds/page.tsx
 ea43909d7f16494754d97cd5fd1273f73244b943648679bd041599d32089d9fe  src/app/(app)/orders/page.tsx
@@ -23,4 +23,4 @@ a01b5a851c6955e88588c9acd2901e43c48618d61ca38cbc8c09b529d334f49e  src/lib/supaba
 72c95f35c339743a707321db977a8d5c016da8386dcb9be815796b50f533f86b  src/lib/api-auth.ts
 62a8e23787ce51e08c3d91154e88f2f68e1f30e03316f9e975d4fec9cabbe873  src/lib/i18n-provider.tsx
 0a8a2fe706d54f7a8681bdbce0281c162c568eecfc17e6b16c3ac37be46002d8  src/lib/translations.ts
-9c002bf08d8951c85f376fd469bccb645133ea666210d5c613038cc26cabed42  src/lib/utils.ts
+df4c67e9726c1ffb101bb36e076b60f8f5e5487809ea803a5da0dd018a970a1e  src/lib/utils.ts

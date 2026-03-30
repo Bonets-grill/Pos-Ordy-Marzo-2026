@@ -67,7 +67,9 @@ function isUUID(v: unknown): v is string {
 
 function sanitize(input: unknown, maxLen: number): string {
   if (typeof input !== "string") return "";
-  // Strip angle brackets entirely to prevent any HTML/script injection.
+  // Strip all `<` and `>` characters to block HTML/script injection.
+  // Using character-level removal (not regex tag-stripping) prevents the nested-tag
+  // bypass: `<<script>script>` would survive `/<[^>]*>/g` but not this approach.
   return input
     .replace(/</g, "")
     .replace(/>/g, "")
