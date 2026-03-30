@@ -47,3 +47,6 @@ check-wa.js
 health-check.js
 *.bak
 *.bak2
+# Screenshot artifacts from development
+docs/ss-*.png
+docs/login-page.png

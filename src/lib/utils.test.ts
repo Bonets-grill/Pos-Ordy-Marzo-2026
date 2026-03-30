@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { cn, formatCurrency, formatDate, timeAgo } from "./utils";
+import { cn, formatCurrency, formatDate, timeAgo, generateUUID } from "./utils";
 
 // ── cn (className merger) ───────────────────────────────────
 
@@ -132,5 +132,44 @@ describe("timeAgo", () => {
     vi.spyOn(Date, "now").mockReturnValue(now);
     const past = new Date(now - 120 * 1000);
     expect(timeAgo(past)).toBe("2m");
+  });
+});
+
+// ── generateUUID ─────────────────────────────────────────────
+
+describe("generateUUID", () => {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  it("returns a valid UUID v4 format", () => {
+    const id = generateUUID();
+    expect(id).toMatch(UUID_RE);
+  });
+
+  it("returns unique values on repeated calls", () => {
+    const ids = new Set(Array.from({ length: 50 }, () => generateUUID()));
+    expect(ids.size).toBe(50);
+  });
+
+  it("works when crypto.randomUUID is unavailable (fallback path)", () => {
+    const orig = (crypto as Record<string, unknown>).randomUUID;
+    (crypto as Record<string, unknown>).randomUUID = undefined;
+    try {
+      const id = generateUUID();
+      expect(typeof id).toBe("string");
+      expect(id).toHaveLength(36);
+    } finally {
+      (crypto as Record<string, unknown>).randomUUID = orig;
+    }
+  });
+
+  it("fallback UUID contains correct version digit (4)", () => {
+    const orig = (crypto as Record<string, unknown>).randomUUID;
+    (crypto as Record<string, unknown>).randomUUID = undefined;
+    try {
+      const id = generateUUID();
+      expect(id[14]).toBe("4");
+    } finally {
+      (crypto as Record<string, unknown>).randomUUID = orig;
+    }
   });
 });

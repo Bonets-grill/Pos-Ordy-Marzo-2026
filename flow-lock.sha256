@@ -6,7 +6,7 @@
 # Any hash mismatch means the flow was altered.
 #
 # ── Customer-facing (QR Menu + Order) ────────────────────────
-a46b1500f142f0775ea5c5262889ad86437a500944c97e67b184e78e5c3ce814  src/app/qr/[slug]/[table]/page.tsx
+7c37f1f5e046d1481c360d6dcef3e2cdd1486883da2c8b671709068f5687d19a  src/app/qr/[slug]/[table]/page.tsx
 c3e056c3654005ba4abb7ebfa78a3e469d945884c549e8e49201aa29d88e70ef  src/app/api/public/menu/route.ts
 b2cb8d1a7dded05376ff42e0b844e436ffa48e829274258c166a50baf615afb5  src/app/api/public/order/route.ts
 # ── Staff-facing (KDS + Orders + Payments) ───────────────────
@@ -23,4 +23,4 @@ a01b5a851c6955e88588c9acd2901e43c48618d61ca38cbc8c09b529d334f49e  src/lib/supaba
 72c95f35c339743a707321db977a8d5c016da8386dcb9be815796b50f533f86b  src/lib/api-auth.ts
 7f0c62d6a654ac9d059f1002d02e50e6b28a2d717ee310d3ff225670c2aa5852  src/lib/i18n-provider.tsx
 0a8a2fe706d54f7a8681bdbce0281c162c568eecfc17e6b16c3ac37be46002d8  src/lib/translations.ts
-c937f0f3b779d0e72cfcf2dc65e06904c5867305510820c2d48d2ba42eca45f3  src/lib/utils.ts
+9c002bf08d8951c85f376fd469bccb645133ea666210d5c613038cc26cabed42  src/lib/utils.ts
