@@ -8,7 +8,7 @@
 # ── Customer-facing (QR Menu + Order) ────────────────────────
 a46b1500f142f0775ea5c5262889ad86437a500944c97e67b184e78e5c3ce814  src/app/qr/[slug]/[table]/page.tsx
 c3e056c3654005ba4abb7ebfa78a3e469d945884c549e8e49201aa29d88e70ef  src/app/api/public/menu/route.ts
-dd4d376cec7a714fc4c631d8ca38e35ea6773d39daa779c563eeb71a88cd7e3c  src/app/api/public/order/route.ts
+b2cb8d1a7dded05376ff42e0b844e436ffa48e829274258c166a50baf615afb5  src/app/api/public/order/route.ts
 # ── Staff-facing (KDS + Orders + Payments) ───────────────────
 fd33c1dbae25a2495b6bfc1482575f5fd0c333f7013d6d655413db00ad031d84  src/app/(app)/kds/page.tsx
 ea43909d7f16494754d97cd5fd1273f73244b943648679bd041599d32089d9fe  src/app/(app)/orders/page.tsx

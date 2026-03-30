@@ -18,6 +18,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // ── Rate limiter (in-memory, resets on cold start) ──────────
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
 setInterval(() => {
+  if (rateLimits.size === 0) return;
   const now = Date.now();
   for (const [k, v] of rateLimits) if (v.resetAt <= now) rateLimits.delete(k);
 }, 60_000);
@@ -44,7 +45,11 @@ async function sendSecurityAlert(ip: string, path: string, type: string) {
     const adminPhone = process.env.WA_ADMIN_PHONE || "";
     if (!evoUrl || !adminPhone || !instance) return;
 
-    const msg = `🚨 *Ordy POS — Alerta de seguridad*\n\nTipo: ${type}\nIP: ${ip}\nRuta: ${path}\nHora: ${new Date().toISOString()}\n\n_Posible ataque de fuerza bruta_`;
+    const msg = `🚨 *Ordy POS — Alerta de seguridad*\n\nTipo: ${type}\nIP: ${ip}\nRuta: ${path}\nHora: ${new Date().toISOString()}\n\n${
+      type === "Login brute force"
+        ? "_Posible ataque de fuerza bruta en login_"
+        : `_Evento: ${type}_`
+    }`;
     await fetch(`${evoUrl}/message/sendText/${instance}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: evoKey || "" },
@@ -170,8 +175,8 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
     {
       cookies: {
         getAll() {

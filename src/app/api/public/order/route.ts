@@ -67,7 +67,13 @@ function isUUID(v: unknown): v is string {
 
 function sanitize(input: unknown, maxLen: number): string {
   if (typeof input !== "string") return "";
-  return input.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().slice(0, maxLen);
+  // Strip angle brackets entirely to prevent any HTML/script injection.
+  return input
+    .replace(/</g, "")
+    .replace(/>/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLen);
 }
 
 function round2(n: number): number {

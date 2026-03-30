@@ -22,7 +22,13 @@ function isUUID(v: unknown): v is string {
 
 function sanitize(input: unknown, maxLen: number): string {
   if (typeof input !== "string") return "";
-  return input.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().slice(0, maxLen);
+  // Strip angle brackets entirely to prevent any HTML/script injection.
+  return input
+    .replace(/</g, "")
+    .replace(/>/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLen);
 }
 
 function round2(n: number): number {
@@ -211,9 +217,30 @@ describe("Order item quantity validation", () => {
 
 describe("Input sanitization", () => {
   it("removes HTML tags (XSS prevention)", () => {
-    expect(sanitize("<script>alert(1)</script>", 100)).toBe("alert(1)");
-    expect(sanitize("<b>Bold</b>", 100)).toBe("Bold");
-    expect(sanitize("<img src=x onerror=alert(1)>", 100)).toBe("");
+    // New sanitize strips all '<' and '>' — contents remain but tags are gone
+    const result1 = sanitize("<script>alert(1)</script>", 100);
+    expect(result1).not.toContain("<script>");
+    expect(result1).not.toContain("<");
+    expect(result1).not.toContain(">");
+
+    const result2 = sanitize("<b>Bold</b>", 100);
+    expect(result2).not.toContain("<b>");
+    expect(result2).not.toContain("</b>");
+    expect(result2).not.toContain("<");
+    expect(result2).toContain("Bold");
+
+    const result3 = sanitize("<img src=x onerror=alert(1)>", 100);
+    expect(result3).not.toContain("<");
+    expect(result3).not.toContain(">");
+  });
+
+  it("SECURITY: nested angle bracket bypass is prevented", () => {
+    // With direct stripping of '<' and '>', no injection is possible
+    const nestedAttack = "<<script>script>alert(1)<</script>/script>";
+    const result = sanitize(nestedAttack, 200);
+    expect(result).not.toContain("<script>");
+    expect(result).not.toContain("<");
+    expect(result).not.toContain(">");
   });
 
   it("collapses whitespace", () => {
@@ -241,6 +268,7 @@ describe("Input sanitization", () => {
     const maliciousName = "<script>alert('xss')</script>Hacker";
     const safe = sanitize(maliciousName, 100);
     expect(safe).not.toContain("<script>");
+    expect(safe).not.toContain("<");
     expect(safe).toContain("Hacker");
   });
 
