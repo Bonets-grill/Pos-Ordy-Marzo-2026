@@ -67,7 +67,7 @@ export async function processMessage(
 
   let finalResponse = "";
   let toolRounds = 0;
-  let currentMessages = [...messages];
+  const currentMessages = [...messages];
 
   while (toolRounds < MAX_TOOL_ROUNDS) {
     const response = await anthropic.messages.create({

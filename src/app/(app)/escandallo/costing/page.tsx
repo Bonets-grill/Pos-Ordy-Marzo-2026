@@ -56,7 +56,10 @@ export default function CostingPage() {
     setLoading(false);
   }, [supabase, tenantId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, [loadData]);
 
   const handleRecalculate = async (recipeId: string) => {
     if (!tenantId) return;

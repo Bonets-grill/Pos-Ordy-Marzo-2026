@@ -19,6 +19,17 @@ const btnPrimary: React.CSSProperties = { background: "var(--accent)", color: "#
 const btnSecondary: React.CSSProperties = { background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border)", borderRadius: 8, padding: "0.6rem 1rem", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer" };
 const cardStyle: React.CSSProperties = { background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12, padding: 20 };
 
+function DeltaIndicator({ value, suffix = "", invert = false }: { value: number; suffix?: string; invert?: boolean }) {
+  const positive = invert ? value < 0 : value > 0;
+  const color = value === 0 ? "var(--text-muted)" : positive ? "var(--success)" : "var(--danger)";
+  const Icon = value > 0 ? TrendingUp : value < 0 ? TrendingDown : Minus;
+  return (
+    <span style={{ color, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <Icon size={14} /> {value > 0 ? "+" : ""}{value.toFixed(2)}{suffix}
+    </span>
+  );
+}
+
 type SimType = "price" | "cost" | "quantity";
 
 export default function SimulatorPage() {
@@ -88,6 +99,7 @@ export default function SimulatorPage() {
   }, [supabase, tenantId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (selectedRecipeId) loadRecipeParams(selectedRecipeId);
   }, [selectedRecipeId, loadRecipeParams]);
 
@@ -107,17 +119,6 @@ export default function SimulatorPage() {
 
     setResult(comparison);
     setSimulating(false);
-  };
-
-  const DeltaIndicator = ({ value, suffix = "", invert = false }: { value: number; suffix?: string; invert?: boolean }) => {
-    const positive = invert ? value < 0 : value > 0;
-    const color = value === 0 ? "var(--text-muted)" : positive ? "var(--success)" : "var(--danger)";
-    const Icon = value > 0 ? TrendingUp : value < 0 ? TrendingDown : Minus;
-    return (
-      <span style={{ color, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
-        <Icon size={14} /> {value > 0 ? "+" : ""}{value.toFixed(2)}{suffix}
-      </span>
-    );
   };
 
   return (

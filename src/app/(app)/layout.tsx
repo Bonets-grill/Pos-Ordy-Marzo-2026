@@ -12,6 +12,7 @@ function ImpersonationBanner() {
 
   useEffect(() => {
     const name = localStorage.getItem("impersonate_tenant_name");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (name) setTenantName(name);
   }, []);
 

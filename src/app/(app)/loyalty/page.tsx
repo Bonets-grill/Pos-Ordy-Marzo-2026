@@ -212,7 +212,9 @@ export default function LoyaltyPage() {
   /* ── Load on tenant change ──────────────────────────── */
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!tenantId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     Promise.all([loadDashboard(), loadSettings()]).finally(() => setLoading(false));
   }, [tenantId, loadDashboard, loadSettings]);

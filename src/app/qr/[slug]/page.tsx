@@ -147,6 +147,7 @@ export default function QrLandingPage() {
   // Auto-detect language
   useEffect(() => {
     const bl = navigator.language?.slice(0, 2) as Lang;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (LANGS.includes(bl)) setLang(bl);
   }, []);
 

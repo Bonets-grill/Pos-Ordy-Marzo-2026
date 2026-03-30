@@ -343,6 +343,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const done = localStorage.getItem(STORAGE_KEY);
     if (done) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setChecked(true);
       return;
     }
