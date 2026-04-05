@@ -1,0 +1,16 @@
+export { SupabasePatientRepo } from './SupabasePatientRepo';
+export type { PatientEntity } from './SupabasePatientRepo';
+export { SupabaseSessionRepo } from './SupabaseSessionRepo';
+export type { SessionEntity, SessionStatus } from './SupabaseSessionRepo';
+export { SupabaseDocumentRepo } from './SupabaseDocumentRepo';
+export type { DocumentEntity, DocumentType } from './SupabaseDocumentRepo';
+export { SupabaseMemoryRepo } from './SupabaseMemoryRepo';
+export type { MemoryItemEntity, MemoryItemType, MemorySeverity, MemoryStatus } from './SupabaseMemoryRepo';
+export { SupabaseAuditRepo } from './SupabaseAuditRepo';
+export type { AuditEventRow, AuditCategory } from './SupabaseAuditRepo';
+export { SupabaseAuthAdapter } from './SupabaseAuthAdapter';
+export type { AuthenticatedActor, PlatformRole } from './SupabaseAuthAdapter';
+export { ClaudeNoteProvider } from './ClaudeNoteProvider';
+export type { NoteGenerationInput, GeneratedNote, NoteTemplate, NoteSections } from './ClaudeNoteProvider';
+export { WhisperTranscriptionProvider } from './WhisperTranscriptionProvider';
+export type { TranscriptionResult } from './WhisperTranscriptionProvider';
