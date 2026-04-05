@@ -5,6 +5,10 @@
 **Repositorio:** Pos-Ordy-Marzo-2026 (branch: main)
 **Directorio raiz:** `/Users/lifeonmotus/`
 
+**GitHub:** https://github.com/Bonets-grill/Pos-Ordy-Marzo-2026
+**Archivo en GitHub:** https://github.com/Bonets-grill/Pos-Ordy-Marzo-2026/blob/main/ORDY_MED_SYSTEM_REPORT.md
+**Raw:** https://raw.githubusercontent.com/Bonets-grill/Pos-Ordy-Marzo-2026/main/ORDY_MED_SYSTEM_REPORT.md
+
 ---
 
 ## 1. STACK TECNICO
