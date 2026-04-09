@@ -127,7 +127,10 @@ export default function IngredientsPage() {
     setLoading(false);
   }, [supabase, tenantId, search, filterCategory, filterStatus, page]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, [loadData]);
 
   // ── Debounced search ────────────────────────────────────
   const [searchInput, setSearchInput] = useState("");

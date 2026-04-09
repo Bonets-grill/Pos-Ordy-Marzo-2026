@@ -98,7 +98,10 @@ export default function SuppliersPage() {
     setLoading(false);
   }, [supabase, tenantId, search, page]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, [loadData]);
 
   // Load supplier ingredients when expanded
   const toggleExpand = async (id: string) => {

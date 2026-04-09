@@ -11,6 +11,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("ordy-pos-lang") as Lang | null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved && LANGS.includes(saved)) setLangState(saved);
   }, []);
 

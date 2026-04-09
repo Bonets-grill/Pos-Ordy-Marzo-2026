@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useI18n } from "@/lib/i18n-provider";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, generateUUID } from "@/lib/utils";
 import { Search, Plus, Minus, Trash2, X, CheckCircle, Split, Clock, ChevronDown, Users, ListChecks, UtensilsCrossed, ShoppingBag, Truck, ArrowLeft, AlertTriangle, DollarSign, Maximize, Minimize } from "lucide-react";
 import PosLoyaltyPanel from "@/components/loyalty/PosLoyaltyPanel";
 import ReceiptModal from "@/components/receipt/ReceiptModal";
@@ -487,7 +487,7 @@ export default function PosPage() {
         return [
           ...prev,
           {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             menuItemId: item.id,
             name: item.name_es,
             price: item.price + modsTotal,

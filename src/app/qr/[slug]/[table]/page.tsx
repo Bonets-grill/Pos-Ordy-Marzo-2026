@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
+import { generateUUID } from "@/lib/utils";
 
 /* ── Types ─────────────────────────────────── */
 type Lang = "es" | "en" | "fr" | "de" | "it";
@@ -233,7 +234,7 @@ export default function QRMenuPage() {
   const [customerName, setCustomerName] = useState(initialName);
   const [orderNotes, setOrderNotes] = useState("");
   const [sending, setSending] = useState(false);
-  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+  const idempotencyKeyRef = useRef<string>(generateUUID());
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
@@ -428,7 +429,7 @@ export default function QRMenuPage() {
       setOrderStatus("confirmed");
       setCart([]);
       setShowCart(false);
-      idempotencyKeyRef.current = crypto.randomUUID();
+      idempotencyKeyRef.current = generateUUID();
     } catch {
       alert(t.error);
     } finally {

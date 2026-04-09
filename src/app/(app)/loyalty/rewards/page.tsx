@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { sendToAirtableFromClient } from "@/lib/airtable/client-dispatcher";
 import { useI18n } from "@/lib/i18n-provider";
+import Overlay from "@/components/Overlay";
 
 /* ── Types ────────────────────────────────────────────── */
 
@@ -147,6 +148,7 @@ export default function LoyaltyRewardsPage() {
   }, [tenantId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (tenantId) loadRewards();
   }, [tenantId, loadRewards]);
 
@@ -247,30 +249,6 @@ export default function LoyaltyRewardsPage() {
     };
     return map[type] || "var(--text-muted)";
   };
-
-  /* ── Overlay ────────────────────────────────────────── */
-
-  const Overlay = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 100, padding: 16,
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "var(--bg-card)", border: "1px solid var(--border)",
-          borderRadius: 16, padding: "1.5rem", width: "100%",
-          maxWidth: 580, maxHeight: "90vh", overflowY: "auto",
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
 
   /* ── Render ─────────────────────────────────────────── */
 

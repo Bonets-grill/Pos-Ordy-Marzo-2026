@@ -998,6 +998,7 @@ ${qrCards
               </div>
 
               {/* Per-zone map canvases */}
+              {/* eslint-disable-next-line react-hooks/refs */}
               {(() => {
                 const zoneIds = [...new Set(tables.map((t) => t.zone_id))];
                 zoneIds.sort((a, b) => {

@@ -111,7 +111,10 @@ export default function RecipesPage() {
     setLoading(false);
   }, [supabase, tenantId, search, filterCat, page]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, [loadData]);
 
   // Expand recipe
   const toggleExpand = async (id: string) => {

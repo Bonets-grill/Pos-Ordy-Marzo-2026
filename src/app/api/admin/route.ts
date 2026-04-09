@@ -446,7 +446,7 @@ async function getAllUsers(svc: Svc, sp: URLSearchParams) {
   const allUsers = (users || []) as Row[];
   const tenantIds = [...new Set(allUsers.map((u) => u.tenant_id as string).filter(Boolean))];
 
-  let tenantMap: Record<string, Row> = {};
+  const tenantMap: Record<string, Row> = {};
   if (tenantIds.length > 0) {
     const { data: tenants } = await svc
       .from("tenants")
@@ -504,7 +504,7 @@ async function getOrdersFeed(svc: Svc, sp: URLSearchParams) {
 
   // Fetch order items for these orders
   const orderIds = allOrders.map((o) => o.id as string);
-  let orderItemsMap: Record<string, Row[]> = {};
+  const orderItemsMap: Record<string, Row[]> = {};
 
   if (orderIds.length > 0) {
     const { data: orderItems } = await svc
@@ -521,7 +521,7 @@ async function getOrdersFeed(svc: Svc, sp: URLSearchParams) {
 
   // Tenant names
   const tenantIds = [...new Set(allOrders.map((o) => o.tenant_id as string))];
-  let tenantMap: Record<string, Row> = {};
+  const tenantMap: Record<string, Row> = {};
   if (tenantIds.length > 0) {
     const { data: tenants } = await svc
       .from("tenants")

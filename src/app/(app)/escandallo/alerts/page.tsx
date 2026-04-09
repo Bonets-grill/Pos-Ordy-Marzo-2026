@@ -45,7 +45,10 @@ export default function AlertsPage() {
     setLoading(false);
   }, [supabase, tenantId, tab]);
 
-  useEffect(() => { loadAlerts(); }, [loadAlerts]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadAlerts();
+  }, [loadAlerts]);
 
   const handleScan = async () => {
     if (!tenantId) return;

@@ -67,7 +67,15 @@ function isUUID(v: unknown): v is string {
 
 function sanitize(input: unknown, maxLen: number): string {
   if (typeof input !== "string") return "";
-  return input.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().slice(0, maxLen);
+  // Strip all `<` and `>` characters to block HTML/script injection.
+  // Using character-level removal (not regex tag-stripping) prevents the nested-tag
+  // bypass: `<<script>script>` would survive `/<[^>]*>/g` but not this approach.
+  return input
+    .replace(/</g, "")
+    .replace(/>/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLen);
 }
 
 function round2(n: number): number {

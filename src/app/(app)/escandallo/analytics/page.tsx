@@ -60,7 +60,10 @@ export default function AnalyticsPage() {
     setLoading(false);
   }, [supabase, tenantId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, [loadData]);
 
   // KPIs
   const avgFoodCost = breakdowns.length > 0 ? breakdowns.reduce((s, b) => s + b.food_cost_pct, 0) / breakdowns.length : 0;

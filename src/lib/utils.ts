@@ -1,5 +1,21 @@
 import { clsx, type ClassValue } from "clsx";
 
+/** UUID v4 generator — uses crypto.randomUUID() when available (requires HTTPS / secure context).
+ *  Falls back to a Math.random-based implementation for HTTP / older environments.
+ *  NOTE: The fallback is NOT cryptographically secure; it is only used for UI idempotency
+ *  keys (cart item IDs, order deduplication) where non-secure UUIDs are acceptable.
+ *  Do NOT use this fallback for security-sensitive token generation. */
+export function generateUUID(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
